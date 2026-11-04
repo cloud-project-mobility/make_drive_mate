@@ -54,6 +54,16 @@ class FakeS3:
 
 
 class RuntimeTest(unittest.TestCase):
+    def test_proxy_replaces_alb_port_and_untrusted_forwarded_header(self):
+        configuration = Path(__file__).with_name("nginx.conf").read_text()
+        for location in ("location = /api/v1/location/stream {", "location /api/v1/ {"):
+            with self.subTest(location=location):
+                block = configuration.split(location, 1)[1].split("\n        }", 1)[0]
+                self.assertIn("proxy_set_header X-Forwarded-Proto https;", block)
+                self.assertIn("proxy_set_header X-Forwarded-Port 443;", block)
+                self.assertIn('proxy_set_header Forwarded "";', block)
+                self.assertIn("proxy_set_header X-Forwarded-Host $host;", block)
+
     def test_archive_code_and_private_corpus_never_replace_image_code(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

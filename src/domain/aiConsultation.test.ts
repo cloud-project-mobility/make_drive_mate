@@ -105,5 +105,24 @@ test('assistant response rejects generated prices but permits original numeric e
   assert.equal(isAssistantResult({ ...result, answer: '천만원에 팔아요.' }), false);
   for (const answer of ['일 년 뒤 팔아요.', '한 달 기다려요.', '삼천 원이에요.'])
     assert.equal(isAssistantResult({ ...result, answer }), false);
+  for (const answer of [
+    '삼천원이에요.',
+    '일조 원이에요.',
+    '십이개월 뒤예요.',
+    '사 건이에요.',
+    '세 대예요.',
+    '구 분 기다려요.',
+  ])
+    assert.equal(isAssistantResult({ ...result, answer }), false);
+  for (const answer of [
+    '공매 조건을 비교하세요.',
+    '세대와 트림을 구분하고 공매 조건을 확인하세요.',
+    '사건별 정보가 달라요.',
+    '한참 기다리는 판단을 보장하지 않아요.',
+    '몇가지 근거를 확인하세요.',
+    '만일 조건이 바뀌면 다시 확인하세요.',
+    '백분율의 의미는 근거와 함께 확인하세요.',
+  ])
+    assert.equal(isAssistantResult({ ...result, answer }), true);
   assert.equal(isAssistantResult({ ...result, facts: [...result.facts, ...result.facts] }), false);
 });

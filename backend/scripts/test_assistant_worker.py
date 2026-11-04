@@ -73,6 +73,17 @@ class AssistantTests(unittest.TestCase):
         self.assertEqual(selected, facts)
         self.assertNotIn("800", answer)
 
+    def test_ordinary_korean_words_are_not_numeric_claims(self):
+        for answer in ["공매 조건을 비교하세요.", "세대와 트림을 구분하고 공매 조건을 확인하세요.",
+                       "사건별 정보가 달라요.", "한참 기다리는 판단을 보장하지 않아요.", "몇가지 근거를 확인하세요.",
+                       "만일 조건이 바뀌면 다시 확인하세요.", "백분율의 의미는 근거와 함께 확인하세요."]:
+            result = respond(request(), lambda _, answer=answer: json.dumps({"status": "answered", "answer": answer, "fact_ids": []}))
+            self.assertEqual(result["status"], "answered")
+            self.assertEqual(result["answer"], answer)
+        for answer in ["삼천원이에요.", "일조 원이에요.", "십이개월 뒤예요.", "사 건이에요.", "세 대예요.", "구 분 기다려요."]:
+            result = respond(request(), lambda _, answer=answer: json.dumps({"status": "answered", "answer": answer, "fact_ids": []}))
+            self.assertEqual(result["status"], "abstained")
+
     def test_model_input_never_enables_second_llm_call(self):
         value = request()
         value["analysis"] = {"vehicle": {"model": "K5", "age_years": 5, "odometer_km": 12000}, "use_llm": True}

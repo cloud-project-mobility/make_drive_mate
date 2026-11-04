@@ -16,7 +16,7 @@ export interface AssistantResult {
 const object = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 const koreanQuantity =
-  /(?:^|[^가-힣])(?:[영공일이삼사오육칠팔구십백천만억조]+|한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|스무|서른|마흔|쉰)\s*(?:개월|년|달|일|시간|분|초|대|건|개|원|만원|억원|퍼센트|프로|킬로미터|미터|리터)/;
+  /(?:^|[^가-힣])(?:(?:[영공일이삼사오육칠팔구십백천만억조]+|한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|스무|서른|마흔|쉰)\s+|(?:[영공일이삼사오육칠팔구][십백천만억][영공일이삼사오육칠팔구십백천만억조]*|[십백천만억][영공일이삼사오육칠팔구십백천만억조]+|[영공일이삼사오육칠팔구]+조[영공일이삼사오육칠팔구십백천만억조]*)\s*)(?:개월|년|달|일|시간|분|초|대|건|개|원|만원|억원|퍼센트|프로|킬로미터|미터|리터)/;
 export function isAssistantResult(value: unknown): value is AssistantResult {
   if (
     !object(value) ||

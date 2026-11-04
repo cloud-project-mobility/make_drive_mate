@@ -8,7 +8,7 @@ test('direct links cannot create orphan data before local onboarding', async ({ 
   ).toBeVisible();
   await expect(page.getByRole('button', { name: '차량 등록하기', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '내 차량으로 시작하기', exact: true }).click();
-  await expect(page.getByRole('button', { name: '첫 차량 등록', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '내 차 등록', exact: true })).toBeVisible();
 });
 
 test('corrupt storage stays intact until reviewed backup recovery', async ({ page }) => {

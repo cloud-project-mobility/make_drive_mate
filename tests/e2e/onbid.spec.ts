@@ -98,19 +98,27 @@ const auction = {
   },
 };
 
-async function login(page: Page) {
+async function login(page: Page, destination: 'analysis' | 'documents' = 'analysis') {
   await page.goto('/');
   await page.getByRole('button', { name: '예시 차량으로 둘러보기', exact: true }).click();
-  await page.getByRole('tab', { name: '설정', exact: true }).click();
+  await page.getByRole('button', { name: '로그인 및 설정', exact: true }).click();
+  await page.getByRole('button', { name: '서버 설정 펼치기', exact: true }).click();
   await page.getByRole('textbox', { name: '백엔드 서버 주소', exact: true }).fill(backendUrl!);
   await page.getByRole('button', { name: '서버 연결 확인', exact: true }).click();
   await expect(page.getByText('서버 연결됨 · 외부 데이터는 예시', { exact: true })).toBeVisible();
   const email = `onbid-${Date.now()}-${Math.random().toString(36).slice(2)}@example.test`;
   await page.getByRole('textbox', { name: '테스트 계정 이메일', exact: true }).fill(email);
   await page.getByLabel('테스트 계정 비밀번호', { exact: true }).fill('synthetic-ui-test-password');
+  await page.getByRole('button', { name: '회원가입으로 전환', exact: true }).click();
   await page.getByRole('button', { name: '로컬 테스트 계정 만들기', exact: true }).click();
   await expect(page.getByText(email, { exact: true })).toBeVisible();
-  await page.getByRole('tab', { name: '가치 분석', exact: true }).click();
+  await page.getByRole('button', { name: '참고 자료', exact: true }).click();
+  await page
+    .getByRole('button', {
+      name: destination === 'analysis' ? '가격 분석 상세' : '프로젝트 자료',
+      exact: true,
+    })
+    .click();
 }
 
 test('analytics shows whole-test and supported-subset errors together and clears on logout', async ({
@@ -132,12 +140,9 @@ test('analytics shows whole-test and supported-subset errors together and clears
       (await page.getByTestId('load-onbid-analytics').boundingBox())!.height,
     ).toBeGreaterThanOrEqual(44);
   }
-  // Native dimensions update after the browser resize; wait for the desktop navigation
-  // before resolving a click so the disappearing mobile tab is not retained.
-  await expect(page.getByRole('tab', { name: '설정', exact: true })).toBeVisible();
-  await page.getByRole('tab', { name: '설정', exact: true }).click();
+  await page.getByRole('button', { name: '뒤로', exact: true }).click();
   await page.getByRole('button', { name: '로컬 서버 로그아웃', exact: true }).click();
-  await page.getByRole('tab', { name: '가치 분석', exact: true }).click();
+  await page.goto('/analysis');
   await expect(page.getByText('모델별 검증 오차', { exact: true })).toHaveCount(0);
   await expect(page.getByTestId('load-onbid-analytics')).toBeDisabled();
 });
@@ -253,7 +258,7 @@ test('document excerpts distinguish plans from verified implementation without e
       },
     });
   });
-  await login(page);
+  await login(page, 'documents');
   await page
     .getByRole('button', { name: 'PoC 계획과 현재 구현은 어떤 부분이 다른가요?', exact: true })
     .click();
@@ -278,7 +283,7 @@ test('restricted document access explains the required account without displayin
       },
     }),
   );
-  await login(page);
+  await login(page, 'documents');
   await page
     .getByRole('textbox', { name: '프로젝트 문서 질문', exact: true })
     .fill('현재 데이터 수집 과정은?');

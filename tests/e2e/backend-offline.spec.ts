@@ -5,7 +5,8 @@ test('unavailable backend and invalid URL show recoverable errors while the offl
 }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '예시 차량으로 둘러보기', exact: true }).click();
-  await page.getByRole('tab', { name: '설정', exact: true }).click();
+  await page.getByRole('button', { name: '로그인 및 설정', exact: true }).click();
+  await page.getByRole('button', { name: '서버 설정 펼치기', exact: true }).click();
   await page
     .getByRole('textbox', { name: '백엔드 서버 주소', exact: true })
     .fill('http://127.0.0.1:1');
@@ -25,6 +26,6 @@ test('unavailable backend and invalid URL show recoverable errors while the offl
       { exact: true },
     ),
   ).toBeVisible();
-  await page.getByRole('tab', { name: '가치 분석', exact: true }).click();
+  await page.goto('/analysis');
   await expect(page.getByText('48,250', { exact: true })).toBeVisible();
 });

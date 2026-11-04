@@ -2,10 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 
 async function start(page: Page) {
   await page.goto('/');
-  await expect(
-    page.getByRole('heading', { name: '내 차의 가치, 다음 타이밍을 읽다.' }),
-  ).toBeVisible();
   await page.getByRole('button', { name: '예시 차량으로 둘러보기', exact: true }).click();
+  await expect(page.getByRole('tab', { name: '홈', exact: true })).toBeVisible();
+  await page.goto('/analysis');
   await expect(page.getByTestId('current-simulated-value')).toHaveText('1,809 만원');
 }
 
@@ -132,6 +131,7 @@ test('a registered vehicle without a year requires analysis input instead of inv
 }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '내 차량으로 시작하기', exact: true }).click();
+  await page.getByRole('tab', { name: '내 차', exact: true }).click();
   await page.getByRole('button', { name: '첫 차량 등록', exact: true }).click();
   await page.getByRole('textbox', { name: '차량 이름', exact: true }).fill('연식 확인할 차');
   await page
@@ -139,6 +139,7 @@ test('a registered vehicle without a year requires analysis input instead of inv
     .fill('현대 아반떼');
   await page.getByRole('textbox', { name: '현재 누적 주행거리 (km)', exact: true }).fill('48250');
   await page.getByRole('button', { name: '차량 등록하기', exact: true }).click();
+  await page.goto('/analysis');
   await expect(page.getByRole('textbox', { name: '분석 연식 (년)', exact: true })).toHaveValue('');
   await expect(page.getByTestId('current-simulated-value')).toHaveCount(0);
   await expect(page.getByTestId('valuation-advice')).toHaveCount(0);

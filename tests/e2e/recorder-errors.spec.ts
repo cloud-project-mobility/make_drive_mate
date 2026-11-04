@@ -61,9 +61,7 @@ test('browser GPS errors pause, remove the exact watch, and stale callbacks cann
   });
   await page.goto('/');
   await page.getByRole('button', { name: '예시 차량으로 둘러보기', exact: true }).click();
-  await expect(
-    page.getByRole('heading', { name: '내 차의 다음 타이밍', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('tab', { name: '홈', exact: true })).toBeVisible();
   await page.goto('/route');
   await page.getByRole('button', { name: '나의 아반떼 · GPS 기록 시작', exact: true }).click();
   await expect(page.getByText('GPS 측정 중', { exact: true })).toBeVisible();

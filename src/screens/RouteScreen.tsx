@@ -51,6 +51,16 @@ export default function RouteScreen() {
   );
   const origin = boundTrip ? boundTrip.origin : plan?.origin;
   const destination = boundTrip ? boundTrip.destination : plan?.destination;
+  const mapLink =
+    origin && destination
+      ? mapsUrl({
+          origin,
+          destination,
+          originPoint: plan?.originPoint,
+          destinationPoint: plan?.destinationPoint,
+        })
+      : null;
+  const hasMapDirections = mapLink?.startsWith('https://map.kakao.com/link/by/car/') ?? false;
   const departure = plan ? departureAt(plan) : null;
   const recording = recorder.status === 'recording';
   const requesting = recorder.status === 'requesting';
@@ -88,19 +98,12 @@ export default function RouteScreen() {
     setCompleted(true);
   }
   async function openMaps() {
-    if (!origin || !destination) return;
+    if (!mapLink) return;
     if (recording) recorder.pause();
     try {
-      await Linking.openURL(
-        mapsUrl({
-          origin,
-          destination,
-          originPoint: plan?.originPoint,
-          destinationPoint: plan?.destinationPoint,
-        }),
-      );
+      await Linking.openURL(mapLink);
     } catch {
-      setFeedback('지도를 열지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.');
+      setFeedback('카카오맵을 열지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.');
     }
   }
   const footer = completed ? (
@@ -296,14 +299,16 @@ export default function RouteScreen() {
               <View style={s.routeBody}>
                 <RouteStops origin={origin} destination={destination} />
                 <Button
-                  title="지도 앱에서 실제 경로 확인"
+                  title={hasMapDirections ? '카카오맵에서 길안내' : '카카오맵에서 목적지 검색'}
                   variant="secondary"
                   icon="external-link"
                   onPress={openMaps}
                   testID="open-maps"
                 />
                 <Text style={shared.muted}>
-                  Google Maps를 열어요.
+                  {hasMapDirections
+                    ? '카카오맵 앱 또는 웹에서 선택한 출발지와 도착지의 자동차 경로를 열어요.'
+                    : '장소 좌표가 없어 카카오맵에서 목적지를 검색해요. 정확한 장소와 출발지를 선택해 주세요.'}
                   {active
                     ? ' 다른 앱으로 전환하면 거리 측정은 일시 정지돼요.'
                     : ' 이동 시간은 실제 경로를 확인한 뒤 판단해 주세요.'}

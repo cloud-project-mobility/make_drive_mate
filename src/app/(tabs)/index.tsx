@@ -1,1 +1,1 @@
-export { default } from '../../screens/GarageScreen';
+export { default } from '../../screens/HomeScreen';

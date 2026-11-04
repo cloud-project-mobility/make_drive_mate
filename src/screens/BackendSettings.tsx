@@ -17,6 +17,7 @@ import { replaceAfterPreparation } from '../services/stateReplacement';
 import { useMounted } from '../services/useMounted';
 import { useTripRecorder } from '../services/useTripRecorder';
 import BackendIntegrations from './BackendIntegrations';
+import { SettingsDisclosure } from '../components/SettingsDisclosure';
 
 function AccountPasswordChange({ onChanged }: { onChanged: () => Promise<void> }) {
   const { client, isCurrentClient } = useBackend();
@@ -67,19 +68,43 @@ function AccountPasswordChange({ onChanged }: { onChanged: () => Promise<void> }
         title={opened ? '비밀번호 변경 취소' : '비밀번호 변경'}
         variant="secondary"
         disabled={busy}
-        onPress={() => { clear(); setOpened(!opened); }}
+        onPress={() => {
+          clear();
+          setOpened(!opened);
+        }}
       />
       {opened && (
         <>
           <Text style={shared.muted}>
             변경하면 모든 기기에서 로그아웃돼요. 새 비밀번호로 다시 로그인해 주세요.
           </Text>
-          <Field label="현재 비밀번호" value={currentPassword} onChangeText={setCurrentPassword}
-            secureTextEntry autoComplete="off" maxLength={128} editable={!busy} />
-          <Field label="새 비밀번호" value={newPassword} onChangeText={setNewPassword}
-            secureTextEntry autoComplete="off" maxLength={128} editable={!busy} />
-          <Field label="새 비밀번호 확인" value={confirmation} onChangeText={setConfirmation}
-            secureTextEntry autoComplete="off" maxLength={128} editable={!busy} />
+          <Field
+            label="현재 비밀번호"
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            secureTextEntry
+            autoComplete="off"
+            maxLength={128}
+            editable={!busy}
+          />
+          <Field
+            label="새 비밀번호"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry
+            autoComplete="off"
+            maxLength={128}
+            editable={!busy}
+          />
+          <Field
+            label="새 비밀번호 확인"
+            value={confirmation}
+            onChangeText={setConfirmation}
+            secureTextEntry
+            autoComplete="off"
+            maxLength={128}
+            editable={!busy}
+          />
           {error ? <Notice title={error} tone="error" /> : null}
           <Button title="비밀번호 변경 확정" onPress={change} loading={busy} />
         </>
@@ -162,7 +187,6 @@ function ServerBackup({ onRestored }: { onRestored: (settings: Settings) => void
   }
   return (
     <View style={shared.stack}>
-      <SectionTitle title="계정별 서버 백업" />
       <Text style={shared.muted}>
         자동 동기화는 하지 않아요. 계정을 바꿔도 기기 기록은 유지되므로 업로드 전에 내용을 확인해
         주세요. 현재 기기의 차량·일정·주행·점검 기록을 이 서버에 함께 보관합니다.
@@ -248,13 +272,20 @@ function ServerBackup({ onRestored }: { onRestored: (settings: Settings) => void
 
 export default function BackendSettings({
   onRestored,
+  initialMode = 'login',
+  onAuthenticated,
+  onSignedOut,
 }: {
   onRestored: (settings: Settings) => void;
+  initialMode?: 'register' | 'login';
+  onAuthenticated?: (mode: 'register' | 'login') => void;
+  onSignedOut?: () => void;
 }) {
   const backend = useBackend();
-  // The Android build also uses the hosted HTTPS service account.
+  const isMounted = useMounted();
   const serviceWebsite = backend.url.startsWith('https://');
-  const [showServerSettings, setShowServerSettings] = useState(!serviceWebsite);
+  const [showServerSettings, setShowServerSettings] = useState(false);
+  const [authMode, setAuthMode] = useState(initialMode);
   const [draftUrl, setUrl] = useState<string | null>(null);
   const url = draftUrl ?? backend.url;
   const [email, setEmail] = useState('');
@@ -288,27 +319,28 @@ export default function BackendSettings({
       setBusy(false);
     }
   }
-  async function authenticate(mode: 'register' | 'login') {
+  async function authenticate() {
+    if (busy) return;
     setBusy(true);
     setError('');
     setMessage('');
     try {
       if (url !== backend.url) throw new Error('변경한 서버 주소를 먼저 연결 확인해 주세요.');
-      if (!email.trim() || !password)
-        throw new Error(
-          serviceWebsite
-            ? 'DriveMate 계정 이메일과 비밀번호를 입력해 주세요.'
-            : '테스트 계정 이메일과 비밀번호를 입력해 주세요.',
-        );
-      await backend.authenticate(mode, email, password);
+      if (!email.trim() || !password) throw new Error('계정 이메일과 비밀번호를 입력해 주세요.');
+      if (authMode === 'register' && password.length < 10)
+        throw new Error('새 계정은 10자 이상의 비밀번호를 입력해 주세요.');
+      await backend.authenticate(authMode, email, password);
+      if (!isMounted()) return;
       setPassword('');
+      setAuthMode('login');
       setMessage(
         serviceWebsite
-          ? mode === 'register'
+          ? authMode === 'register'
             ? 'DriveMate 회원가입을 마치고 로그인했어요.'
             : 'DriveMate에 로그인했어요.'
           : '로컬 서버 계정에 로그인했어요. Google·현대 계정 연결과는 별개예요.',
       );
+      onAuthenticated?.(authMode);
     } catch (cause) {
       const accountErrors: Record<string, string> = {
         invalid_credentials:
@@ -319,7 +351,7 @@ export default function BackendSettings({
       };
       setError(
         serviceWebsite && cause instanceof BackendError
-          ? accountErrors[cause.code] ?? backendMessage(cause)
+          ? (accountErrors[cause.code] ?? backendMessage(cause))
           : backendMessage(cause),
       );
     } finally {
@@ -336,145 +368,158 @@ export default function BackendSettings({
       setMessage('로그아웃했어요. 기기 데이터는 유지돼요.');
     } catch (cause) {
       setError(
-        `${backendMessage(cause)} 기기에서는 로그아웃했지만 서버 세션 해제는 확인하지 못했어요.`,
+        backendMessage(cause) + ' 기기에서는 로그아웃했지만 서버 세션 해제는 확인하지 못했어요.',
       );
     } finally {
+      onSignedOut?.();
       setBusy(false);
     }
   }
   return (
-    <Card style={shared.stack}>
-      <SectionTitle title={serviceWebsite ? 'DriveMate 계정' : '로컬 백엔드 연결'} />
-      <Notice
-        title={serviceWebsite ? 'DriveMate에서 만든 계정으로 로그인해요' : 'API 키 없는 통합 테스트'}
-        body={
-          serviceWebsite
-            ? 'DriveMate 전용 이메일·비밀번호를 사용해요. Google·AWS·현대 계정 로그인과는 별개예요.'
-            : '계정과 백업은 직접 실행한 DriveMate 서버에서 처리해요. Google·Kakao·현대 API 키는 이 화면에 입력하지 않아요.'
-        }
-      />
-      {serviceWebsite && (
-        <>
-          <Text style={shared.muted}>로그인할 서비스: {new URL(backend.url).host}</Text>
-          <Button
-            title={showServerSettings ? '서버 설정 접기' : '서버 설정 펼치기'}
-            onPress={() => setShowServerSettings(!showServerSettings)}
-            disabled={busy}
-            variant="ghost"
-          />
-        </>
-      )}
-      {showServerSettings && (
-        <>
-          <Field
-            label="백엔드 서버 주소"
-            value={url}
-            onChangeText={(value) => {
-              setUrl(value);
-              setHealth(null);
-            }}
-            editable={!backend.session && !busy}
-            keyboardType="url"
-            autoCorrect={false}
-            hint={
-              serviceWebsite
-                ? '주소가 바뀌면 사용하는 계정과 데이터도 달라져요. 안내받은 경우에만 변경해 주세요.'
-                : 'PC 브라우저: http://127.0.0.1:18085 · 휴대폰: 실행 중인 PC의 같은 네트워크 주소'
-            }
-          />
-          <Button
-            title="서버 연결 확인"
-            onPress={connect}
-            loading={busy && !backend.session}
-            disabled={busy}
-            variant="secondary"
-          />
-        </>
-      )}
-      {health && (
-        <Chip
-          label={
-            health.provider_mode === 'mock'
-              ? '서버 연결됨 · 외부 데이터는 예시'
-              : health.provider_mode === 'disconnected'
-                ? '서버 연결됨 · 외부 연동 꺼짐'
-                : '서버 연결됨 · 외부 연동 모드'
-          }
+    <View style={shared.stack}>
+      <Card style={shared.stack}>
+        <SectionTitle
+          title={backend.session ? '계정 정보' : authMode === 'register' ? '회원가입' : '로그인'}
         />
-      )}
-      {error ? <Notice title={error} tone="error" /> : null}
-      {message ? <Notice title={message} /> : null}
-      {backend.sessionNotice ? <Notice title={backend.sessionNotice} tone="warning" /> : null}
-      {backend.session ? (
-        <>
-          <Text style={shared.heading}>{backend.session.user.email}</Text>
-          <Text style={shared.muted}>
-            {serviceWebsite ? 'DriveMate 계정' : '로컬 서버 계정'} · 세션 만료{' '}
-            {new Date(backend.session.expires_at).toLocaleString('ko-KR')} · 앱을 다시 열면 로그인해
-            주세요.
-          </Text>
-          <Button
-            title={serviceWebsite ? '로그아웃' : '로컬 서버 로그아웃'}
-            onPress={logout}
-            disabled={busy}
-            variant="ghost"
-          />
-          <AccountPasswordChange
-            key={`password:${backend.url}:${backend.session.user.id}`}
-            onChanged={async () => {
-              setPassword('');
-              setError('');
-              setMessage('비밀번호를 변경했어요. 모든 기기에서 로그아웃되었으니 새 비밀번호로 로그인해 주세요.');
-              // The password endpoint already revoked every session. Logout also clears local state.
-              await backend.logout();
-            }}
-          />
-          <BackendIntegrations key={`integrations:${backend.url}:${backend.session.user.id}`} />
-          <ServerBackup key={`${backend.url}:${backend.session.user.id}`} onRestored={onRestored} />
-        </>
-      ) : (
-        <>
-          <Text style={shared.muted}>
-            {serviceWebsite
-              ? '처음 이용한다면 회원가입을 선택해 주세요. 로컬 PC에서 만든 계정과 이 서비스의 계정은 별도예요.'
-              : '과제 테스트용 이메일과 별도 비밀번호를 사용해 주세요.'}{' '}
-            비밀번호와 로그인 토큰은 기기에 저장하지 않아요.
-          </Text>
-          <Field
-            label={serviceWebsite ? 'DriveMate 계정 이메일' : '테스트 계정 이메일'}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoComplete="off"
-            maxLength={254}
-          />
-          <Field
-            label={serviceWebsite ? 'DriveMate 계정 비밀번호' : '테스트 계정 비밀번호'}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="off"
-            maxLength={128}
-            hint="새 계정은 10자 이상의 비밀번호를 사용해 주세요."
-          />
-          <Button
-            title={serviceWebsite ? '로그인' : '로컬 서버 로그인'}
-            onPress={() => authenticate('login')}
-            disabled={busy}
-          />
-          <Button
-            title={serviceWebsite ? '회원가입' : '로컬 테스트 계정 만들기'}
-            onPress={() => authenticate('register')}
-            disabled={busy}
-            variant="secondary"
-          />
-          {serviceWebsite && (
+        {error ? <Notice title={error} tone="error" /> : null}
+        {message ? <Notice title={message} /> : null}
+        {backend.sessionNotice ? <Notice title={backend.sessionNotice} tone="warning" /> : null}
+        {backend.session ? (
+          <>
+            <Text style={shared.heading}>{backend.session.user.email}</Text>
             <Text style={shared.muted}>
-              비밀번호를 모르거나 계정 안내를 받지 못했다면 서비스 운영자에게 문의해 주세요.
+              로그인되어 있어요. 앱을 다시 열면 다시 로그인해 주세요.
             </Text>
-          )}
-        </>
+            <Button
+              title={serviceWebsite ? '로그아웃' : '로컬 서버 로그아웃'}
+              onPress={logout}
+              disabled={busy}
+              variant="ghost"
+            />
+          </>
+        ) : (
+          <>
+            <Text style={shared.muted}>
+              DriveMate 이메일·비밀번호를 사용해요. Google·AWS·현대 계정 로그인과는 별개예요.
+            </Text>
+            <Field
+              label={serviceWebsite ? 'DriveMate 계정 이메일' : '테스트 계정 이메일'}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoComplete="off"
+              maxLength={254}
+              editable={!busy}
+            />
+            <Field
+              label={serviceWebsite ? 'DriveMate 계정 비밀번호' : '테스트 계정 비밀번호'}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoComplete="off"
+              maxLength={128}
+              editable={!busy}
+              hint={authMode === 'register' ? '10자 이상의 비밀번호를 사용해 주세요.' : undefined}
+            />
+            <Button
+              title={
+                authMode === 'register'
+                  ? serviceWebsite
+                    ? '회원가입'
+                    : '로컬 테스트 계정 만들기'
+                  : serviceWebsite
+                    ? '로그인'
+                    : '로컬 서버 로그인'
+              }
+              onPress={authenticate}
+              loading={busy}
+              disabled={busy}
+            />
+            <Button
+              title={authMode === 'register' ? '로그인으로 전환' : '회원가입으로 전환'}
+              variant="ghost"
+              disabled={busy}
+              onPress={() => {
+                setAuthMode(authMode === 'register' ? 'login' : 'register');
+                setError('');
+                setMessage('');
+              }}
+            />
+            <Text style={shared.muted}>비밀번호와 로그인 토큰은 기기에 저장하지 않아요.</Text>
+          </>
+        )}
+        <Button
+          title={showServerSettings ? '서버 설정 접기' : '서버 설정 펼치기'}
+          onPress={() => setShowServerSettings(!showServerSettings)}
+          disabled={busy}
+          variant="ghost"
+        />
+        {showServerSettings && (
+          <View style={shared.stack}>
+            <Text style={shared.muted}>
+              안내받은 경우에만 주소를 변경해 주세요. 주소가 바뀌면 계정과 데이터도 달라져요.
+            </Text>
+            <Field
+              label="백엔드 서버 주소"
+              value={url}
+              onChangeText={(value) => {
+                setUrl(value);
+                setHealth(null);
+              }}
+              editable={!backend.session && !busy}
+              keyboardType="url"
+              autoCorrect={false}
+            />
+            <Button
+              title="서버 연결 확인"
+              onPress={connect}
+              loading={busy && !backend.session}
+              disabled={busy}
+              variant="secondary"
+            />
+            {health && (
+              <Chip
+                label={
+                  health.provider_mode === 'mock'
+                    ? '서버 연결됨 · 외부 데이터는 예시'
+                    : health.provider_mode === 'disconnected'
+                      ? '서버 연결됨 · 외부 연동 꺼짐'
+                      : '서버 연결됨 · 외부 연동 모드'
+                }
+              />
+            )}
+          </View>
+        )}
+      </Card>
+      {backend.session && (
+        <View key={backend.url + ':' + backend.session.user.id} style={shared.stack}>
+          <SettingsDisclosure title="계정 보안" description="비밀번호 변경">
+            <AccountPasswordChange
+              onChanged={async () => {
+                setPassword('');
+                setError('');
+                setMessage(
+                  '비밀번호를 변경했어요. 모든 기기에서 로그아웃되었으니 새 비밀번호로 로그인해 주세요.',
+                );
+                try {
+                  await backend.logout();
+                } finally {
+                  onSignedOut?.();
+                }
+              }}
+            />
+          </SettingsDisclosure>
+          <SettingsDisclosure title="외부 서비스 연결" description="지도·일정·차량 연동 상태">
+            <BackendIntegrations />
+          </SettingsDisclosure>
+          <SettingsDisclosure
+            title="계정별 서버 백업"
+            description="기기 기록을 직접 저장하거나 복원"
+          >
+            <ServerBackup onRestored={onRestored} />
+          </SettingsDisclosure>
+        </View>
       )}
-    </Card>
+    </View>
   );
 }

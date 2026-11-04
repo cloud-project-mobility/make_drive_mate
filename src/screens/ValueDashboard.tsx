@@ -5,7 +5,6 @@ import { VehicleArt } from '../components/VehicleArt';
 import { ValuationChart } from '../components/ValuationChart';
 import OnbidAnalytics from './OnbidAnalytics';
 import OnbidValuation from './OnbidValuation';
-import DocumentKnowledge from './DocumentKnowledge';
 import {
   createValuationInput,
   simulateValuation,
@@ -493,8 +492,9 @@ export default function ValueDashboard({ vehicle }: { vehicle: Vehicle }) {
             {showMethod && (
               <View style={s.methodBody}>
                 <Text style={s.methodText}>
-                  이 오프라인 계산은 학습된 AI나 실거래 가격 예측기가 아니에요. 모든 차량에 같은 감가식을
-                  적용하며, 차종·트림·옵션·사고 이력·지역·계절의 실제 효과는 반영하지 않아요.
+                  이 오프라인 계산은 학습된 AI나 실거래 가격 예측기가 아니에요. 모든 차량에 같은
+                  감가식을 적용하며, 차종·트림·옵션·사고 이력·지역·계절의 실제 효과는 반영하지
+                  않아요.
                 </Text>
                 <Text style={s.methodText}>
                   가치 = 가상 기준가 × 0.84^min(차령, 1) × 0.90^max(차령−1, 0) ×
@@ -518,7 +518,8 @@ export default function ValueDashboard({ vehicle }: { vehicle: Vehicle }) {
                 <View style={s.dataStatus}>
                   <Icon name="cloud-off" color={C.muted} size={16} />
                   <Text style={s.methodText}>
-                    이 영역은 합성 규칙을 사용하며 브라우저/기기에서 계산해요. 위의 공매 학습 모델 결과와 별개예요.
+                    이 영역은 합성 규칙을 사용하며 브라우저/기기에서 계산해요. 위의 공매 학습 모델
+                    결과와 별개예요.
                   </Text>
                 </View>
               </View>
@@ -526,7 +527,6 @@ export default function ValueDashboard({ vehicle }: { vehicle: Vehicle }) {
           </View>
         </>
       )}
-      <DocumentKnowledge />
     </View>
   );
 }

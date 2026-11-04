@@ -100,7 +100,7 @@ async function prepare(page: Page) {
   });
   await page.goto('/');
   await page.getByRole('button', { name: '예시 차량으로 둘러보기', exact: true }).click();
-  await page.getByRole('tab', { name: '설정', exact: true }).click();
+  await page.getByRole('button', { name: '로그인 및 설정', exact: true }).click();
   await page
     .getByRole('textbox', { name: '테스트 계정 이메일', exact: true })
     .fill('location@example.test');

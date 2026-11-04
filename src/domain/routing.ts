@@ -1,4 +1,4 @@
-import type { TripPlan } from './types';
+import type { Coordinates, TripPlan } from './types';
 /** The route result is valid only for the exact inputs and provider expiry it was computed for. */
 export interface RouteInputs {
   origin: string;
@@ -18,13 +18,24 @@ export interface AppliedRoute {
 export function mapsUrl(
   plan: Pick<TripPlan, 'origin' | 'destination' | 'originPoint' | 'destinationPoint'>,
 ): string {
-  const origin = plan.originPoint
-    ? `${plan.originPoint.latitude},${plan.originPoint.longitude}`
-    : plan.origin;
-  const destination = plan.destinationPoint
-    ? `${plan.destinationPoint.latitude},${plan.destinationPoint.longitude}`
-    : plan.destination;
-  return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=driving`;
+  // Kakao's documented link formats use latitude first, unlike our coordinate object.
+  // https://apis.map.kakao.com/web/guide/#routeurl
+  if (validMapPoint(plan.originPoint) && validMapPoint(plan.destinationPoint)) {
+    const origin = `${encodeURIComponent(plan.origin)},${plan.originPoint.latitude},${plan.originPoint.longitude}`;
+    const destination = `${encodeURIComponent(plan.destination)},${plan.destinationPoint.latitude},${plan.destinationPoint.longitude}`;
+    return `https://map.kakao.com/link/by/car/${origin}/${destination}`;
+  }
+  // An unselected place name cannot identify an exact route. Let the user select it in Kakao.
+  return `https://map.kakao.com/link/search/${encodeURIComponent(plan.destination)}`;
+}
+function validMapPoint(point: Coordinates | undefined): point is Coordinates {
+  return (
+    !!point &&
+    Number.isFinite(point.latitude) &&
+    Math.abs(point.latitude) <= 90 &&
+    Number.isFinite(point.longitude) &&
+    Math.abs(point.longitude) <= 180
+  );
 }
 export function routeApplicationIssue(
   applied: AppliedRoute | null,

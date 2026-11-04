@@ -9,7 +9,8 @@ test.skip(
 async function register(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: '예시 차량으로 둘러보기', exact: true }).click();
-  await page.getByRole('tab', { name: '설정', exact: true }).click();
+  await page.getByRole('button', { name: '로그인 및 설정', exact: true }).click();
+  await page.getByRole('button', { name: '서버 설정 펼치기', exact: true }).click();
   await page.getByRole('textbox', { name: '백엔드 서버 주소', exact: true }).fill(backendUrl!);
   await page.getByRole('button', { name: '서버 연결 확인', exact: true }).click();
   await expect(page.getByText('서버 연결됨 · 외부 데이터는 예시', { exact: true })).toBeVisible();
@@ -17,6 +18,7 @@ async function register(page: Page) {
   const password = 'local-demo-only-2026';
   await page.getByRole('textbox', { name: '테스트 계정 이메일', exact: true }).fill(email);
   await page.getByLabel('테스트 계정 비밀번호', { exact: true }).fill(password);
+  await page.getByRole('button', { name: '회원가입으로 전환', exact: true }).click();
   const responsePromise = page.waitForResponse(
     (response) =>
       response.url().endsWith('/api/v1/auth/register') && response.request().method() === 'POST',
@@ -46,96 +48,195 @@ async function openServiceAccount(page: Page, baseURL: string, successfulRegistr
     // The public reference catalog is read on mount, independently of account actions.
     if (requested.pathname !== '/api/v1/vehicle-catalog') calls.push(requested.pathname);
     if (requested.pathname.endsWith('/auth/login')) {
-      await route.fulfill({ status: 401, json: { error: { code: 'invalid_credentials', message: '확인 필요' } } });
+      await route.fulfill({
+        status: 401,
+        json: { error: { code: 'invalid_credentials', message: '확인 필요' } },
+      });
     } else if (requested.pathname.endsWith('/auth/register')) {
-      await route.fulfill(successfulRegistration ? {
-        status: 201,
-        json: { access_token: 'synthetic-service-session-token', token_type: 'bearer',
-          user: { id: 'synthetic-service-user', email: 'service-user@example.test' },
-          expires_at: new Date(Date.now() + 3_600_000).toISOString() },
-      } : { status: 403, json: { error: { code: 'email_reserved', message: '확인 필요' } } });
+      await route.fulfill(
+        successfulRegistration
+          ? {
+              status: 201,
+              json: {
+                access_token: 'synthetic-service-session-token',
+                token_type: 'bearer',
+                user: { id: 'synthetic-service-user', email: 'service-user@example.test' },
+                expires_at: new Date(Date.now() + 3_600_000).toISOString(),
+              },
+            }
+          : { status: 403, json: { error: { code: 'email_reserved', message: '확인 필요' } } },
+      );
     } else if (requested.pathname.endsWith('/auth/password')) {
-      expect(route.request().headers().authorization).toBe('Bearer synthetic-service-session-token');
+      expect(route.request().headers().authorization).toBe(
+        'Bearer synthetic-service-session-token',
+      );
       const body = route.request().postDataJSON();
       expect(body.new_password).toBe('synthetic-new-password');
-      await route.fulfill(body.current_password === 'synthetic-service-password'
-        ? { status: 200, json: { ok: true, reauthentication_required: true } }
-        : { status: 400, json: { error: { code: 'invalid_current_password', message: '현재 비밀번호를 확인해 주세요.' } } });
+      await route.fulfill(
+        body.current_password === 'synthetic-service-password'
+          ? { status: 200, json: { ok: true, reauthentication_required: true } }
+          : {
+              status: 400,
+              json: {
+                error: {
+                  code: 'invalid_current_password',
+                  message: '현재 비밀번호를 확인해 주세요.',
+                },
+              },
+            },
+      );
     } else if (requested.pathname.endsWith('/integrations')) {
-      await route.fulfill({ status: 200, json: { provider_mode: 'live', providers: {
-        kakao: { mode: 'live', configured: true, connected: false, live_verified: true,
-          auth_type: 'api_key', requires_user_consent: false, reason: 'verified', capabilities: {
-            places: { configured: true, live_verified: true, last_verified_at: '2026-11-04T12:00:00Z' },
-            routes: { configured: true, live_verified: false, last_verified_at: null },
-          } },
-        google_calendar: { mode: 'live', configured: false, connected: false, live_verified: false },
-        hyundai: { mode: 'live', configured: false, connected: false, live_verified: false,
-          reason: 'implementation_pending' },
-      } } });
+      await route.fulfill({
+        status: 200,
+        json: {
+          provider_mode: 'live',
+          providers: {
+            kakao: {
+              mode: 'live',
+              configured: true,
+              connected: false,
+              live_verified: true,
+              auth_type: 'api_key',
+              requires_user_consent: false,
+              reason: 'verified',
+              capabilities: {
+                places: {
+                  configured: true,
+                  live_verified: true,
+                  last_verified_at: '2026-11-04T12:00:00Z',
+                },
+                routes: { configured: true, live_verified: false, last_verified_at: null },
+              },
+            },
+            google_calendar: {
+              mode: 'live',
+              configured: false,
+              connected: false,
+              live_verified: false,
+            },
+            hyundai: {
+              mode: 'live',
+              configured: false,
+              connected: false,
+              live_verified: false,
+              reason: 'implementation_pending',
+            },
+          },
+        },
+      });
     } else if (requested.pathname.endsWith('/auth/logout')) {
       await route.fulfill({ status: 200, json: { ok: true } });
     } else {
-      await route.fulfill({ status: 503, json: { error: { code: 'synthetic_unavailable', message: '예시 미연결' } } });
+      await route.fulfill({
+        status: 503,
+        json: { error: { code: 'synthetic_unavailable', message: '예시 미연결' } },
+      });
     }
   });
   await page.goto(origin);
   await page.getByRole('button', { name: '예시 차량으로 둘러보기', exact: true }).click();
-  await page.getByRole('tab', { name: '설정', exact: true }).click();
+  await page.getByRole('button', { name: '로그인 및 설정', exact: true }).click();
   return { calls, origin };
 }
 
-test('HTTPS service account hides server settings and explains account-specific login errors', async ({ page, baseURL }) => {
+test('HTTPS service account hides server settings and explains account-specific login errors', async ({
+  page,
+  baseURL,
+}) => {
   const { calls, origin } = await openServiceAccount(page, baseURL!);
-  await expect(page.getByRole('heading', { name: 'DriveMate 계정', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
   await expect(page.getByText(/Google·AWS·현대 계정 로그인과는 별개/)).toBeVisible();
   await expect(page.getByRole('textbox', { name: '백엔드 서버 주소', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '서버 설정 펼치기', exact: true }).click();
-  await expect(page.getByRole('textbox', { name: '백엔드 서버 주소', exact: true })).toHaveValue(origin);
+  await expect(page.getByRole('textbox', { name: '백엔드 서버 주소', exact: true })).toHaveValue(
+    origin,
+  );
   await page.getByRole('button', { name: '서버 설정 접기', exact: true }).click();
   expect(calls).toEqual([]);
-  await page.getByRole('textbox', { name: 'DriveMate 계정 이메일', exact: true }).fill('service-user@example.test');
-  await page.getByLabel('DriveMate 계정 비밀번호', { exact: true }).fill('synthetic-service-password');
+  await page
+    .getByRole('textbox', { name: 'DriveMate 계정 이메일', exact: true })
+    .fill('service-user@example.test');
+  await page
+    .getByLabel('DriveMate 계정 비밀번호', { exact: true })
+    .fill('synthetic-service-password');
   await page.getByRole('button', { name: '로그인', exact: true }).click();
-  await expect(page.getByText('DriveMate에 가입한 이메일과 비밀번호를 확인해 주세요. 로컬 PC 계정은 자동으로 연결되지 않아요.', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(
+      'DriveMate에 가입한 이메일과 비밀번호를 확인해 주세요. 로컬 PC 계정은 자동으로 연결되지 않아요.',
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await page.getByRole('button', { name: '회원가입으로 전환', exact: true }).click();
   await page.getByRole('button', { name: '회원가입', exact: true }).click();
-  await expect(page.getByText('이 이메일은 별도 계정 설정이 필요해요. 운영자에게 최초 로그인 안내를 요청해 주세요.', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(
+      '이 이메일은 별도 계정 설정이 필요해요. 운영자에게 최초 로그인 안내를 요청해 주세요.',
+      { exact: true },
+    ),
+  ).toBeVisible();
   expect(calls).toEqual(['/api/v1/auth/login', '/api/v1/auth/register']);
 });
 
-test('HTTPS service account registration preserves session and logout behavior without storing credentials', async ({ page, baseURL }) => {
+test('HTTPS service account registration preserves session and logout behavior without storing credentials', async ({
+  page,
+  baseURL,
+}) => {
   const { calls } = await openServiceAccount(page, baseURL!, true);
-  await page.getByRole('textbox', { name: 'DriveMate 계정 이메일', exact: true }).fill('service-user@example.test');
-  await page.getByLabel('DriveMate 계정 비밀번호', { exact: true }).fill('synthetic-service-password');
+  await page
+    .getByRole('textbox', { name: 'DriveMate 계정 이메일', exact: true })
+    .fill('service-user@example.test');
+  await page
+    .getByLabel('DriveMate 계정 비밀번호', { exact: true })
+    .fill('synthetic-service-password');
+  await page.getByRole('button', { name: '회원가입으로 전환', exact: true }).click();
   await page.getByRole('button', { name: '회원가입', exact: true }).click();
-  await expect(page.getByText('DriveMate 회원가입을 마치고 로그인했어요.', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('DriveMate 회원가입을 마치고 로그인했어요.', { exact: true }),
+  ).toBeVisible();
   await expect(page.getByText('service-user@example.test', { exact: true })).toBeVisible();
   await expect(page.getByRole('textbox', { name: '백엔드 서버 주소', exact: true })).toHaveCount(0);
   const saved = await page.evaluate(() => JSON.stringify(localStorage));
   expect(saved).not.toContain('synthetic-service-session-token');
   expect(saved).not.toContain('synthetic-service-password');
+  await page.getByRole('button', { name: '외부 서비스 연결', exact: true }).click();
   await page.getByRole('button', { name: '외부 연동 준비 상태 확인', exact: true }).click();
-  await expect(page.getByText('서비스 키 연결 · 실제 조회 이력 있음', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('서비스 키 연결 · 실제 조회 이력 있음', { exact: true }),
+  ).toBeVisible();
   await expect(page.getByText(/개인 카카오 계정 로그인은 필요하지 않아요/)).toBeVisible();
   await expect(page.getByText(/장소 검색: 실제 조회 확인됨/)).toBeVisible();
   await expect(page.getByText('길찾기: 준비됨 · 실제 조회 확인 전', { exact: true })).toBeVisible();
-  await expect(page.getByText('실차 연동 준비 중 · 아직 연결 안 됨', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('실차 연동 준비 중 · 아직 연결 안 됨', { exact: true }),
+  ).toBeVisible();
   await expect(page.getByText('서버 설정 준비됨 · 계정 연결 전', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '로그아웃', exact: true }).click();
   await expect(page.getByRole('button', { name: '로그인', exact: true })).toBeVisible();
   expect(calls).toEqual(['/api/v1/auth/register', '/api/v1/integrations', '/api/v1/auth/logout']);
 });
 
-test('HTTPS service account password change validates confirmation and returns to login after success', async ({ page, baseURL }) => {
+test('HTTPS service account password change validates confirmation and returns to login after success', async ({
+  page,
+  baseURL,
+}) => {
   const { calls } = await openServiceAccount(page, baseURL!, true);
-  await page.getByRole('textbox', { name: 'DriveMate 계정 이메일', exact: true }).fill('service-user@example.test');
-  await page.getByLabel('DriveMate 계정 비밀번호', { exact: true }).fill('synthetic-service-password');
+  await page
+    .getByRole('textbox', { name: 'DriveMate 계정 이메일', exact: true })
+    .fill('service-user@example.test');
+  await page
+    .getByLabel('DriveMate 계정 비밀번호', { exact: true })
+    .fill('synthetic-service-password');
+  await page.getByRole('button', { name: '회원가입으로 전환', exact: true }).click();
   await page.getByRole('button', { name: '회원가입', exact: true }).click();
+  await page.getByRole('button', { name: '계정 보안', exact: true }).click();
   await page.getByRole('button', { name: '비밀번호 변경', exact: true }).click();
   await page.getByLabel('현재 비밀번호', { exact: true }).fill('synthetic-wrong-password');
   await page.getByLabel('새 비밀번호', { exact: true }).fill('synthetic-new-password');
   await page.getByLabel('새 비밀번호 확인', { exact: true }).fill('synthetic-mismatch');
   await page.getByRole('button', { name: '비밀번호 변경 확정', exact: true }).click();
-  await expect(page.getByText('새 비밀번호와 확인 입력이 일치하지 않아요.', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('새 비밀번호와 확인 입력이 일치하지 않아요.', { exact: true }),
+  ).toBeVisible();
   expect(calls).toEqual(['/api/v1/auth/register']);
   await page.getByLabel('새 비밀번호 확인', { exact: true }).fill('synthetic-new-password');
   await page.getByRole('button', { name: '비밀번호 변경 확정', exact: true }).click();
@@ -143,19 +244,30 @@ test('HTTPS service account password change validates confirmation and returns t
   await expect(page.getByRole('button', { name: '로그아웃', exact: true })).toBeVisible();
   await page.getByLabel('현재 비밀번호', { exact: true }).fill('synthetic-service-password');
   await page.getByRole('button', { name: '비밀번호 변경 확정', exact: true }).click();
-  await expect(page.getByText('비밀번호를 변경했어요. 모든 기기에서 로그아웃되었으니 새 비밀번호로 로그인해 주세요.', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(
+      '비밀번호를 변경했어요. 모든 기기에서 로그아웃되었으니 새 비밀번호로 로그인해 주세요.',
+      { exact: true },
+    ),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: '로그인', exact: true })).toBeVisible();
   await expect(page.getByLabel('현재 비밀번호', { exact: true })).toHaveCount(0);
   const saved = await page.evaluate(() => JSON.stringify(localStorage));
   expect(saved).not.toContain('synthetic-new-password');
   expect(saved).not.toContain('synthetic-service-session-token');
-  expect(calls).toEqual(['/api/v1/auth/register', '/api/v1/auth/password', '/api/v1/auth/password', '/api/v1/auth/logout']);
+  expect(calls).toEqual([
+    '/api/v1/auth/register',
+    '/api/v1/auth/password',
+    '/api/v1/auth/password',
+    '/api/v1/auth/logout',
+  ]);
 });
 
 test('real local account stores a revisioned backup, restores after confirmation, and never persists a bearer', async ({
   page,
 }) => {
   const credentials = await register(page);
+  await page.getByRole('button', { name: '외부 서비스 연결', exact: true }).click();
   await page.getByRole('button', { name: '외부 연동 준비 상태 확인', exact: true }).click();
   await expect(page.getByText('예시 데이터 · 실제 계정 연결 안 됨', { exact: true })).toHaveCount(
     3,
@@ -163,6 +275,8 @@ test('real local account stores a revisioned backup, restores after confirmation
   await expect(
     page.getByRole('button', { name: 'Google 캘린더 연결 준비', exact: true }),
   ).toHaveCount(0);
+  if ((await page.getByRole('button', { name: '서버 백업 확인', exact: true }).count()) === 0)
+    await page.getByRole('button', { name: '계정별 서버 백업', exact: true }).click();
   await page.getByRole('button', { name: '서버 백업 확인', exact: true }).click();
   await expect(
     page.getByText('이 계정에는 아직 서버 백업이 없어요.', { exact: true }),
@@ -170,6 +284,7 @@ test('real local account stores a revisioned backup, restores after confirmation
   await page.getByRole('button', { name: '현재 기기 데이터를 서버에 저장', exact: true }).click();
   await page.getByRole('button', { name: '서버에 저장 확정', exact: true }).click();
   await expect(page.getByText('서버 백업 버전 1에 저장했어요.', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '운전·알림 설정', exact: true }).click();
   await page.getByRole('textbox', { name: '여유 시간 (분)', exact: true }).fill('25');
   await page.getByRole('button', { name: '기본 시간 저장', exact: true }).click();
   await page.getByRole('button', { name: '서버 백업을 기기에 복원', exact: true }).click();
@@ -185,6 +300,7 @@ test('real local account stores a revisioned backup, restores after confirmation
   expect(storage).not.toContain(credentials.password);
   await page.reload();
   await expect(page.getByRole('button', { name: '로컬 서버 로그인', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '서버 설정 펼치기', exact: true }).click();
   await expect(page.getByRole('textbox', { name: '백엔드 서버 주소', exact: true })).toHaveValue(
     backendUrl!,
   );
@@ -193,6 +309,8 @@ test('real local account stores a revisioned backup, restores after confirmation
     .fill(credentials.email);
   await page.getByLabel('테스트 계정 비밀번호', { exact: true }).fill(credentials.password);
   await page.getByRole('button', { name: '로컬 서버 로그인', exact: true }).click();
+  if ((await page.getByRole('button', { name: '서버 백업 확인', exact: true }).count()) === 0)
+    await page.getByRole('button', { name: '계정별 서버 백업', exact: true }).click();
   await page.getByRole('button', { name: '서버 백업 확인', exact: true }).click();
   await expect(page.getByText(/서버 버전 1 · 차량 3대/)).toBeVisible();
   await page.getByRole('button', { name: '로컬 서버 로그아웃', exact: true }).click();
@@ -203,13 +321,18 @@ test('real mock providers import timed and all-day events, calculate selected co
   page,
 }) => {
   await register(page);
-  await page.getByRole('tab', { name: '가치 분석', exact: true }).click();
+  await page.getByRole('tab', { name: '내 차', exact: true }).click();
   await page.getByRole('button', { name: '차량 정보 수정', exact: true }).click();
+  await page.getByRole('button', { name: '차량 연동 상태', exact: true }).click();
   await page.getByRole('button', { name: '서버 예시 차량 상태 확인', exact: true }).click();
   await expect(page.getByText('예시 차량 · 현대 계정 연결 안 됨', { exact: true })).toBeVisible();
   await expect(page.getByText(/관측 시각의 시간대가 확인되지 않았어요/)).toBeVisible();
   await page.getByRole('button', { name: '뒤로', exact: true }).click();
-  await expect(page.getByText('48,250', { exact: true })).toBeVisible();
+  const vehicleSummary = page
+    .getByRole('button', { name: '차량 선택', exact: true })
+    .locator('..')
+    .locator('..');
+  await expect(vehicleSummary.getByTestId('vehicle-odometer')).toHaveText('48,250');
   await page.getByRole('tab', { name: '이동 계획', exact: true }).click();
   await page.getByRole('button', { name: '일정으로 계획', exact: true }).click();
   await page.getByRole('button', { name: '서버 캘린더 일정 불러오기', exact: true }).click();
@@ -309,6 +432,7 @@ test('real backend rejects stale snapshot upload without replacing either copy',
   request,
 }) => {
   const credentials = await register(page);
+  await page.getByRole('button', { name: '외부 서비스 연결', exact: true }).click();
   await page.getByRole('button', { name: '외부 연동 준비 상태 확인', exact: true }).click();
   await expect(page.getByText('예시 데이터 · 실제 계정 연결 안 됨', { exact: true })).toHaveCount(
     3,
@@ -316,6 +440,8 @@ test('real backend rejects stale snapshot upload without replacing either copy',
   await expect(
     page.getByRole('button', { name: 'Google 캘린더 연결 준비', exact: true }),
   ).toHaveCount(0);
+  if ((await page.getByRole('button', { name: '서버 백업 확인', exact: true }).count()) === 0)
+    await page.getByRole('button', { name: '계정별 서버 백업', exact: true }).click();
   await page.getByRole('button', { name: '서버 백업 확인', exact: true }).click();
   await expect(
     page.getByText('이 계정에는 아직 서버 백업이 없어요.', { exact: true }),
@@ -345,6 +471,8 @@ test('real backend rejects stale snapshot upload without replacing either copy',
   await expect(
     page.getByRole('button', { name: '현재 기기 데이터를 서버에 저장', exact: true }),
   ).toHaveCount(0);
+  if ((await page.getByRole('button', { name: '서버 백업 확인', exact: true }).count()) === 0)
+    await page.getByRole('button', { name: '계정별 서버 백업', exact: true }).click();
   await page.getByRole('button', { name: '서버 백업 확인', exact: true }).click();
   await expect(page.getByText(/서버 버전 1 · 차량 3대/)).toBeVisible();
 });
@@ -358,6 +486,8 @@ test('revoked server session requires fresh login and preserves device data', as
     headers: { Authorization: `Bearer ${credentials.token}` },
   });
   expect(result.ok()).toBeTruthy();
+  if ((await page.getByRole('button', { name: '서버 백업 확인', exact: true }).count()) === 0)
+    await page.getByRole('button', { name: '계정별 서버 백업', exact: true }).click();
   await page.getByRole('button', { name: '서버 백업 확인', exact: true }).click();
   await expect(
     page.getByText(

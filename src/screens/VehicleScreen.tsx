@@ -5,6 +5,7 @@ import { Button, C, Card, Chip, Field, Notice, Screen, shared } from '../compone
 import { VehicleArt } from '../components/VehicleArt';
 import { VehiclePhotoCredits } from '../components/VehiclePhotoCredits';
 import { VehicleCatalogPicker } from '../components/VehicleCatalogPicker';
+import { SettingsDisclosure } from '../components/SettingsDisclosure';
 import { useApp } from '../state/AppProvider';
 import { useBackend } from '../state/BackendProvider';
 import { useVehicleCatalog } from '../state/VehicleCatalogProvider';
@@ -17,7 +18,11 @@ import { cancelDeparture } from '../services/notifications';
 import type { AppAction, Powertrain, Vehicle } from '../domain/types';
 import BackendVehicleStatus from './BackendVehicleStatus';
 export default function VehicleScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, onboarding: onboardingParam } = useLocalSearchParams<{
+    id?: string;
+    onboarding?: string;
+  }>();
+  const onboarding = onboardingParam === '1';
   const { state, dispatch } = useApp();
   const { client, session, isCurrentClient } = useBackend();
   const { entries } = useVehicleCatalog();
@@ -33,8 +38,12 @@ export default function VehicleScreen() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showCatalog, setShowCatalog] = useState(false);
   const busyRef = useRef(false);
-  const draftIdentity = useRef({ id: existing?.id ?? createId('vehicle'), createdAt: existing?.createdAt ?? new Date().toISOString() });
+  const draftIdentity = useRef({
+    id: existing?.id ?? createId('vehicle'),
+    createdAt: existing?.createdAt ?? new Date().toISOString(),
+  });
   const selected = entries.find((entry) => entry.id === catalogId);
   const displayModel = selected ? `${selected.manufacturer} ${selected.model} · ${year}` : model;
   const locked = state.activeTrip?.vehicleId === existing?.id && !!existing;
@@ -43,18 +52,31 @@ export default function VehicleScreen() {
     setCatalogId(entry.id);
     if (!name.trim()) setName(`나의 ${entry.model}`);
     if (!entry.powertrains.includes(type)) setType(entry.powertrains[0]);
-    if (Number(year) < entry.yearFrom || (entry.yearTo !== null && Number(year) > entry.yearTo)) setYear('');
+    if (Number(year) < entry.yearFrom || (entry.yearTo !== null && Number(year) > entry.yearTo))
+      setYear('');
     setErrors({});
+    setShowCatalog(false);
   }
   async function save() {
     if (saved || disabled || busyRef.current) return;
+    if (onboarding && !session) {
+      setErrors({ form: '차량을 계정에 저장하려면 다시 로그인해 주세요.' });
+      return;
+    }
     const n = parseNonNegativeNumber(km, '누적 주행거리');
     const next: Record<string, string> = {};
     if (!name.trim()) next.name = '차량 이름을 입력해 주세요.';
     if (!displayModel.trim()) next.model = '제조사·모델·연식을 입력해 주세요.';
-    if (catalogId && !selected) next.model = '선택한 차종을 찾을 수 없어요. 차종을 다시 선택해 주세요.';
-    if (selected && !selected.powertrains.includes(type)) next.form = '선택한 차종의 구동 방식을 다시 확인해 주세요.';
-    if (selected && (!/^\d{4}$/.test(year) || Number(year) < selected.yearFrom || (selected.yearTo !== null && Number(year) > selected.yearTo)))
+    if (catalogId && !selected)
+      next.model = '선택한 차종을 찾을 수 없어요. 차종을 다시 선택해 주세요.';
+    if (selected && !selected.powertrains.includes(type))
+      next.form = '선택한 차종의 구동 방식을 다시 확인해 주세요.';
+    if (
+      selected &&
+      (!/^\d{4}$/.test(year) ||
+        Number(year) < selected.yearFrom ||
+        (selected.yearTo !== null && Number(year) > selected.yearTo))
+    )
       next.year = `${selected.yearFrom}${selected.yearTo === null ? '년 이후' : `–${selected.yearTo}년 중`} 차량등록증의 연식을 입력해 주세요.`;
     if (!n.ok) next.km = n.error;
     setErrors(next);
@@ -75,19 +97,36 @@ export default function VehicleScreen() {
     try {
       applyStateTransaction(state, action);
       if (session) {
-        if (!isCurrentClient(client)) throw new Error('로그인 정보가 바뀌었어요. 현재 계정을 확인해 주세요.');
+        if (!isCurrentClient(client))
+          throw new Error('로그인 정보가 바뀌었어요. 현재 계정을 확인해 주세요.');
         savedVehicle = await saveRegisteredVehicle(client, vehicle);
         serverSaved = true;
         if (!isMounted()) return;
-        if (!isCurrentClient(client)) throw new Error('로그인 정보가 바뀌었어요. 현재 계정을 확인한 뒤 차량 목록을 불러와 주세요.');
+        if (!isCurrentClient(client))
+          throw new Error(
+            '로그인 정보가 바뀌었어요. 현재 계정을 확인한 뒤 차량 목록을 불러와 주세요.',
+          );
       }
       if (!isMounted()) return;
-      const result = dispatch({ type: existing ? 'UPDATE_VEHICLE' : 'ADD_VEHICLE', vehicle: savedVehicle }, { expectedState: state });
-      if (!result.ok) throw new Error(`${serverSaved ? '계정에는 저장됐어요. 내 차량에서 계정 차량을 불러와 주세요. ' : ''}${result.error}`);
+      const result = dispatch(
+        { type: existing ? 'UPDATE_VEHICLE' : 'ADD_VEHICLE', vehicle: savedVehicle },
+        { expectedState: state },
+      );
+      if (!result.ok)
+        throw new Error(
+          `${serverSaved ? '계정에는 저장됐어요. 내 차량에서 계정 차량을 불러와 주세요. ' : ''}${result.error}`,
+        );
       setSaved(true);
-      router.dismissTo('/(tabs)');
+      if (onboarding) router.replace('/(tabs)');
+      else router.dismissTo('/(tabs)');
     } catch (error) {
-      if (isMounted()) setErrors({ form: error instanceof Error ? error.message : '차량을 저장하지 못했어요. 다시 시도해 주세요.' });
+      if (isMounted())
+        setErrors({
+          form:
+            error instanceof Error
+              ? error.message
+              : '차량을 저장하지 못했어요. 다시 시도해 주세요.',
+        });
     } finally {
       busyRef.current = false;
       if (isMounted()) setBusy(false);
@@ -104,21 +143,42 @@ export default function VehicleScreen() {
       );
       if (!isMounted()) return;
       if (session) {
-        if (!isCurrentClient(client)) throw new Error('로그인 정보가 바뀌었어요. 다시 확인해 주세요.');
+        if (!isCurrentClient(client))
+          throw new Error('로그인 정보가 바뀌었어요. 다시 확인해 주세요.');
         await deleteRegisteredVehicle(client, existing.id);
         if (!isMounted()) return;
-        if (!isCurrentClient(client)) throw new Error('로그인 정보가 바뀌었어요. 현재 계정의 차량 목록을 다시 확인해 주세요.');
+        if (!isCurrentClient(client))
+          throw new Error('로그인 정보가 바뀌었어요. 현재 계정의 차량 목록을 다시 확인해 주세요.');
       }
-      const result = dispatch({ type: 'DELETE_VEHICLE', vehicleId: existing.id }, { expectedState: state });
+      const result = dispatch(
+        { type: 'DELETE_VEHICLE', vehicleId: existing.id },
+        { expectedState: state },
+      );
       if (!result.ok) throw new Error(result.error);
       router.dismissTo('/(tabs)');
     } catch (error) {
-      if (isMounted()) setErrors({ form: error instanceof Error ? error.message : '차량을 삭제하지 못했어요. 해제된 알림은 다시 켜 주세요.' });
+      if (isMounted())
+        setErrors({
+          form:
+            error instanceof Error
+              ? error.message
+              : '차량을 삭제하지 못했어요. 해제된 알림은 다시 켜 주세요.',
+        });
     } finally {
       busyRef.current = false;
       if (isMounted()) setBusy(false);
     }
   }
+  if (onboarding && !session)
+    return (
+      <Screen back title="로그인이 필요해요">
+        <Notice title="차량을 계정에 저장하려면 다시 로그인해 주세요." />
+        <Button
+          title="로그인하고 차량 등록"
+          onPress={() => router.replace('/settings?onboarding=1&mode=login')}
+        />
+      </Screen>
+    );
   if (id && !existing)
     return (
       <Screen back title="차량을 찾을 수 없어요">
@@ -136,16 +196,15 @@ export default function VehicleScreen() {
   return (
     <Screen
       back
-      eyebrow="MY VEHICLE"
-      title={existing ? '차량 정보' : '새로운 메이트 등록'}
+      title={existing ? '차량 정보' : '내 차 등록'}
       subtitle={
         existing
           ? '차량 정보와 누적 주행거리를 관리해요.'
-          : `한 번 등록하면, 관리가 가벼워져요. (${state.vehicles.length}/3대)`
+          : `차량등록증과 계기판의 정보를 입력해 주세요. (${state.vehicles.length}/3대)`
       }
       footer={
         <Button
-          title={existing ? '변경사항 저장' : '차량 등록하기'}
+          title={existing ? '변경사항 저장' : onboarding ? '등록하고 시작하기' : '차량 등록하기'}
           icon="check"
           onPress={save}
           disabled={disabled || saved}
@@ -154,14 +213,40 @@ export default function VehicleScreen() {
         />
       }
     >
-      <View style={s.preview}>
-        <VehicleArt type={type} model={displayModel} catalogId={catalogId} style={{ height: 230 }} />
-      </View>
-      <VehiclePhotoCredits />
-      <VehicleCatalogPicker selectedId={catalogId} disabled={disabled} onSelect={selectCatalog} />
-      <Notice title={session ? '등록하면 로그인한 계정에도 저장돼요.' : '현재는 이 기기에 저장돼요.'}
-        body={session ? '차량 정보와 선택한 차종 사진이 연결돼요. 다른 기기에서 계정 차량을 불러올 수 있어요.' : '설정에서 서버에 로그인하면 차량을 계정에 저장하고 다른 기기에서 불러올 수 있어요.'} />
-      <BackendVehicleStatus key={type} powertrain={type} />
+      {onboarding && (
+        <View style={shared.row}>
+          <Chip label="계정 연결됨" selected />
+          <Text style={shared.heading}>2 차량 등록</Text>
+        </View>
+      )}
+      {(selected || existing) && (
+        <View style={s.preview}>
+          <VehicleArt
+            type={type}
+            model={displayModel}
+            catalogId={catalogId}
+            style={{ height: 112 }}
+          />
+          <VehiclePhotoCredits />
+        </View>
+      )}
+      <Button
+        title={showCatalog ? '차종 목록 닫기' : '차종 목록에서 선택'}
+        variant="secondary"
+        disabled={disabled}
+        onPress={() => setShowCatalog(!showCatalog)}
+      />
+      {showCatalog && (
+        <VehicleCatalogPicker selectedId={catalogId} disabled={disabled} onSelect={selectCatalog} />
+      )}
+      <Notice
+        title={session ? '등록하면 로그인한 계정에도 저장돼요.' : '현재는 이 기기에 저장돼요.'}
+        body={
+          session
+            ? '차량 정보와 선택한 차종 사진이 연결돼요. 다른 기기에서 계정 차량을 불러올 수 있어요.'
+            : '설정에서 서버에 로그인하면 차량을 계정에 저장하고 다른 기기에서 불러올 수 있어요.'
+        }
+      />
       {locked && (
         <Notice
           title="주행을 마친 뒤 수정할 수 있어요."
@@ -182,21 +267,41 @@ export default function VehicleScreen() {
         />
         {selected ? (
           <View style={{ gap: 12 }}>
-            <Text style={shared.heading}>{selected.manufacturer} {selected.model}</Text>
+            <Text style={shared.heading}>
+              {selected.manufacturer} {selected.model}
+            </Text>
             <Text style={shared.muted}>{selected.generation}</Text>
-            <Field label="차량 연식 (년)" value={year} onChangeText={setYear} keyboardType="number-pad"
-              placeholder="차량등록증의 연식" maxLength={4} editable={!disabled} error={errors.year} />
-            <Button title="차종 직접 입력" variant="ghost" disabled={disabled} onPress={() => { setModel(displayModel); setCatalogId(undefined); }} />
+            <Field
+              label="차량 연식 (년)"
+              value={year}
+              onChangeText={setYear}
+              keyboardType="number-pad"
+              placeholder="차량등록증의 연식"
+              maxLength={4}
+              editable={!disabled}
+              error={errors.year}
+            />
+            <Button
+              title="차종 직접 입력"
+              variant="ghost"
+              disabled={disabled}
+              onPress={() => {
+                setModel(displayModel);
+                setCatalogId(undefined);
+              }}
+            />
           </View>
-        ) : <Field
-          label="제조사 · 모델 · 연식"
-          value={model}
-          onChangeText={setModel}
-          placeholder="예: 현대 아반떼 2023"
-          maxLength={80}
-          error={errors.model}
-          editable={!disabled}
-        />}
+        ) : (
+          <Field
+            label="제조사 · 모델 · 연식"
+            value={model}
+            onChangeText={setModel}
+            placeholder="예: 현대 아반떼 2023"
+            maxLength={80}
+            error={errors.model}
+            editable={!disabled}
+          />
+        )}
         <Field
           label="현재 누적 주행거리 (km)"
           value={km}
@@ -223,7 +328,11 @@ export default function VehicleScreen() {
                   label={t.label}
                   icon={t.icon}
                   selected={type === t.id}
-                  onPress={disabled || (selected && !selected.powertrains.includes(t.id)) ? undefined : () => setType(t.id)}
+                  onPress={
+                    disabled || (selected && !selected.powertrains.includes(t.id))
+                      ? undefined
+                      : () => setType(t.id)
+                  }
                 />
               </View>
             ))}
@@ -235,6 +344,11 @@ export default function VehicleScreen() {
           </Text>
         </View>
       </Card>
+      {existing && (
+        <SettingsDisclosure title="차량 연동 상태" description="외부 차량 정보의 연결 여부">
+          <BackendVehicleStatus key={type} powertrain={type} />
+        </SettingsDisclosure>
+      )}
       {existing && (
         <Card style={{ gap: 12 }}>
           <Text style={s.label}>차량 삭제</Text>
@@ -254,7 +368,12 @@ export default function VehicleScreen() {
                 disabled={disabled}
                 onPress={remove}
               />
-              <Button title="삭제 취소" variant="ghost" disabled={busy} onPress={() => setConfirmDelete(false)} />
+              <Button
+                title="삭제 취소"
+                variant="ghost"
+                disabled={busy}
+                onPress={() => setConfirmDelete(false)}
+              />
             </>
           ) : (
             <Button

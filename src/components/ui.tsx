@@ -15,17 +15,17 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const C = {
-  bg: '#F4F8FE',
+  bg: '#F3F5F9',
   surface: '#FFFFFF',
   ink: '#10203B',
-  muted: '#60738F',
-  primary: '#0875FF',
-  mint: '#EAF3FF',
-  line: '#E2EBF7',
+  muted: '#58677E',
+  primary: '#2452E5',
+  mint: '#EDF2FF',
+  line: '#E2E7F0',
   amber: '#85580C',
   amberBg: '#FFF3D9',
   red: '#BA4444',
@@ -72,6 +72,7 @@ export function Screen({
   scroll?: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const tabHeader = ['/', '/ai', '/trips', '/garage', '/settings'].includes(usePathname());
   const content = (
     <View style={s.content}>
       {(title || back || action) && (
@@ -103,7 +104,7 @@ export function Screen({
   );
   return (
     <KeyboardAvoidingView
-      style={[s.screen, { paddingTop: insets.top }]}
+      style={[s.screen, { paddingTop: tabHeader ? 0 : insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {scroll ? (
@@ -289,7 +290,7 @@ export const shared = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   text: { fontSize: 15, lineHeight: 23, color: C.ink },
-  muted: { fontSize: 13, lineHeight: 21, color: C.muted },
+  muted: { fontSize: 14, lineHeight: 22, color: C.muted },
   heading: { fontSize: 19, fontWeight: '700', color: C.ink },
   divider: { height: 1, backgroundColor: C.line, marginVertical: 16 },
   stack: { gap: 16 },

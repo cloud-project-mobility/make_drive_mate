@@ -24,14 +24,20 @@ test('saved coordinates survive JSON roundtrip and external maps use the selecte
   const saved = JSON.parse(JSON.stringify(plan));
   assert.equal(isTripPlan(saved), true);
   const url = new URL(mapsUrl(saved));
-  assert.equal(url.searchParams.get('origin'), '37.5547,126.9706');
-  assert.equal(url.searchParams.get('destination'), '37.5665,126.978');
-  assert.equal(url.searchParams.get('travelmode'), 'driving');
+  assert.equal(url.origin, 'https://map.kakao.com');
+  assert.equal(
+    decodeURIComponent(url.pathname),
+    '/link/by/car/동명 장소,37.5547,126.9706/동명 장소,37.5665,126.978',
+  );
+  assert.equal(url.search, '');
 });
 test('old plans keep name lookup while corrupt or misleading route provenance is rejected', () => {
   const { originPoint, destinationPoint, route, ...old } = plan;
   assert.equal(isTripPlan(old), true);
-  assert.equal(new URL(mapsUrl(old)).searchParams.get('origin'), old.origin);
+  assert.equal(
+    decodeURIComponent(new URL(mapsUrl(old)).pathname),
+    `/link/search/${old.destination}`,
+  );
   for (const bad of [
     { originPoint: null },
     { destinationPoint: { latitude: 91, longitude: 0 } },
@@ -44,4 +50,25 @@ test('old plans keep name lookup while corrupt or misleading route provenance is
   ])
     assert.equal(isTripPlan({ ...plan, ...bad }), false);
   assert.equal(isTripPlan({ ...old, originPoint, destinationPoint }), true);
+});
+test('Kakao route links encode names and reject incomplete or invalid coordinates', () => {
+  const input = { ...plan, origin: '서울/역, 1번? #출구', destination: '도착 & 주차장' };
+  const route = new URL(mapsUrl(input));
+  const parts = route.pathname.split('/');
+  assert.equal(parts.length, 6);
+  assert.equal(decodeURIComponent(parts[4]), `${input.origin},37.5547,126.9706`);
+  assert.equal(decodeURIComponent(parts[5]), `${input.destination},37.5665,126.978`);
+  assert.equal(route.hash, '');
+  for (const point of [
+    undefined,
+    { latitude: NaN, longitude: 127 },
+    { latitude: 91, longitude: 127 },
+    { latitude: 37, longitude: Infinity },
+    { latitude: 37, longitude: -181 },
+  ]) {
+    const url = new URL(mapsUrl({ ...input, originPoint: point }));
+    assert.equal(url.origin, 'https://map.kakao.com');
+    assert.equal(decodeURIComponent(url.pathname), `/link/search/${input.destination}`);
+  }
+  assert.match(mapsUrl({ ...input, destinationPoint: undefined }), /\/link\/search\//);
 });

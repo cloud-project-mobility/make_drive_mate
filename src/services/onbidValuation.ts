@@ -8,6 +8,15 @@ export interface AuctionScenario {
   interval_high_krw?: number;
   assumed_combined_cost_krw?: number;
 }
+export interface AuctionComparable {
+  evidence_id: string;
+  event_date: string;
+  model: string;
+  age_years: number;
+  odometer_km: number;
+  auction_award_krw: number;
+  selection: 'same_model_nearest_age_and_mileage_training_only';
+}
 export interface AuctionResult {
   ok: true;
   evidence: {
@@ -21,6 +30,7 @@ export interface AuctionResult {
     limitations: string[];
     warnings: string[];
     scenarios: AuctionScenario[];
+    comparable_cases?: AuctionComparable[];
     prediction_krw?: number;
     interval_low_krw?: number;
     interval_high_krw?: number;
@@ -47,6 +57,33 @@ export function isAuctionResult(value: unknown): value is AuctionResult {
     strings(evidence.defer_reasons) &&
     strings(evidence.limitations) &&
     strings(evidence.warnings) &&
+    (evidence.comparable_cases === undefined ||
+      (Array.isArray(evidence.comparable_cases) &&
+        evidence.comparable_cases.length <= 3 &&
+        evidence.comparable_cases.every(
+          (item) =>
+            object(item) &&
+            Object.keys(item).every((key) =>
+              [
+                'evidence_id',
+                'event_date',
+                'model',
+                'age_years',
+                'odometer_km',
+                'auction_award_krw',
+                'selection',
+              ].includes(key),
+            ) &&
+            typeof item.evidence_id === 'string' &&
+            typeof item.event_date === 'string' &&
+            /^\d{4}-\d{2}-\d{2}$/.test(item.event_date) &&
+            typeof item.model === 'string' &&
+            item.model.length <= 100 &&
+            ['age_years', 'odometer_km', 'auction_award_krw'].every(
+              (key) => finite(item[key]) && item[key] >= 0,
+            ) &&
+            item.selection === 'same_model_nearest_age_and_mileage_training_only',
+        ))) &&
     ['prediction_krw', 'interval_low_krw', 'interval_high_krw'].every((key) =>
       evidence.status === 'deferred' ? evidence[key] === undefined : finite(evidence[key]),
     ) &&

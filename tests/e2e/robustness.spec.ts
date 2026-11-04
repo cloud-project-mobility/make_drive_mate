@@ -8,13 +8,15 @@ test.use({ timezoneId: 'America/New_York' });
 async function register(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: '예시 차량으로 둘러보기', exact: true }).click();
-  await page.getByRole('tab', { name: '설정', exact: true }).click();
+  await page.getByRole('button', { name: '로그인 및 설정', exact: true }).click();
+  await page.getByRole('button', { name: '서버 설정 펼치기', exact: true }).click();
   await page.getByRole('textbox', { name: '백엔드 서버 주소', exact: true }).fill(backendUrl!);
   await page.getByRole('button', { name: '서버 연결 확인', exact: true }).click();
   await expect(page.getByText('서버 연결됨 · 외부 데이터는 예시', { exact: true })).toBeVisible();
   const email = `robust-${Date.now()}-${Math.random().toString(36).slice(2)}@example.test`;
   await page.getByRole('textbox', { name: '테스트 계정 이메일', exact: true }).fill(email);
   await page.getByLabel('테스트 계정 비밀번호', { exact: true }).fill('synthetic-test-only-2026');
+  await page.getByRole('button', { name: '회원가입으로 전환', exact: true }).click();
   await page.getByRole('button', { name: '로컬 테스트 계정 만들기', exact: true }).click();
   await expect(page.getByText(email, { exact: true })).toBeVisible();
   return email;
@@ -151,21 +153,25 @@ test('same-name selected places retain coordinates, route provenance, backup com
       return null;
     };
   });
-  await page.getByRole('button', { name: '지도 앱에서 실제 경로 확인', exact: true }).click();
+  await page.getByRole('button', { name: '카카오맵에서 길안내', exact: true }).click();
   const opened = new URL((await page.evaluate(() => localStorage.getItem('test:last-map-url')))!);
-  expect(opened.searchParams.get('origin')).toBe('37.5547,126.9726');
-  expect(opened.searchParams.get('destination')).toBe('37.5666,126.9784');
+  expect(opened.origin).toBe('https://map.kakao.com');
+  expect(decodeURIComponent(opened.pathname)).toBe(
+    '/link/by/car/동명 장소,37.5547,126.9726/동명 장소,37.5666,126.9784',
+  );
   await page.getByRole('button', { name: '나의 아반떼 · GPS 기록 시작', exact: true }).click();
   await expect(page.getByText('GPS 측정 중', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '뒤로', exact: true }).click();
   await page.getByRole('button', { name: '진행 중인 주행 확인', exact: true }).click();
   expect(new URL(page.url()).searchParams.has('id')).toBe(false);
-  await page.getByRole('button', { name: '지도 앱에서 실제 경로 확인', exact: true }).click();
+  await page.getByRole('button', { name: '카카오맵에서 길안내', exact: true }).click();
   const resumedMap = new URL(
     (await page.evaluate(() => localStorage.getItem('test:last-map-url')))!,
   );
-  expect(resumedMap.searchParams.get('origin')).toBe('37.5547,126.9726');
-  expect(resumedMap.searchParams.get('destination')).toBe('37.5666,126.9784');
+  expect(resumedMap.origin).toBe('https://map.kakao.com');
+  expect(decodeURIComponent(resumedMap.pathname)).toBe(
+    '/link/by/car/동명 장소,37.5547,126.9726/동명 장소,37.5666,126.9784',
+  );
   await page.getByRole('button', { name: '이번 측정 취소', exact: true }).click();
   await page.getByRole('button', { name: '측정 내용 버리기', exact: true }).click();
   const saved = await page.evaluate(
@@ -174,7 +180,8 @@ test('same-name selected places retain coordinates, route provenance, backup com
   expect(saved.route.source).toBe('mock');
   const savedRouteUrl = `/route?id=${encodeURIComponent(saved.id)}`;
   await page.getByRole('button', { name: '뒤로', exact: true }).click();
-  await page.getByRole('tab', { name: '설정', exact: true }).click();
+  await page.getByRole('button', { name: '계정 및 설정', exact: true }).click();
+  await page.getByRole('button', { name: '계정별 서버 백업', exact: true }).click();
   await page.getByRole('button', { name: '서버 백업 확인', exact: true }).click();
   await page.getByRole('button', { name: '현재 기기 데이터를 서버에 저장', exact: true }).click();
   await page.getByRole('button', { name: '서버에 저장 확정', exact: true }).click();

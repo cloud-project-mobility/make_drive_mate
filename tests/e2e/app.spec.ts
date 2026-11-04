@@ -9,9 +9,9 @@ async function start(page: Page, demo = true) {
       exact: true,
     })
     .click();
-  await expect(
-    page.getByRole('heading', { name: '내 차의 다음 타이밍', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('tab', { name: '홈', exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: '내 차', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '내 차', exact: true })).toBeVisible();
 }
 
 async function addVehicle(page: Page, name: string, powertrain = '내연기관') {
@@ -22,9 +22,9 @@ async function addVehicle(page: Page, name: string, powertrain = '내연기관')
   await page.getByRole('textbox', { name: '현재 누적 주행거리 (km)', exact: true }).fill('48,250');
   await page.getByRole('button', { name: powertrain, exact: true }).click();
   await page.getByRole('button', { name: '차량 등록하기', exact: true }).click();
-  await expect(
-    page.getByRole('heading', { name: '내 차의 다음 타이밍', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('tab', { name: '홈', exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: '내 차', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '내 차', exact: true })).toBeVisible();
 }
 
 async function futureDate(page: Page, days = 2) {
@@ -51,10 +51,21 @@ test('demo selection keeps vehicle identity consistent and excludes engine maint
   page,
 }) => {
   await start(page);
-  await expect(page.getByText('48,250', { exact: true })).toBeVisible();
+  await expect(
+    page
+      .getByRole('button', { name: '차량 선택', exact: true })
+      .locator('..')
+      .getByTestId('vehicle-odometer'),
+  ).toHaveText('48,250');
+  await page.getByRole('button', { name: '차량 선택', exact: true }).click();
   await page.getByRole('button', { name: '아이오닉 5', exact: true }).click();
-  await expect(page.getByText('31,780', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '전체 보기', exact: true }).click();
+  await expect(
+    page
+      .getByRole('button', { name: '차량 선택', exact: true })
+      .locator('..')
+      .getByTestId('vehicle-odometer'),
+  ).toHaveText('31,780');
+  await page.getByRole('button', { name: '정비·소모품 기록', exact: true }).click();
   await expect(page.getByRole('heading', { name: '소모품 관리', exact: true })).toBeVisible();
   await expect(page.getByText('아이오닉 5 · 31,780 km', { exact: true })).toBeVisible();
   await expect(
@@ -67,8 +78,9 @@ test('demo selection keeps vehicle identity consistent and excludes engine maint
     page.getByRole('button', { name: '엔진 에어필터 점검 기록하기', exact: true }),
   ).toHaveCount(0);
   await page.getByRole('button', { name: '뒤로', exact: true }).click();
+  await page.getByRole('button', { name: '차량 선택', exact: true }).click();
   await page.getByRole('button', { name: '우리 집 K5', exact: true }).click();
-  await page.getByRole('button', { name: '전체 보기', exact: true }).click();
+  await page.getByRole('button', { name: '정비·소모품 기록', exact: true }).click();
   await expect(page.getByText('우리 집 K5 · 26,340 km', { exact: true })).toBeVisible();
   await expect(
     page.getByRole('button', { name: '엔진오일 점검 기록하기', exact: true }),
@@ -90,16 +102,15 @@ test('an empty garage validates registration, persists real inputs, and enforces
   ).toBeVisible();
   await addVehicle(page, '우리 가족 첫 차');
   await page.reload();
-  await expect(page.getByRole('button', { name: '우리 가족 첫 차', exact: true })).toBeVisible();
-  await expect(page.getByText('48,250', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '차량 추가', exact: true }).click();
-  await addVehicle(page, '주말 하이브리드', '하이브리드');
-  await page.getByRole('button', { name: '차량 추가', exact: true }).click();
-  await addVehicle(page, '출퇴근 전기차', '전기차');
-  await expect(page.getByRole('button', { name: '차량 추가', exact: true })).toHaveCount(0);
   await expect(
-    page.getByText('최대 3대 등록됨', { exact: true }).filter({ visible: true }),
+    page.getByText('우리 가족 첫 차', { exact: true }).filter({ visible: true }),
   ).toBeVisible();
+  await expect(page.getByText('48,250', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '차량 등록', exact: true }).click();
+  await addVehicle(page, '주말 하이브리드', '하이브리드');
+  await page.getByRole('button', { name: '차량 등록', exact: true }).click();
+  await addVehicle(page, '출퇴근 전기차', '전기차');
+  await expect(page.getByRole('button', { name: '차량 등록', exact: true })).toBeDisabled();
   await page.goto('/vehicle');
   await expect(
     page.getByRole('heading', { name: '차량은 최대 3대까지', exact: true }),
@@ -111,7 +122,7 @@ test('maintenance rejects impossible baselines and persists a successful service
   page,
 }) => {
   await start(page);
-  await page.getByRole('button', { name: '전체 보기', exact: true }).click();
+  await page.getByRole('button', { name: '정비·소모품 기록', exact: true }).click();
   await page.getByRole('button', { name: '엔진오일 점검 기록하기', exact: true }).click();
   await page.getByRole('textbox', { name: '점검 당시 주행거리 (km)', exact: true }).fill('48251');
   await page.getByRole('button', { name: '엔진오일 기록 저장', exact: true }).click();
@@ -200,7 +211,7 @@ test('mobile and desktop retain reachable controls without horizontal overflow',
   await start(page);
   for (const width of [360, 1280]) {
     await page.setViewportSize({ width, height: 900 });
-    await expect(page.getByRole('button', { name: '전체 보기', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '정비·소모품 기록', exact: true })).toBeVisible();
     const overflow = await page.evaluate(
       () =>
         Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) -
@@ -220,9 +231,7 @@ test('mobile and desktop retain reachable controls without horizontal overflow',
     const bounds = await save.boundingBox();
     expect(bounds?.height).toBeGreaterThanOrEqual(44);
     await page.getByRole('button', { name: '뒤로', exact: true }).click();
-    await expect(
-      page.getByRole('heading', { name: '내 차의 다음 타이밍', exact: true }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: '내 차', exact: true })).toBeVisible();
   }
 });
 
@@ -231,7 +240,9 @@ test('settings validate time limits, persist, and prefill the next plan with hon
 }) => {
   await start(page);
   await page.goto('/settings');
-  await expect(page.getByRole('heading', { name: '설정', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '내 계정', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '기기 설정 보기', exact: true }).click();
+  await page.getByRole('button', { name: '운전·알림 설정', exact: true }).click();
   await page.getByRole('textbox', { name: '여유 시간 (분)', exact: true }).fill('181');
   await page.getByRole('button', { name: '기본 시간 저장', exact: true }).click();
   await expect(page.getByText('여유 시간은 180 이하여야 해요.', { exact: true })).toBeVisible();
@@ -242,6 +253,8 @@ test('settings validate time limits, persist, and prefill the next plan with hon
     page.getByText('기본 시간을 저장했어요. 새로 만드는 이동 계획에 적용해요.', { exact: true }),
   ).toBeVisible();
   await page.reload();
+  await page.getByRole('button', { name: '기기 설정 보기', exact: true }).click();
+  await page.getByRole('button', { name: '운전·알림 설정', exact: true }).click();
   await expect(page.getByRole('textbox', { name: '여유 시간 (분)', exact: true })).toHaveValue(
     '30',
   );
@@ -249,9 +262,8 @@ test('settings validate time limits, persist, and prefill the next plan with hon
     '15',
   );
   await expect(page.getByText('백그라운드 측정은 지원하지 않아요', { exact: true })).toBeVisible();
-  await expect(
-    page.getByText(/Google·Kakao·현대 API 키는 이 화면에 입력하지 않아요/),
-  ).toBeVisible();
+  await page.getByRole('button', { name: '서버 설정 펼치기', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: /API.?키|API.?Key/i })).toHaveCount(0);
   await page.getByRole('button', { name: '내 출발 알림 관리', exact: true }).click();
   await expect(page.getByRole('heading', { name: '출발 알림', exact: true })).toBeVisible();
   await expect(page.getByText(/웹에서는 기기 알림을 예약할 수 없어요/)).toBeVisible();
@@ -353,7 +365,7 @@ test('controlled browser GPS survives pause and reload, excludes the paused gap,
     page.getByRole('button', { name: '주행 종료 · 기록 저장', exact: true }),
   ).toHaveCount(0);
   await page.getByRole('button', { name: '저장한 주행 기록 보기', exact: true }).click();
-  await page.getByRole('button', { name: '주행 기록 1', exact: true }).click();
+  await page.getByRole('tab', { name: '완료', exact: true }).click();
   await expect(page.getByText('GPS 측정', { exact: true })).toBeVisible();
   await expect(page.getByText(/^0\.22\s*km$/).filter({ visible: true })).toBeVisible();
   await page.goto('/');
@@ -367,6 +379,9 @@ test('backup export and reviewed restore preserve data and reject invalid conten
 }, testInfo) => {
   await start(page);
   await page.goto('/settings');
+  await page.getByRole('button', { name: '기기 설정 보기', exact: true }).click();
+  await page.getByRole('button', { name: '운전·알림 설정', exact: true }).click();
+  await page.getByRole('button', { name: '기기 데이터 관리', exact: true }).click();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '내 데이터 백업 내보내기', exact: true }).click();
   const download = await downloadPromise;
@@ -407,10 +422,13 @@ test('backup export and reviewed restore preserve data and reject invalid conten
     '10',
   );
   await page.reload();
+  await page.getByRole('button', { name: '기기 설정 보기', exact: true }).click();
+  await page.getByRole('button', { name: '운전·알림 설정', exact: true }).click();
   await expect(page.getByRole('textbox', { name: '여유 시간 (분)', exact: true })).toHaveValue(
     '10',
   );
   await page.goto('/');
+  await page.getByRole('button', { name: '차량 선택', exact: true }).click();
   await expect(page.getByRole('button', { name: '나의 아반떼', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '아이오닉 5', exact: true })).toBeVisible();
 });

@@ -149,12 +149,14 @@ function AppShell() {
         }}
       >
         <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
         <Stack.Protected guard={!state.onboarded}>
           <Stack.Screen name="welcome" />
         </Stack.Protected>
         <Stack.Protected guard={state.onboarded}>
-          <Stack.Screen name="(tabs)" />
           <Stack.Screen name="vehicle" />
+          <Stack.Screen name="analysis" />
+          <Stack.Screen name="documents" />
           <Stack.Screen name="maintenance" />
           <Stack.Screen name="plan" />
           <Stack.Screen name="route" />

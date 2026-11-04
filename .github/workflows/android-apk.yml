@@ -1,0 +1,150 @@
+name: Build internal Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/android-apk.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CI: '1'
+      EXPO_NO_DOTENV: '1'
+      EXPO_NO_TELEMETRY: '1'
+      EXPO_PUBLIC_API_BASE_URL: https://d2a3l7qimjk3ir.cloudfront.net
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: Install matching Android build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$sdkmanager"
+          # Ignore only yes's SIGPIPE; a failing sdkmanager still fails the step.
+          set +o pipefail
+          yes | "$sdkmanager" --licenses > /dev/null
+          set -o pipefail
+          "$sdkmanager" --install \
+            "platform-tools" "platforms;android-36" \
+            "build-tools;36.0.0" "build-tools;35.0.0" \
+            "ndk;27.1.12297006" "cmake;3.30.5" "cmake;3.22.1"
+          # Worklets requests 3.22.1; keep it alongside the local toolchain's 3.30.5.
+      - name: Generate native project from public source
+        run: npx expo prebuild --platform android --no-install
+      - name: Require the generated internal debug signing configuration
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          gradle = Path('android/app/build.gradle').read_text()
+          if not re.search(r'release\s*\{[^}]*signingConfig\s+signingConfigs\.debug', gradle):
+              raise SystemExit('The release variant must use the generated debug signing config.')
+          PY
+      - name: Build standalone release variant for arm64 and x86_64
+        working-directory: android
+        run: ./gradlew :app:assembleRelease --no-daemon --max-workers=2 -PreactNativeArchitectures=arm64-v8a,x86_64
+      - name: Verify APK signature, package, permissions, ABIs and bundled API address
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          import shutil
+          import subprocess
+          import zipfile
+          from pathlib import Path
+
+          apk = Path('android/app/build/outputs/apk/release/app-release.apk')
+          tools = Path(os.environ['ANDROID_HOME']) / 'build-tools' / '36.0.0'
+          if not apk.is_file():
+              raise SystemExit('Expected release APK is missing.')
+          subprocess.run([str(tools / 'apksigner'), 'verify', '--verbose', str(apk)], check=True)
+          badging = subprocess.check_output([str(tools / 'aapt'), 'dump', 'badging', str(apk)], text=True)
+          permissions = subprocess.check_output([str(tools / 'aapt'), 'dump', 'permissions', str(apk)], text=True)
+          expected_package = 'com.cloudprojectmobility.drivemate'
+          if not re.search(r"^package: name='" + re.escape(expected_package) + r"'", badging, re.M):
+              raise SystemExit('Unexpected Android package identifier.')
+          if "sdkVersion:'24'" not in badging or "targetSdkVersion:'36'" not in badging:
+              raise SystemExit('Unexpected minimum/target Android SDK.')
+          if 'application-debuggable' in badging:
+              raise SystemExit('Release APK must not enable Android debugging.')
+          blocked = json.loads(Path('app.json').read_text())['expo']['android']['blockedPermissions']
+          required_blocked = {
+              'android.permission.SYSTEM_ALERT_WINDOW',
+              'android.permission.READ_EXTERNAL_STORAGE',
+              'android.permission.WRITE_EXTERNAL_STORAGE',
+          }
+          if not required_blocked.issubset(blocked):
+              raise SystemExit('Required blocked-permission configuration is missing.')
+          if any(permission in permissions for permission in blocked):
+              raise SystemExit('APK still declares a blocked permission.')
+          with zipfile.ZipFile(apk) as archive:
+              names = archive.namelist()
+              abis = sorted({name.split('/')[1] for name in names if name.startswith('lib/') and name.endswith('.so')})
+              if abis != ['arm64-v8a', 'x86_64']:
+                  raise SystemExit('APK must contain exactly arm64-v8a and x86_64 native libraries.')
+              bundle = archive.read('assets/index.android.bundle')
+              if os.environ['EXPO_PUBLIC_API_BASE_URL'].encode() not in bundle:
+                  raise SystemExit('Bundled app is missing the expected public HTTPS API address.')
+          output = Path('apk-artifacts')
+          output.mkdir(exist_ok=True)
+          destination = output / 'drivemate-internal-release.apk'
+          shutil.copyfile(apk, destination)
+          digest = hashlib.sha256(destination.read_bytes()).hexdigest()
+          (output / 'SHA256SUMS').write_text(f'{digest}  {destination.name}\n')
+          summary = {
+              'source_revision': os.environ['GITHUB_SHA'],
+              'application_id': expected_package,
+              'variant': 'release',
+              'signing': 'generated_debug_internal_only',
+              'min_sdk': 24,
+              'target_sdk': 36,
+              'abis': abis,
+              'api_base_url': os.environ['EXPO_PUBLIC_API_BASE_URL'],
+              'bundled_javascript': True,
+              'blocked_permissions_absent': True,
+              'sha256': digest,
+              'device_installation_tested': False,
+          }
+          (output / 'build-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as report:
+              report.write('### Internal Android APK\n\n')
+              report.write(f'- Source: `{summary["source_revision"]}`\n')
+              report.write('- Standalone release variant, generated debug signature; not for store publication.\n')
+              report.write('- arm64-v8a + x86_64; public HTTPS API address bundled; no Metro server required.\n')
+              report.write('- Signature and package checks passed. Device installation has not been tested by this job.\n')
+              report.write('- Download the artifact below; manually dispatch this workflow to build later source changes.\n')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: drivemate-android-internal-${{ github.sha }}
+          path: apk-artifacts/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

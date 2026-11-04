@@ -10,22 +10,22 @@
 
 ## 현재 구현 상태
 
-운영 확인: **ECS Fargate API revision 4와 공개 HTTPS/WSS 서비스**. **[DriveMate 웹 열기](https://d2a3l7qimjk3ir.cloudfront.net)**. 기존 RDS를 재사용하며 첫 데이터 사이클·API 집계 갱신이 성공했고 주간 요청과 시간 단위 worker 예약도 활성화했습니다. 이전 EC2·CloudFront·VPC origin 정리도 완료했습니다. 공개 저장소의 소스와 별도로 준비한 비공개 데이터가 필요한 기능을 구분합니다.
+운영 확인: **ECS Fargate API revision 6·cycle revision 6와 공개 HTTPS/WSS 서비스**. **[DriveMate 웹 열기](https://d2a3l7qimjk3ir.cloudfront.net)**. 기존 RDS를 재사용하며 첫 데이터 사이클·API 집계 갱신이 성공했고 주간 요청과 시간 단위 worker 예약도 활성화했습니다. 이전 EC2·CloudFront·VPC origin 정리도 완료했습니다. 공개 저장소의 소스와 별도로 준비한 비공개 데이터가 필요한 기능을 구분합니다.
 
-**UI 03 변경은 현재 로컬 검증 단계이며 운영 반영·새 APK 빌드는 아직 완료하지 않았습니다.** 아래 새 사용 흐름과 기존 배포·APK 검증 이력을 구분해 읽어 주세요. [UI 03 변경·검증 범위](docs/UI-03.md)
+**UI 03은 소스 `9c50cfc9`의 v7 이미지로 운영 배포됐습니다.** 공개 상태 응답과 HTML·웹 번들의 해시가 검증본과 일치합니다. 같은 소스의 [새 Android APK 빌드](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41861259652)는 내부용 APK 생성·정적 검사를 완료했으며, 실제 휴대전화 검증은 아직입니다. [UI 03 변경·검증 범위](docs/UI-03.md)
 
-| 영역          | 구현·검증 상태                                                                                           | 실행 조건·남은 일                                                                                                                                                 |
-| ------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 프런트엔드    | React Native / Expo / TypeScript. 홈·AI 상담·이동 계획·내 차, 단계별 가입·차량 등록                      | UI 03 로컬 검증 중. 새 운영 배포·APK 및 모바일 실기기 검증은 별도                                                                                                 |
-| Android APK   | 내부용 APK 빌드·정적 검사 성공. 오프라인 에뮬레이터 2회 설치·프로세스 유지·랜딩 확인                     | [APK 안내](docs/ANDROID-APK.md). debug 서명. System UI ANR 경고 겹침·원인 미확정. 경고 없는 전체 흐름·실제 폰·앱 API 호출 미검증                                  |
-| Spring API    | Spring Boot 4.1.2 / Java 17 / JDBC. 로그인, 비밀번호 변경, 계정별 차량·백업, 가격·분석·문서 API          | ECS API revision 4·Nginx 정상, 기존 RDS 재사용. 공개 HTTPS 계정·Kakao API 검증 통과                                                                               |
-| 가격 모델     | 온비드 정제 2,197행 기반 Random Forest. AWS HTTPS 지원 차량·템플릿 응답 확인                             | 14,867행 새 모델은 평가 후보이며 서비스에 승격하지 않음. 모델·데이터는 공개 저장소 제외                                                                           |
-| GPT 설명      | ECS revision 3에서 가격 근거 설명 1건 실제 API 확인. 문서 RAG는 앞선 ECS 배포에서 실제 GPT 답변 8건 검증 | 가격은 ML이 계산. 단일 가격 예제는 연결 확인이며 일반 정확도 평가가 아님. [문서 평가 10건](docs/RAG-EVALUATION-20261104.md)은 자동 8/10, 추가 원문 대조 결과 별도 |
-| 문서 RAG      | 6개 문서·83개 청크. RDS pgvector 적재와 최종 ECS HTTPS 검색·권한 검증 완료                               | 공개 경로에서 출처 6개·다른 계정 403 확인. 이 검증은 `use_llm=false` 검색이며 새 LLM 품질 평가가 아님                                                             |
-| 실시간 위치   | 웹에서 같은 계정 기기의 최근 위치 중계·중지, 다른 계정 격리                                              | AWS HTTPS/WSS에서 합성 좌표로 검증. 이 동기화 화면은 웹 전용이며 Android APK에서는 미지원                                                                         |
-| 데이터 사이클 | 첫 ECS 실행 성공, S3와 공개 API 집계 일치. 새 API cycle 정제 2,187행                                     | 주간 요청·시간 단위 worker 예약 활성화. 새 후보의 모델 자동 승격 없음; 첫 정기 실행 관측은 별도                                                                   |
-| CI            | 커밋 `76ae3787`의 Spring·Python·웹·release 모두 성공                                                     | [검증된 실행 기록](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41839693687). 후속 문서 커밋의 CI는 별도 실행에서 확인                  |
-| AWS / CD      | Fargate 1 task·CloudFront 정상, 공개 검증·이전 EC2 정리 완료. 현재 이미지 ECR 기본 OS 검사 완료          | **CD 미활성**: GitHub OIDC 조회가 조직 SCP에 거절됨. 후속 배포 작업은 의도대로 건너뜀                                                                             |
+| 영역          | 구현·검증 상태                                                                                                | 실행 조건·남은 일                                                                                                                                                 |
+| ------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 프런트엔드    | React Native / Expo / TypeScript. UI 03 홈·AI 상담·이동 계획·내 차, 단계별 가입·차량 등록 운영 반영           | 공개 화면·파일 검증과 새 내부용 APK 생성·정적 검사 완료. 모바일 실기기 검증은 별도                                                                                |
+| Android APK   | UI 03 소스 `9c50cfc9`의 내부용 APK 생성·서명·권한·ABI·내장 API 주소 및 비밀값 검사 완료                       | [APK 안내](docs/ANDROID-APK.md). debug 서명·versionCode 1. 최신 APK의 에뮬레이터·실제 폰·앱 API 호출 미검증; 이전 버전의 System UI ANR 관측은 별도 이력           |
+| Spring API    | Spring Boot 4.1.2 / Java 17 / JDBC. 로그인, 비밀번호 변경, 계정별 차량·백업, 가격·분석·문서·상담 API          | ECS API revision 6·Nginx 정상, 기존 RDS 재사용. 최신 로그인·상담·로그아웃 확인; Kakao 검증은 revision 3 이력                                                      |
+| 가격 모델     | 온비드 정제 2,197행 기반 Random Forest. AWS HTTPS 지원 차량·템플릿 응답 확인                                  | 14,867행 새 모델은 평가 후보이며 서비스에 승격하지 않음. 모델·데이터는 공개 저장소 제외                                                                           |
+| GPT 상담·설명 | ECS revision 6에서 유료 상담 1건 `gpt-6-astra` 응답 확인. 가격은 `random_forest_log`가 계산하고 LLM 생성 아님 | 연결·응답 구조 확인이며 일반 정확도 평가가 아님. 이전 [문서 평가 10건](docs/RAG-EVALUATION-20261104.md)은 자동 8/10, 추가 원문 대조 결과 별도                     |
+| 문서 RAG      | 6개 문서·83개 청크. RDS pgvector 적재와 최종 ECS HTTPS 검색·권한 검증 완료                                    | 공개 경로에서 출처 6개·다른 계정 403 확인. 이 검증은 `use_llm=false` 검색이며 새 LLM 품질 평가가 아님                                                             |
+| 실시간 위치   | 웹에서 같은 계정 기기의 최근 위치 중계·중지, 다른 계정 격리                                                   | AWS HTTPS/WSS에서 합성 좌표로 검증. 이 동기화 화면은 웹 전용이며 Android APK에서는 미지원                                                                         |
+| 데이터 사이클 | 첫 ECS 실행 성공, S3와 공개 API 집계 일치. 새 API cycle 정제 2,187행                                          | 주간 요청·시간 단위 worker 예약 활성화. 새 후보의 모델 자동 승격 없음; 첫 정기 실행 관측은 별도                                                                   |
+| CI            | 이전 커밋 `76ae3787`의 Spring·Python·웹·release 성공 이력                                                     | 최신 `9c50cfc9`의 [CI 실행](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41861245740)은 진행 중. 원격 최종 결과와 수동 배포 검증을 구분 |
+| AWS / CD      | Fargate 1 task·CloudFront 정상, 공개 검증·이전 EC2 정리 완료. 현재 이미지 ECR 기본 OS 검사 완료               | **CD 미활성**: GitHub OIDC 조회가 조직 SCP에 거절됨. 후속 배포 작업은 의도대로 건너뜀                                                                             |
 
 공개 clone에는 **소스·테스트·기술 문서·코드 전용 노트북**이 있습니다. API 키, 계정 DB, 원시·정제 데이터, 학습 모델, 원본 Word/PPT, 문서 본문·검색 인덱스, 데이터가 내장된 Colab 사본은 포함하지 않습니다.
 
@@ -51,6 +51,12 @@
 ### UI 03과 이전 화면
 
 UI 03은 **홈 / AI 상담 / 이동 계획 / 내 차**의 4개 탭과 별도 계정 화면으로 정리했습니다. 작은 화면에서는 하단 탭, 넓은 화면에서는 상단 탐색을 사용합니다. 로그인·차량 등록은 한 단계씩 진행하고, 관리 기능은 접힌 메뉴에 둡니다. [화면별 동선과 검증 상태](docs/UI-03.md)를 참고하세요.
+
+2026-11-05 운영 웹에서 캡처한 화면입니다. **예시 차량·비로그인 상태**로 공매 가격은 표시하지 않습니다. 실제 사용자 차량이나 유료 상담 결과 화면이 아닙니다.
+
+![운영 UI 03 홈 — 예시 차량·비로그인](docs/evidence/2026-11-05/public-home-desktop.jpg)
+
+![운영 UI 03 AI 상담 — 예시 차량·비로그인](docs/evidence/2026-11-05/public-ai-desktop.jpg)
 
 [2026-11-04 데스크톱 화면](docs/evidence/2026-11-04/current-ui-desktop.png)과 [모바일 화면](docs/evidence/2026-11-04/current-ui-mobile.png)은 **UI 03 이전 구현 기록**입니다. 최신 화면 이미지나 새 배포·APK의 증거로 사용하지 않습니다. [차량 사진 출처·이용 조건](docs/VEHICLE-PHOTOS.md)
 
@@ -197,11 +203,11 @@ DRIVEMATE_WEB_STATIC=1 npm run test:integrated -- tests/e2e/valuation.spec.ts te
 
 통합 검사는 별도 H2 메모리 DB와 Spring `18086`, 웹 `18087`을 사용합니다. ML/RAG 화면의 합성 응답 검사는 실제 모델 성능이나 유료 API 호출 검증을 의미하지 않습니다. Python 의존성과 검사는 [CI 워크플로](.github/workflows/ci.yml)에 고정되어 있습니다.
 
-커밋 `76ae3787`의 원격 CI에서 `spring`, `python`, `web`, `release`가 모두 성공했습니다. 이전 실행 코드 `b00bf8e`의 로컬 세부 검증은 Spring 57개, 프런트 98개, 위치 브라우저 12개, 컨테이너 준비 로직 11개가 통과했습니다. 실제 컨테이너의 비루트 권한·읽기 전용 루트·프록시 Origin·합성 위치 중계와 AWS 공개 경로를 확인했습니다. 후속 문서 커밋의 원격 결과는 [Actions](https://github.com/cloud-project-mobility/make_drive_mate/actions)에서 별도로 확인합니다.
+이전 커밋 `76ae3787`의 원격 CI에서 `spring`, `python`, `web`, `release`가 모두 성공했습니다. 이전 실행 코드 `b00bf8e`의 로컬 세부 검증은 Spring 57개, 프런트 98개, 위치 브라우저 12개, 컨테이너 준비 로직 11개가 통과했습니다. 실제 컨테이너의 비루트 권한·읽기 전용 루트·프록시 Origin·합성 위치 중계와 AWS 공개 경로를 확인했습니다. 현재 배포 소스 `9c50cfc9`의 [원격 CI](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41861245740)는 진행 중입니다. v7 컨테이너의 비루트·읽기 전용 실행, 프록시 Origin·합성 위치 중계와 공개 화면 파일 검증은 별도로 통과했습니다.
 
 기본 DriveMate CI는 **웹 export**, Spring JAR, 코드 전용 배포 ZIP을 만듭니다. 별도 [Android APK 작업](docs/ANDROID-APK.md)은 debug 키로 서명한 내부용 standalone release APK를 생성·검사하며, [첫 빌드](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41839693866)가 성공했습니다. Android/iOS 실기기 시험·스토어 배포·IPA 생성은 수행하지 않았습니다. ECS용 CD는 성공한 main CI의 JAR·웹 산출물을 코드 전용 이미지로 만들고 ECR digest를 배포하도록 준비했습니다. **현재 GitHub OIDC 조회가 조직 SCP에 거절되어 CD 활성화는 차단된 상태**입니다. Kubernetes 설정은 렌더링만 검사했으며 실제 클러스터는 없습니다. [CI/CD 안내](docs/CICD.md)와 [AWS 실제 상태](infra/aws/DEPLOYMENT-STATUS.md)를 참고하세요.
 
-GitHub 장애로 지연됐던 실행 코드 업로드는 `b00bf8e`로 완료했습니다. [해당 CI 실행](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41822100409)은 2026-11-04 11:38:54 UTC에 성공했으며 `spring`, `python`, `web`, `release`가 모두 통과했습니다.
+이전 GitHub 장애 당시 지연됐던 실행 코드 업로드는 `b00bf8e`로 완료했습니다. [해당 CI 실행](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41822100409)은 2026-11-04 11:38:54 UTC에 성공했으며 `spring`, `python`, `web`, `release`가 모두 통과했습니다.
 
 월 20만원은 운영 목표이며 확정 상한이 아닙니다. 준비 시 계산한 Fargate 실행비 참고값은 약 **US$47/월**이고, RDS·ALB·S3·CloudFront·로그·외부 API 사용료 등이 추가됩니다. 현재 RDS는 PostgreSQL 18.6, `db.t4g.micro`, Single-AZ, 백업 1일이며 대기 DB를 통한 자동 장애 전환은 제공하지 않습니다.
 
@@ -246,7 +252,7 @@ docs/             설계·검증·데이터·팀 인수 문서
 
 ## 기존 기능의 제한과 출처
 
-Kakao·Google 연동 경계와 Kakao 웹 SDK 키·허용 도메인 설정은 준비했습니다. 실제 지도 렌더링·길찾기·Google 연동 검증은 미완료이며 현대 실차 연결은 미지원입니다. 계정 이메일 확인·비밀번호 복구, 백업 자동 병합은 제공하지 않습니다. 이전 Python 서버의 계정·토큰 자동 이전도 지원하지 않습니다. [외부 연동](backend-spring/PROVIDERS.md)과 [연동 범위](docs/INTEGRATION.md)를 참고하세요.
+Kakao·Google 연동 경계와 Kakao 웹 SDK 키·허용 도메인 설정은 준비했습니다. Kakao 장소·경로 서버 API는 앞선 운영 배포에서 검증했지만 실제 휴대전화의 지도·길안내와 Google 연동 검증은 미완료이며 현대 실차 연결은 미지원입니다. UI 03의 길안내는 외부 카카오맵 길안내·검색으로 연결하며 앱 내부 음성 내비게이션은 제공하지 않습니다. 계정 이메일 확인·비밀번호 복구, 백업 자동 병합은 제공하지 않습니다. 이전 Python 서버의 계정·토큰 자동 이전도 지원하지 않습니다. [외부 연동](backend-spring/PROVIDERS.md)과 [연동 범위](docs/INTEGRATION.md)를 참고하세요.
 
 GPS는 앱이 활성화된 동안 측정하며 화면 잠금·다른 앱 전환 시 멈춥니다. 기존 이동 경로 도식은 실제 지도가 아닙니다. 실시간 기기 위치 화면의 카카오 지도는 별도 SDK 키·도메인 설정과 사용자의 연결 동작이 필요합니다. 기기 저장은 암호화된 클라우드 보관함이 아니며 삭제에 대비해 사용자가 백업해야 합니다.
 

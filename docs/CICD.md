@@ -2,6 +2,8 @@
 
 `ci.yml`은 main push와 PR을 검사한다. `deploy.yml`은 성공한 main CI 실행 번호를 받아 수동으로 **기존 ECS Fargate API 서비스만** 갱신한다. 대상은 [cloud-project-mobility/make_drive_mate](https://github.com/cloud-project-mobility/make_drive_mate)다. 소스 준비, 원격 CI 성공, AWS 권한 연결, 실제 배포 완료를 구분한다. 로컬 회귀 검사만으로 AWS 배포 성공을 주장하지 않는다.
 
+자동 실행이 등록되지 않은 경우 CI를 `gh workflow run ci.yml --repo cloud-project-mobility/make_drive_mate --ref main`으로 수동 시작할 수 있다. 수동 CI는 검증용이며 release job을 건너뛴다. CD는 계속 **성공한 main push 실행만** 허용하므로 수동 CI 실행 번호로 배포할 수 없다.
+
 ## CI 산출물
 
 - Java 17에서 Spring Maven verify 후 JAR를 보관한다.

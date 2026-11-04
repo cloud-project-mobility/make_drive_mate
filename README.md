@@ -6,7 +6,7 @@
 
 [팀 작업 분담](docs/TEAM-HANDOFF.md) · [전체 구조](docs/ARCHITECTURE.md) · [문서 수정 위치](docs/DOCUMENT-CHANGE-MAP.md) · [GitHub Actions](https://github.com/cloud-project-mobility/make_drive_mate/actions)
 
-배포 웹 로그인과 비밀번호 변경은 [계정 사용 안내](docs/ACCOUNT-ACCESS.md)를 확인하세요. 준비된 소유자 계정의 최초 비밀번호 설정은 사용자가 WSL 도우미에서 직접 입력해야 하며, 아직 완료되지 않았습니다. 일반 사용자는 웹에서 회원가입할 수 있습니다.
+배포 웹 로그인과 비밀번호 변경은 [계정 사용 안내](docs/ACCOUNT-ACCESS.md)를 확인하세요. 준비된 소유자 계정의 최초 비밀번호는 사용자가 나중에 WSL 도우미에서 직접 설정하기로 했으며, 아직 변경하지 않았습니다. 일반 사용자는 웹에서 회원가입할 수 있습니다.
 
 ## 현재 구현 상태
 
@@ -15,13 +15,14 @@
 | 영역          | 구현·검증 상태                                                                                           | 실행 조건·남은 일                                                                                                                                                 |
 | ------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 프런트엔드    | React Native / Expo / TypeScript. 차량 관리, 가치 비교, 분석 집계, 문서 검색 화면                        | 웹 검증 완료. 모바일 실기기 검증은 별도                                                                                                                           |
+| Android APK   | 내부용 APK 빌드·정적 검사 성공. 오프라인 에뮬레이터 2회 설치·프로세스 유지·랜딩 확인                     | [APK 안내](docs/ANDROID-APK.md). debug 서명. System UI ANR 경고 겹침·원인 미확정. 경고 없는 전체 흐름·실제 폰·앱 API 호출 미검증                                  |
 | Spring API    | Spring Boot 4.1.2 / Java 17 / JDBC. 로그인, 비밀번호 변경, 계정별 차량·백업, 가격·분석·문서 API          | ECS API revision 3·Nginx 정상, 기존 RDS 재사용. 공개 HTTPS 계정·Kakao API 검증 통과                                                                               |
 | 가격 모델     | 온비드 정제 2,197행 기반 Random Forest. AWS HTTPS 지원 차량·템플릿 응답 확인                             | 14,867행 새 모델은 평가 후보이며 서비스에 승격하지 않음. 모델·데이터는 공개 저장소 제외                                                                           |
 | GPT 설명      | ECS revision 3에서 가격 근거 설명 1건 실제 API 확인. 문서 RAG는 앞선 ECS 배포에서 실제 GPT 답변 8건 검증 | 가격은 ML이 계산. 단일 가격 예제는 연결 확인이며 일반 정확도 평가가 아님. [문서 평가 10건](docs/RAG-EVALUATION-20261104.md)은 자동 8/10, 추가 원문 대조 결과 별도 |
 | 문서 RAG      | 6개 문서·83개 청크. RDS pgvector 적재와 최종 ECS HTTPS 검색·권한 검증 완료                               | 공개 경로에서 출처 6개·다른 계정 403 확인. 이 검증은 `use_llm=false` 검색이며 새 LLM 품질 평가가 아님                                                             |
-| 실시간 위치   | 같은 계정 기기의 최근 위치 중계·중지, 다른 계정 격리                                                     | AWS HTTPS/WSS에서 합성 좌표로 검증. 실제 GPS·모바일 실기기 검증과 구분                                                                                            |
+| 실시간 위치   | 웹에서 같은 계정 기기의 최근 위치 중계·중지, 다른 계정 격리                                              | AWS HTTPS/WSS에서 합성 좌표로 검증. 이 동기화 화면은 웹 전용이며 Android APK에서는 미지원                                                                         |
 | 데이터 사이클 | 첫 ECS 실행 성공, S3와 공개 API 집계 일치. 새 API cycle 정제 2,187행                                     | 주간 요청·시간 단위 worker 예약 활성화. 새 후보의 모델 자동 승격 없음; 첫 정기 실행 관측은 별도                                                                   |
-| CI            | 실행 코드 `f210b8da`의 Spring·Python·웹·release 모두 성공                                                | [검증된 실행 기록](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41836029892). 후속 문서 커밋의 CI는 별도 실행에서 확인                  |
+| CI            | 커밋 `76ae3787`의 Spring·Python·웹·release 모두 성공                                                     | [검증된 실행 기록](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41839693687). 후속 문서 커밋의 CI는 별도 실행에서 확인                  |
 | AWS / CD      | Fargate 1 task·CloudFront 정상, 공개 검증·이전 EC2 정리 완료. 현재 이미지 ECR 기본 OS 검사 완료          | **CD 미활성**: GitHub OIDC 조회가 조직 SCP에 거절됨. 후속 배포 작업은 의도대로 건너뜀                                                                             |
 
 공개 clone에는 **소스·테스트·기술 문서·코드 전용 노트북**이 있습니다. API 키, 계정 DB, 원시·정제 데이터, 학습 모델, 원본 Word/PPT, 문서 본문·검색 인덱스, 데이터가 내장된 Colab 사본은 포함하지 않습니다.
@@ -189,9 +190,9 @@ DRIVEMATE_WEB_STATIC=1 npm run test:integrated -- tests/e2e/valuation.spec.ts te
 
 통합 검사는 별도 H2 메모리 DB와 Spring `18086`, 웹 `18087`을 사용합니다. ML/RAG 화면의 합성 응답 검사는 실제 모델 성능이나 유료 API 호출 검증을 의미하지 않습니다. Python 의존성과 검사는 [CI 워크플로](.github/workflows/ci.yml)에 고정되어 있습니다.
 
-실행 코드 `b00bf8e`의 원격 CI에서 `spring`, `python`, `web`, `release`가 모두 성공했습니다. 로컬 세부 검증은 Spring 57개, 프런트 98개, 위치 브라우저 12개, 컨테이너 준비 로직 11개가 통과했습니다. 실제 컨테이너의 비루트 권한·읽기 전용 루트·프록시 Origin·합성 위치 중계와 최종 AWS 공개 경로를 확인했습니다. 후속 문서 커밋의 원격 결과는 [Actions](https://github.com/cloud-project-mobility/make_drive_mate/actions)에서 별도로 확인합니다.
+커밋 `76ae3787`의 원격 CI에서 `spring`, `python`, `web`, `release`가 모두 성공했습니다. 이전 실행 코드 `b00bf8e`의 로컬 세부 검증은 Spring 57개, 프런트 98개, 위치 브라우저 12개, 컨테이너 준비 로직 11개가 통과했습니다. 실제 컨테이너의 비루트 권한·읽기 전용 루트·프록시 Origin·합성 위치 중계와 AWS 공개 경로를 확인했습니다. 후속 문서 커밋의 원격 결과는 [Actions](https://github.com/cloud-project-mobility/make_drive_mate/actions)에서 별도로 확인합니다.
 
-현재 CI는 **웹 export**, Spring JAR, 코드 전용 배포 ZIP을 만듭니다. Android/iOS 실기기 시험이나 서명된 APK/IPA 배포를 수행하지 않습니다. ECS용 CD는 성공한 main CI의 JAR·웹 산출물을 코드 전용 이미지로 만들고 ECR digest를 배포하도록 준비했습니다. **현재 GitHub OIDC 조회가 조직 SCP에 거절되어 CD 활성화는 차단된 상태**입니다. Kubernetes 설정은 렌더링만 검사했으며 실제 클러스터는 없습니다. [CI/CD 안내](docs/CICD.md)와 [AWS 실제 상태](infra/aws/DEPLOYMENT-STATUS.md)를 참고하세요.
+기본 DriveMate CI는 **웹 export**, Spring JAR, 코드 전용 배포 ZIP을 만듭니다. 별도 [Android APK 작업](docs/ANDROID-APK.md)은 debug 키로 서명한 내부용 standalone release APK를 생성·검사하며, [첫 빌드](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41839693866)가 성공했습니다. Android/iOS 실기기 시험·스토어 배포·IPA 생성은 수행하지 않았습니다. ECS용 CD는 성공한 main CI의 JAR·웹 산출물을 코드 전용 이미지로 만들고 ECR digest를 배포하도록 준비했습니다. **현재 GitHub OIDC 조회가 조직 SCP에 거절되어 CD 활성화는 차단된 상태**입니다. Kubernetes 설정은 렌더링만 검사했으며 실제 클러스터는 없습니다. [CI/CD 안내](docs/CICD.md)와 [AWS 실제 상태](infra/aws/DEPLOYMENT-STATUS.md)를 참고하세요.
 
 GitHub 장애로 지연됐던 실행 코드 업로드는 `b00bf8e`로 완료했습니다. [해당 CI 실행](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41822100409)은 2026-11-04 11:38:54 UTC에 성공했으며 `spring`, `python`, `web`, `release`가 모두 통과했습니다.
 

@@ -3,6 +3,18 @@ import { expect, test, type Page } from '@playwright/test';
 const backendUrl = process.env.DRIVEMATE_BACKEND_URL;
 test.skip(!backendUrl, 'Use npm run test:integrated with the key-free Spring backend.');
 
+async function expectNoHorizontalOverflow(page: Page) {
+  // React Native applies useWindowDimensions after the browser resize event.
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
+      ),
+    )
+    .toBeLessThanOrEqual(1);
+}
+
 // These are synthetic UI-contract fixtures, never performance or price evidence.
 const analytics = {
   schema_version: 'drivemate-cycle-v1',
@@ -115,12 +127,7 @@ test('analytics shows whole-test and supported-subset errors together and clears
   await expect(page.getByText('130만원', { exact: true })).toBeVisible();
   for (const width of [360, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
-    expect(
-      await page.evaluate(
-        () =>
-          Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
-      ),
-    ).toBeLessThanOrEqual(1);
+    await expectNoHorizontalOverflow(page);
     expect(
       (await page.getByTestId('load-onbid-analytics').boundingBox())!.height,
     ).toBeGreaterThanOrEqual(44);
@@ -186,11 +193,7 @@ test('auction analysis preserves won units and explicitly avoids paid LLM calls'
   await expect(page.getByTestId('onbid-result')).toContainText('예상 공매 낙찰가 800만원');
   await expect(page.getByTestId('onbid-result')).toContainText('합성 테스트 근거');
   await page.setViewportSize({ width: 360, height: 1000 });
-  expect(
-    await page.evaluate(
-      () => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
-    ),
-  ).toBeLessThanOrEqual(1);
+  await expectNoHorizontalOverflow(page);
 });
 
 test('malformed analytics never becomes a success dashboard', async ({ page }) => {
@@ -261,11 +264,7 @@ test('document excerpts distinguish plans from verified implementation without e
   await expect(result).toContainText('현재 코드에서 확인');
   await expect(result).not.toContainText('/private/');
   await page.setViewportSize({ width: 360, height: 1000 });
-  expect(
-    await page.evaluate(
-      () => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
-    ),
-  ).toBeLessThanOrEqual(1);
+  await expectNoHorizontalOverflow(page);
 });
 
 test('restricted document access explains the required account without displaying excerpts', async ({

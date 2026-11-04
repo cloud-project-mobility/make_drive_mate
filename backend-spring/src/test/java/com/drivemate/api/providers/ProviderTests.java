@@ -50,6 +50,46 @@ class ProviderTests {
         assertEquals("provider_not_configured", assertThrows(ProviderException.class, () -> new KakaoProvider(live, forbidden).search("서울")).code());
         assertEquals("provider_not_configured", assertThrows(ProviderException.class, () -> new HyundaiProvider(live, mapper).vehicleStatus("EV")).code());
     }
+    @Test void integrationStatusSeparatesServerKeyFromAccountConsentAndVerification() {
+        ProviderHttp forbidden = new ProviderHttp(mapper, request -> { throw new AssertionError("Status opened network"); });
+        Map<String, Object> kakao = new KakaoProvider(settings("live"), forbidden).status();
+        assertEquals("api_key", kakao.get("auth_type")); assertEquals(true, kakao.get("configured"));
+        assertEquals(false, kakao.get("requires_user_consent")); assertEquals(false, kakao.get("connected"));
+        assertEquals(false, kakao.get("live_verified")); assertEquals("ready", kakao.get("reason"));
+        assertFalse(kakao.toString().contains("synthetic-provider-key"));
+        assertEquals("disconnected", new KakaoProvider(settings("disconnected"), forbidden).status().get("reason"));
+        Map<String, Object> hyundai = new HyundaiProvider(settings("live"), mapper).status();
+        assertEquals(false, hyundai.get("configured")); assertEquals(false, hyundai.get("live_verified"));
+        assertEquals(true, hyundai.get("requires_user_consent")); assertEquals("implementation_pending", hyundai.get("reason"));
+    }
+    @Test void kakaoVerificationRequiresValidatedProductionResponseAndClearsAfterFailure() {
+        Object response = map("meta", map("total_count", 0, "pageable_count", 0, "is_end", true), "documents", List.of());
+        KakaoProvider fixtureProvider = new KakaoProvider(settings("live"), fixture(response));
+        fixtureProvider.search("서울");
+        assertEquals(false, fixtureProvider.status().get("live_verified"));
+        AtomicInteger calls = new AtomicInteger();
+        // Exercise production metadata handling with synthetic bytes, without an external API call.
+        ProviderHttp productionShape = new ProviderHttp(mapper, request -> calls.incrementAndGet() == 1
+            ? new ProviderHttp.Reply(200, mapper.writeValueAsBytes(response), null)
+            : new ProviderHttp.Reply(403, new byte[0], null)) {
+            @Override public boolean isTestTransport() { return false; }
+        };
+        KakaoProvider provider = new KakaoProvider(settings("live"), productionShape);
+        provider.search("서울");
+        assertEquals(true, provider.status().get("live_verified"));
+        Map<?, ?> capabilities = (Map<?, ?>) provider.status().get("capabilities");
+        assertNotNull(((Map<?, ?>) capabilities.get("places")).get("last_verified_at"));
+        assertEquals(false, ((Map<?, ?>) capabilities.get("routes")).get("live_verified"));
+        assertThrows(ProviderException.class, () -> provider.search("서울"));
+        assertEquals(false, provider.status().get("live_verified"));
+    }
+    @Test void kakaoConfiguredRejectsMalformedCredentialsWithoutNetwork() {
+        ProviderSettings invalid = new ProviderSettings(new AppSettings("live", 12, "http://localhost"),
+            new MockEnvironment().withProperty("DRIVEMATE_KAKAO_REST_KEY", "invalid key"));
+        ProviderHttp forbidden = new ProviderHttp(mapper, request -> { throw new AssertionError("Status opened network"); });
+        assertEquals(false, new KakaoProvider(invalid, forbidden).status().get("configured"));
+        assertEquals("not_configured", new KakaoProvider(invalid, forbidden).status().get("reason"));
+    }
     @Test void fixedKakaoEndpointAndMetricValidation() {
         Object response = map("routes", List.of(map("result_code", 0, "summary", map("distance", 1234, "duration", 567, "priority", "RECOMMEND", "origin", map("x", 126.9726, "y", 37.5547), "destination", map("x", 126.9784, "y", 37.5666)),
             "sections", List.of(map("distance", 1234, "duration", 560, "roads", List.of(map("vertexes", List.of(126.9726, 37.5547, 126.9784, 37.5666))))))));

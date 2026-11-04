@@ -289,9 +289,22 @@
                   "Action": [
                     "secretsmanager:GetSecretValue"
                   ],
-                  "Resource": {
-                    "Ref": "AppSecretArn"
-                  }
+                  "Resource": [
+                    {
+                      "Ref": "AppSecretArn"
+                    },
+                    {
+                      "Fn::If": [
+                        "HasKakao",
+                        {
+                          "Ref": "KakaoSecretArn"
+                        },
+                        {
+                          "Ref": "AWS::NoValue"
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             }
@@ -581,6 +594,16 @@
                 "Value": "true"
               },
               {
+                "Name": "DRIVEMATE_PROVIDER_MODE",
+                "Value": {
+                  "Fn::If": [
+                    "HasKakao",
+                    "live",
+                    "mock"
+                  ]
+                }
+              },
+              {
                 "Name": "DRIVEMATE_LLM_DAILY_LIMIT",
                 "Value": "20"
               },
@@ -613,6 +636,20 @@
                 "ValueFrom": {
                   "Fn::Sub": "${AppSecretArn}:DRIVEMATE_KNOWLEDGE_ALLOWED_EMAILS::"
                 }
+              },
+              {
+                "Fn::If": [
+                  "HasKakao",
+                  {
+                    "Name": "DRIVEMATE_KAKAO_REST_KEY",
+                    "ValueFrom": {
+                      "Fn::Sub": "${KakaoSecretArn}:DRIVEMATE_KAKAO_REST_KEY::"
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
               }
             ],
             "StopTimeout": 60,
@@ -1222,6 +1259,12 @@
       "Type": "String",
       "AllowedPattern": "arn:aws:secretsmanager:.*"
     },
+    "KakaoSecretArn": {
+      "Type": "String",
+      "Default": "",
+      "AllowedPattern": "(?:|arn:aws:secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:[A-Za-z0-9/_+=.@-]+)",
+      "Description": "Optional existing secret ARN containing DRIVEMATE_KAKAO_REST_KEY; empty keeps provider mock mode."
+    },
     "RefreshQueueUrl": {
       "Type": "String",
       "AllowedPattern": "https://sqs\\.[a-z0-9-]+\\.amazonaws\\.com/[0-9]{12}/[a-zA-Z0-9_-]+"
@@ -1229,6 +1272,20 @@
     "RefreshQueueArn": {
       "Type": "String",
       "AllowedPattern": "arn:aws:sqs:.*"
+    }
+  },
+  "Conditions": {
+    "HasKakao": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "KakaoSecretArn"
+            },
+            ""
+          ]
+        }
+      ]
     }
   },
   "Outputs": {

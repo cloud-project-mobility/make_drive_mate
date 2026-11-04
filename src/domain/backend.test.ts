@@ -41,6 +41,42 @@ test('API requests carry a memory bearer, omit cookies, reject redirects, and en
   assert.equal(calls[0].options?.redirect, 'error');
 });
 
+test('password change sends only the authenticated password fields and requires reauthentication confirmation', async () => {
+  const fetcher: typeof fetch = async (input, options) => {
+    assert.equal(String(input), 'https://service.example.test/api/v1/auth/password');
+    assert.equal(options?.method, 'POST');
+    assert.equal(new Headers(options?.headers).get('Authorization'), 'Bearer synthetic-token');
+    assert.deepEqual(JSON.parse(String(options?.body)), {
+      current_password: ' synthetic-current ', new_password: 'synthetic-new-password',
+    });
+    return new Response(JSON.stringify({ ok: true, reauthentication_required: true }));
+  };
+  const result = await new BackendClient('https://service.example.test', 'synthetic-token', fetcher)
+    .changePassword(' synthetic-current ', 'synthetic-new-password');
+  assert.deepEqual(result, { ok: true, reauthentication_required: true });
+  for (const body of [{ ok: true }, { ok: true, reauthentication_required: false }]) {
+    const invalid: typeof fetch = async () => new Response(JSON.stringify(body));
+    await assert.rejects(
+      new BackendClient('https://service.example.test', 'synthetic-token', invalid)
+        .changePassword('synthetic-current', 'synthetic-new-password'),
+      (error: unknown) => error instanceof BackendError && error.code === 'invalid_response'
+        && !error.message.includes('변경하지 않았어요'),
+    );
+  }
+});
+
+test('wrong current password does not invalidate a valid login session', async () => {
+  let invalidated = false;
+  const fetcher: typeof fetch = async () => new Response(JSON.stringify({
+    error: { code: 'invalid_current_password', message: '현재 비밀번호를 확인해 주세요.' },
+  }), { status: 400 });
+  const client = new BackendClient('https://service.example.test', 'synthetic-token', fetcher,
+    () => { invalidated = true; });
+  await assert.rejects(client.changePassword('synthetic-current', 'synthetic-new-password'),
+    (error: unknown) => error instanceof BackendError && error.code === 'invalid_current_password');
+  assert.equal(invalidated, false);
+});
+
 test('snapshot conflicts preserve error status and message for a fresh review', async () => {
   const fetcher: typeof fetch = async () =>
     new Response(
@@ -57,6 +93,41 @@ test('snapshot conflicts preserve error status and message for a fresh review', 
       error.code === 'revision_conflict' &&
       error.message === '다른 기기에서 먼저 저장했어요.',
   );
+});
+
+test('integration status accepts legacy servers and validates service-key capability metadata', async () => {
+  const base = { mode: 'live', configured: false, connected: false, live_verified: false };
+  const legacy = { provider_mode: 'live', providers: {
+    kakao: { ...base }, google_calendar: { ...base }, hyundai: { ...base },
+  } };
+  const current = structuredClone(legacy);
+  Object.assign(current.providers.kakao, {
+    configured: true, live_verified: true, auth_type: 'api_key', requires_user_consent: false,
+    reason: 'verified', capabilities: {
+      places: { configured: true, live_verified: true, last_verified_at: '2026-11-04T12:00:00Z' },
+      routes: { configured: true, live_verified: false, last_verified_at: null },
+    },
+  });
+  Object.assign(current.providers.hyundai, { reason: 'implementation_pending' });
+  for (const body of [legacy, current]) {
+    const fetcher: typeof fetch = async () => new Response(JSON.stringify(body));
+    assert.deepEqual(await new BackendClient('https://service.example.test', 'synthetic-token', fetcher)
+      .integrations(), body);
+  }
+  for (const extra of [
+    { requires_user_consent: 'false' },
+    { capabilities: { places: {}, routes: {} } },
+    { capabilities: {
+      places: { configured: true, live_verified: true, last_verified_at: 'not-a-date' },
+      routes: { configured: true, live_verified: false, last_verified_at: null },
+    } },
+  ]) {
+    const body = structuredClone(legacy);
+    Object.assign(body.providers.kakao, extra);
+    const fetcher: typeof fetch = async () => new Response(JSON.stringify(body));
+    await assert.rejects(new BackendClient('https://service.example.test', 'synthetic-token', fetcher)
+      .integrations(), (error: unknown) => error instanceof BackendError && error.code === 'invalid_response');
+  }
 });
 
 test('provider reauthorization preserves the local account session while local authentication failure clears it', async () => {

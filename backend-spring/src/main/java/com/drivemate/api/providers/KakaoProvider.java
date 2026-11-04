@@ -12,14 +12,38 @@ import org.springframework.stereotype.Service;
 public class KakaoProvider {
     private final ProviderSettings settings;
     private final ProviderHttp http;
+    private volatile String placesVerifiedAt;
+    private volatile String routesVerifiedAt;
     static final List<Map<String, Object>> PLACES = List.of(
         map("id", "mock-seoul-station", "name", "서울역", "address", "서울 중구 한강대로 405", "longitude", 126.9726, "latitude", 37.5547),
         map("id", "mock-seoul-city-hall", "name", "서울시청", "address", "서울 중구 세종대로 110", "longitude", 126.9784, "latitude", 37.5666),
         map("id", "mock-gangnam-station", "name", "강남역", "address", "서울 강남구 강남대로 396", "longitude", 127.0276, "latitude", 37.4979));
     public KakaoProvider(ProviderSettings settings, ProviderHttp http) { this.settings = settings; this.http = http; }
     private Map<String, Object> meta() { return metadata("kakao", settings.mode(), http.isTestTransport()); }
+    private boolean configured(String key) {
+        if (!settings.mode().equals("live")) return false;
+        try { secret(key, 16384); return true; }
+        catch (IllegalArgumentException error) { return false; }
+    }
+    public Map<String, Object> status() {
+        boolean places = configured(settings.kakaoRestKey()), routes = configured(settings.kakaoMobilityKey());
+        boolean verified = places && placesVerifiedAt != null || routes && routesVerifiedAt != null;
+        String reason = !settings.mode().equals("live") ? settings.mode() : !places ? "not_configured" : verified ? "verified" : "ready";
+        return map("mode", settings.mode(), "source", settings.mode().equals("mock") ? "mock" : "live", "configured", places, "connected", false, "live_verified", verified,
+            "auth_type", "api_key", "requires_user_consent", false, "reason", reason,
+            "capabilities", map("places", map("configured", places, "live_verified", places && placesVerifiedAt != null, "last_verified_at", placesVerifiedAt),
+                "routes", map("configured", routes, "live_verified", routes && routesVerifiedAt != null, "last_verified_at", routesVerifiedAt)),
+            "notice", "카카오는 서버 API 키로 검색·길찾기를 호출하며 개인 계정 연결은 필요하지 않습니다. 검증 시각은 현재 서버 실행 중 마지막 성공을 뜻합니다.");
+    }
     public Map<String, Object> search(String query) { return local(query, 1, 15, false); }
     public Map<String, Object> local(String query, int page, int size, boolean geocode) {
+        try {
+            Map<String, Object> result = localResponse(query, page, size, geocode);
+            if (settings.mode().equals("live") && !http.isTestTransport()) placesVerifiedAt = now();
+            return result;
+        } catch (ProviderException error) { placesVerifiedAt = null; throw error; }
+    }
+    private Map<String, Object> localResponse(String query, int page, int size, boolean geocode) {
         if (query == null || query.isBlank() || query.length() > 200 || page < 1 || page > 45 || size < 1 || size > (geocode ? 30 : 15)) throw new IllegalArgumentException("Invalid place search");
         query = query.trim(); String key = credential(settings.mode(), settings.kakaoRestKey());
         if (settings.mode().equals("mock")) {
@@ -51,6 +75,13 @@ public class KakaoProvider {
     }
     static Map<String, Object> providerPoint(JsonNode node) { return coordinate(number(node.get("x"), true), number(node.get("y"), true)); }
     public Map<String, Object> route(Map<String, Object> origin, Map<String, Object> destination) {
+        try {
+            Map<String, Object> result = routeResponse(origin, destination);
+            if (settings.mode().equals("live") && !http.isTestTransport()) routesVerifiedAt = now();
+            return result;
+        } catch (ProviderException error) { routesVerifiedAt = null; throw error; }
+    }
+    private Map<String, Object> routeResponse(Map<String, Object> origin, Map<String, Object> destination) {
         String key = credential(settings.mode(), settings.kakaoMobilityKey());
         if (settings.mode().equals("mock")) return mockRoute(origin, destination);
         JsonNode data = http.get("https://apis-navi.kakaomobility.com/v1/directions", Map.of(

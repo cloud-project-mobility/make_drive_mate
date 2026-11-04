@@ -133,8 +133,12 @@ def service():
         "RagPointerKey": {"Type": "String", "AllowedPattern": "(?:releases/[a-zA-Z0-9._/-]+|data/rag/pointers/[a-f0-9]{64}\\.json)"},
         "RagPointerSha256": {"Type": "String", "AllowedPattern": "[a-f0-9]{64}"},
         "AppSecretArn": {"Type": "String", "AllowedPattern": "arn:aws:secretsmanager:.*"},
+        "KakaoSecretArn": {"Type": "String", "Default": "",
+            "AllowedPattern": "(?:|arn:aws:secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:[A-Za-z0-9/_+=.@-]+)",
+            "Description": "Optional existing secret ARN containing DRIVEMATE_KAKAO_REST_KEY; empty keeps provider mock mode."},
         "RefreshQueueUrl": {"Type": "String", "AllowedPattern": "https://sqs\\.[a-z0-9-]+\\.amazonaws\\.com/[0-9]{12}/[a-zA-Z0-9_-]+"},
         "RefreshQueueArn": {"Type": "String", "AllowedPattern": "arn:aws:sqs:.*"}}
+    data["Conditions"] = {"HasKakao": {"Fn::Not": [{"Fn::Equals": [ref("KakaoSecretArn"), ""]}]}}
     resources = data["Resources"]
     for label, zone in [("A", 0), ("B", 1)]:
         resources["TaskSubnet" + label] = resource("EC2::Subnet", {
@@ -165,7 +169,8 @@ def service():
         statement(["ecr:GetAuthorizationToken"], "*"),
         statement(["ecr:BatchCheckLayerAvailability", "ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer"], ref("RepositoryArn")),
         statement(["logs:CreateLogStream", "logs:PutLogEvents"], logs_arn),
-        statement(["secretsmanager:GetSecretValue"], ref("AppSecretArn"))]
+        statement(["secretsmanager:GetSecretValue"], [ref("AppSecretArn"),
+            {"Fn::If": ["HasKakao", ref("KakaoSecretArn"), ref("AWS::NoValue")]}])]
     resources["ExecutionRole"] = role(execution_statements, "ECS injects selected application secret keys and pulls the immutable image")
     release_arn = sub("arn:${AWS::Partition}:s3:::${DataBucket}/${ReleaseKey}")
     resources["ApiTaskRole"] = role([statement(["s3:GetObject"], [
@@ -186,8 +191,12 @@ def service():
     api = container("api", {**shared_env, "DRIVEMATE_RAG_POINTER_KEY": ref("RagPointerKey"),
         "DRIVEMATE_RAG_POINTER_SHA256": ref("RagPointerSha256"), "DRIVEMATE_DB_HOST": ref("DbHost"),
         "DRIVEMATE_ANALYTICS_LATEST_KEY": "data/cycles/latest.json", "DRIVEMATE_ALLOW_LLM": "true",
+        "DRIVEMATE_PROVIDER_MODE": {"Fn::If": ["HasKakao", "live", "mock"]},
         "DRIVEMATE_LLM_DAILY_LIMIT": "20", "SPRING_SQL_INIT_MODE": "never"},
         [secret(name) for name in ["DRIVEMATE_DB_PASSWORD", "OPENAI_API_KEY", "OPENAI_MODEL", "DRIVEMATE_KNOWLEDGE_ALLOWED_EMAILS"]])
+    api["Secrets"].append({"Fn::If": ["HasKakao", {
+        "Name": "DRIVEMATE_KAKAO_REST_KEY", "ValueFrom": sub("${KakaoSecretArn}:DRIVEMATE_KAKAO_REST_KEY::")},
+        ref("AWS::NoValue")]})
     api["HealthCheck"] = {"Command": ["CMD", "/opt/drivemate/venv/bin/python", "/opt/drivemate/container/healthcheck.py", "api"],
                           "Interval": 15, "Timeout": 5, "Retries": 3, "StartPeriod": 120}
     api["MountPoints"] = [{"SourceVolume": "runtime", "ContainerPath": "/opt/drivemate/runtime"},

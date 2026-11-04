@@ -27,9 +27,9 @@ public class ProviderController {
         String uid = (String) auth.require(request).get("id"), mode = settings.mode();
         Map<String, Object> googleStatus = map("mode", mode); googleStatus.putAll(google.status(uid));
         return map("provider_mode", mode, "providers", map(
-            "kakao", map("mode", mode, "source", mode.equals("mock") ? "mock" : "live", "configured", !settings.kakaoRestKey().isEmpty(), "connected", false, "live_verified", false),
-            "google_calendar", googleStatus, "hyundai", map("mode", mode, "configured", false, "connected", false, "live_verified", false)),
-            "notice", "예시 모드는 외부 API 연결이나 실제 계정 인증을 뜻하지 않습니다.");
+            "kakao", kakao.status(), "google_calendar", googleStatus, "hyundai", hyundai.status()),
+            "notice", mode.equals("mock") ? "예시 모드는 외부 API 연결이나 실제 계정 인증을 뜻하지 않습니다."
+                : "서버 설정, 사용자 동의와 실제 조회 성공은 각각 확인합니다. Google 캘린더 연결은 DriveMate 로그인이 아닙니다.");
     }
     @PostMapping("/integrations/google/authorize") public Map<String, Object> authorize(HttpServletRequest request) {
         return google.authorize((String) auth.requireProvider(request).get("id"));

@@ -15,6 +15,12 @@ public class HyundaiProvider {
     private final ProviderSettings settings;
     private final ObjectMapper mapper;
     public HyundaiProvider(ProviderSettings settings, ObjectMapper mapper) { this.settings = settings; this.mapper = mapper; }
+    public Map<String, Object> status() {
+        return map("mode", settings.mode(), "configured", false, "connected", false, "live_verified", false,
+            "auth_type", "oauth_vehicle_consent", "requires_user_consent", true,
+            "reason", settings.mode().equals("live") ? "implementation_pending" : settings.mode(),
+            "notice", "현대 실차 연결은 아직 제공하지 않습니다. 개발 차량 활성화, 차량별 접근 동의와 개인정보 제3자 제공 동의 후 연동 구현·검증이 필요합니다.");
+    }
     public static Map<String, Object> normalizeOdometer(JsonNode payload, Instant receivedAt) {
         try {
             if (payload == null || !payload.isObject()) throw new IllegalArgumentException();

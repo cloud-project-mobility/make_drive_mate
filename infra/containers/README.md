@@ -41,6 +41,10 @@ docker build --tag drivemate-runtime:reviewed /tmp/drivemate-code-context-NEW
 
 ECS `secrets`로 API 컨테이너에만 주입하는 기존 Secret JSON 필드는 `DRIVEMATE_DB_PASSWORD`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `DRIVEMATE_KNOWLEDGE_ALLOWED_EMAILS`다. 구성된 외부 공급자의 기존 환경변수는 그대로 전달한다. Kakao 서버 필드는 `DRIVEMATE_KAKAO_REST_KEY`, `DRIVEMATE_KAKAO_MOBILITY_KEY`다. Nginx에는 secret을 주입하지 않는다.
 
+`infra/aws/ecs-service.json`의 선택 매개변수 `KakaoSecretArn`은 기본값이 빈 문자열이다. 비어 있으면 `DRIVEMATE_PROVIDER_MODE=mock`이며 카카오 키를 주입하지 않는다. 기존 Secrets Manager secret의 ARN을 배포 매개변수로 지정하면 `live`로 전환하고 그 secret의 `DRIVEMATE_KAKAO_REST_KEY` JSON 필드만 API에 주입한다. 실제 ARN·키는 공개 소스에 기록하지 않는다. 이 설정은 REST 키만 연결하며 별도 Mobility 키, Google·현대 계정 동의 또는 실제 호출 성공을 대신하지 않는다.
+
+ECS execution role의 `GetSecretValue` 리소스에는 지정한 카카오 secret ARN만 조건부로 추가한다. API task role에 secret 조회 권한을 주지 않으며 Nginx와 cycle의 secret 목록은 바뀌지 않는다. 키를 회전하면 실행 중인 컨테이너가 자동 갱신되지 않으므로 새 task 배포가 필요하다. JSON 필드 주입과 갱신 방식은 [AWS ECS 공식 문서](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/secrets-envvar-secrets-manager.html)를 따른다.
+
 DB 사용자는 `drivemate_app`으로 고정하고 TLS `verify-full`을 사용한다. 런처가 `SPRING_SQL_INIT_MODE=never`를 지정한다. DB master secret, 소유자 초기 비밀번호, bootstrap token을 일반 task에 전달하지 않는다. master/owner/bootstrap 변수가 발견되면 시작을 거절한다. 기존 bootstrap이 만든 `drivemate_app`은 현재 테이블 소유자이므로 DB 역할 자체를 DML 전용으로 낮춘 상태는 아니다. IAM execution role의 JSON key 주입과 task role의 AWS API 권한을 구분한다. task role에는 release·pointer·latest 집계 객체 읽기와 `s3:prefix=data/cycles/latest.json`에만 허용한 `ListBucket`이 필요하다. exact key가 아직 없으면 GET하지 않고 기존 보고서를 유지한다. secret이 회전하면 task를 교체해야 한다.
 
 런타임은 ZIP 전체 SHA256을 검증한 다음 데이터 중 모델과 집계만 선택해 추출한다. ZIP에 들어 있는 JAR·Python·웹 코드로 이미지 코드를 덮어쓰지 않는다. API에는 원시 온비드 자료와 RAG 준비 색인을 추출하지 않는다. RAG 포인터는 엄격히 메타데이터 필드만 허용하며 실제 pgvector 검색은 RDS를 읽는다. 포인터의 `index_relative_path`가 가리키는 별도 S3 객체 권한은 필요하지 않다.

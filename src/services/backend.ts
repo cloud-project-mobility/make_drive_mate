@@ -67,6 +67,14 @@ export interface IntegrationStatus {
       configured: boolean;
       connected: boolean;
       live_verified: boolean;
+      auth_type?: string;
+      requires_user_consent?: boolean;
+      reason?: string;
+      capabilities?: Record<'places' | 'routes', {
+        configured: boolean;
+        live_verified: boolean;
+        last_verified_at: string | null;
+      }>;
     }
   >;
 }
@@ -296,6 +304,19 @@ export class BackendClient {
   logout() {
     return this.request<void>('/auth/logout', { method: 'POST' });
   }
+  async changePassword(currentPassword: string, newPassword: string) {
+    const value = await this.request<unknown>('/auth/password', {
+      method: 'POST',
+      body: { current_password: currentPassword, new_password: newPassword },
+    });
+    if (!object(value) || value.ok !== true || value.reauthentication_required !== true)
+      throw new BackendError(
+        '비밀번호 변경 결과를 확인하지 못했어요. 다시 로그인해 계정 상태를 확인해 주세요.',
+        502,
+        'invalid_response',
+      );
+    return { ok: true, reauthentication_required: true } as const;
+  }
   snapshot() {
     return this.validated('/state', validSnapshot);
   }
@@ -386,7 +407,17 @@ export class BackendClient {
             ['mock', 'live', 'disconnected'].includes(String(provider.mode)) &&
             typeof provider.configured === 'boolean' &&
             typeof provider.connected === 'boolean' &&
-            typeof provider.live_verified === 'boolean'
+            typeof provider.live_verified === 'boolean' &&
+            (provider.auth_type === undefined || text(provider.auth_type, 80)) &&
+            (provider.requires_user_consent === undefined || typeof provider.requires_user_consent === 'boolean') &&
+            (provider.reason === undefined || text(provider.reason, 80)) &&
+            (provider.capabilities === undefined || (object(provider.capabilities) &&
+              ['places', 'routes'].every((capability) => {
+                const value = (provider.capabilities as ObjectData)[capability];
+                return object(value) && typeof value.configured === 'boolean'
+                  && typeof value.live_verified === 'boolean'
+                  && (value.last_verified_at === null || instant(value.last_verified_at));
+              })))
           );
         }),
     );

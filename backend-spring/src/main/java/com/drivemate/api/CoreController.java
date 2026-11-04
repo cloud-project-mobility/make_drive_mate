@@ -65,6 +65,23 @@ public class CoreController {
     @GetMapping("/auth/me")
     public Map<String, Object> me(HttpServletRequest request) { return auth.require(request); }
 
+    @PostMapping("/auth/password")
+    public Map<String, Boolean> changePassword(@RequestBody JsonNode body, HttpServletRequest request) {
+        String userId = (String) auth.require(request).get("id");
+        store.rateLimit("password-ip:" + Store.digest(request.getRemoteAddr()), 30, 60);
+        store.rateLimit("password-user:" + userId, 5, 900);
+        SnapshotValidator.fields(body, Set.of("current_password", "new_password"), Set.of());
+        String currentPassword = SnapshotValidator.text(body, "current_password", 128);
+        String newPassword = SnapshotValidator.text(body, "new_password", 128);
+        if (currentPassword.length() < 10 || newPassword.length() < 10) throw ApiException.invalid();
+        if (currentPassword.equals(newPassword)) {
+            throw new ApiException("password_unchanged", "현재 비밀번호와 다른 새 비밀번호를 입력해 주세요.", 400);
+        }
+        store.changePassword(userId, currentPassword, newPassword);
+        for (SessionDisconnect disconnector : sessionDisconnectors) disconnector.disconnectAccountSessions(userId);
+        return Map.of("ok", true, "reauthentication_required", true);
+    }
+
     @PostMapping("/auth/logout")
     public Map<String, Boolean> logout(HttpServletRequest request) {
         String token = auth.token(request);

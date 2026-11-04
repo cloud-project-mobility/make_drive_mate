@@ -81,16 +81,36 @@ public class Store {
     }
 
     public Map<String, Object> login(String email, String password) {
-        List<Map<String, Object>> rows = jdbc.queryForList("SELECT * FROM accounts WHERE email = ?", email);
-        Map<String, Object> row = rows.isEmpty() ? null : rows.get(0);
-        String salt = row == null ? "00".repeat(16) : (String) row.get("salt");
-        String expected = row == null ? "00".repeat(32) : (String) row.get("password_hash");
+        return transactions.execute(status -> {
+            // Serialize password verification/session creation with password rotation.
+            List<Map<String, Object>> rows = jdbc.queryForList("SELECT * FROM accounts WHERE email = ? FOR UPDATE", email);
+            Map<String, Object> row = rows.isEmpty() ? null : rows.get(0);
+            String salt = row == null ? "00".repeat(16) : (String) row.get("salt");
+            String expected = row == null ? "00".repeat(32) : (String) row.get("password_hash");
+            if (!passwordMatches(password, salt, expected) || row == null) {
+                throw new ApiException("invalid_credentials", "이메일 또는 비밀번호를 확인해 주세요.", 401);
+            }
+            return newSession(Map.of("id", row.get("id"), "email", row.get("email")));
+        });
+    }
+
+    private static boolean passwordMatches(String password, String salt, String expected) {
         String actual = passwordHash(password, salt);
-        boolean matches = MessageDigest.isEqual(actual.getBytes(StandardCharsets.US_ASCII), expected.getBytes(StandardCharsets.US_ASCII));
-        if (!matches || row == null) {
-            throw new ApiException("invalid_credentials", "이메일 또는 비밀번호를 확인해 주세요.", 401);
-        }
-        return transactions.execute(status -> newSession(Map.of("id", row.get("id"), "email", row.get("email"))));
+        return MessageDigest.isEqual(actual.getBytes(StandardCharsets.US_ASCII), expected.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    public void changePassword(String userId, String currentPassword, String newPassword) {
+        transactions.executeWithoutResult(status -> {
+            List<Map<String, Object>> rows = jdbc.queryForList("SELECT salt,password_hash FROM accounts WHERE id=? FOR UPDATE", userId);
+            if (rows.isEmpty()) throw new ApiException("unauthorized", "다시 로그인해 주세요.", 401);
+            Map<String, Object> row = rows.get(0);
+            if (!passwordMatches(currentPassword, (String) row.get("salt"), (String) row.get("password_hash"))) {
+                throw new ApiException("invalid_current_password", "현재 비밀번호를 확인해 주세요.", 400);
+            }
+            String salt = random(16);
+            jdbc.update("UPDATE accounts SET salt=?,password_hash=? WHERE id=?", salt, passwordHash(newPassword, salt), userId);
+            jdbc.update("DELETE FROM sessions WHERE user_id=?", userId);
+        });
     }
 
     private Map<String, Object> newSession(Map<String, Object> user) {

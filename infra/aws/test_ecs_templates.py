@@ -58,9 +58,33 @@ class EcsTemplatesTests(unittest.TestCase):
         self.assertEqual(len(listing), 1)
         self.assertEqual(listing[0]["Condition"], {"StringEquals": {"s3:prefix": "data/cycles/latest.json"}})
         api = self.resources["ApiTask"]["Properties"]["ContainerDefinitions"][0]
-        self.assertEqual({item["Name"] for item in api["Secrets"]}, {
+        required_secrets = [item for item in api["Secrets"] if "Name" in item]
+        self.assertEqual({item["Name"] for item in required_secrets}, {
             "DRIVEMATE_DB_PASSWORD", "OPENAI_API_KEY", "OPENAI_MODEL", "DRIVEMATE_KNOWLEDGE_ALLOWED_EMAILS"})
-        self.assertTrue(all(item["ValueFrom"]["Fn::Sub"].endswith("::") for item in api["Secrets"]))
+        self.assertTrue(all(item["ValueFrom"]["Fn::Sub"].endswith("::") for item in required_secrets))
+
+    def test_optional_kakao_secret_is_scoped_and_never_injected_when_absent(self):
+        parameter = self.service["Parameters"]["KakaoSecretArn"]
+        self.assertEqual(parameter["Default"], "")
+        pattern = parameter["AllowedPattern"]
+        valid_arn = "arn:aws:secretsmanager:ap-southeast-2:111122223333:secret:example/kakao-AbCd12"
+        for value in ("", valid_arn):
+            self.assertIsNotNone(re.fullmatch(pattern, value))
+        for value in ("*", valid_arn + ":DRIVEMATE_KAKAO_REST_KEY::", valid_arn + "*"):
+            self.assertIsNone(re.fullmatch(pattern, value))
+        self.assertEqual(self.service["Conditions"]["HasKakao"], {
+            "Fn::Not": [{"Fn::Equals": [{"Ref": "KakaoSecretArn"}, ""]}]})
+        api = self.resources["ApiTask"]["Properties"]["ContainerDefinitions"][0]
+        mode = next(item["Value"] for item in api["Environment"] if item["Name"] == "DRIVEMATE_PROVIDER_MODE")
+        self.assertEqual(mode, {"Fn::If": ["HasKakao", "live", "mock"]})
+        optional = [item for item in api["Secrets"] if "Fn::If" in item]
+        self.assertEqual(optional, [{"Fn::If": ["HasKakao", {
+            "Name": "DRIVEMATE_KAKAO_REST_KEY",
+            "ValueFrom": {"Fn::Sub": "${KakaoSecretArn}:DRIVEMATE_KAKAO_REST_KEY::"}}, {"Ref": "AWS::NoValue"}]}])
+        statements = self.resources["ExecutionRole"]["Properties"]["Policies"][0]["PolicyDocument"]["Statement"]
+        secret_permissions = [item for item in statements if "secretsmanager:GetSecretValue" in item["Action"]]
+        self.assertEqual(secret_permissions, [{"Effect": "Allow", "Action": ["secretsmanager:GetSecretValue"],
+            "Resource": [{"Ref": "AppSecretArn"}, {"Fn::If": ["HasKakao", {"Ref": "KakaoSecretArn"}, {"Ref": "AWS::NoValue"}]}]}])
 
     def test_proxy_has_no_secrets_and_waits_for_api_health(self):
         api, nginx = self.resources["ApiTask"]["Properties"]["ContainerDefinitions"]

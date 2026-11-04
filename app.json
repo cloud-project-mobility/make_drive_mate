@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "DriveMate",
+    "slug": "drivemate-fe-test",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cloudprojectmobility.drivemate"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#11695F",
+        "foregroundImage": "./assets/icon.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.cloudprojectmobility.drivemate"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "주행을 직접 시작했을 때, 앱이 열려 있는 동안 주행거리를 측정합니다."
+        }
+      ],
+      "expo-notifications"
+    ],
+    "scheme": "drivemate"
+  }
+}

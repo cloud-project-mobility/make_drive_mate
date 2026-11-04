@@ -1,0 +1,53 @@
+{
+  "evidence": [
+    {
+      "name": "backend-settings-360",
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "overflow": 0,
+      "violations": []
+    },
+    {
+      "name": "backend-settings-desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "overflow": 0,
+      "violations": []
+    },
+    {
+      "name": "backend-plan-360",
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "overflow": 0,
+      "violations": []
+    },
+    {
+      "name": "backend-route-360",
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "overflow": 0,
+      "violations": []
+    },
+    {
+      "name": "backend-route-desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "overflow": 0,
+      "violations": []
+    }
+  ],
+  "runtime": [],
+  "checkedAt": "2026-10-28",
+  "dataSource": "Synthetic local account and mock provider responses only; no external provider requests or real API keys.",
+  "visualInspection": "Inspected five screenshots; rechecked saved route after wrapping source badge. Korean labels and primary controls are visible at360px and1440px, with no clipped source badge and no horizontal overflow."
+}

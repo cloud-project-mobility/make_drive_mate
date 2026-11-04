@@ -1,0 +1,30 @@
+{
+  "status": "local_verification_complete",
+  "baseline_commit": "8caa18babea4c3131fef5c124c07ffd1e6c9cc22",
+  "baseline_worktree": "clean",
+  "branch": "fix/requirement-robustness",
+  "constraints": ["no real API keys", "no live provider calls", "no device verification claims"],
+  "scope_frozen_by_user": true,
+  "verification": {
+    "backend_tests_per_python": 230,
+    "python_versions": ["3.11", "3.13", "3.14"],
+    "coverage_python_311": 94.01,
+    "coverage_python_314": 93.92,
+    "frontend_tests": 61,
+    "browser_tests_development": 48,
+    "browser_tests_exported_web": 48,
+    "exported_web_seconds": 38.8,
+    "browser_skipped": 0,
+    "real_http_restart_checks": 5,
+    "export_platforms": ["web", "android", "ios"],
+    "new_dst_screen_axe_violations": 0,
+    "independent_review_blockers": 0
+  },
+  "integration_status_source": "The GitHub pull request and its exact-head CI checks are authoritative for merge status.",
+  "unresolved": [
+    "Real provider and device validation are separate work",
+    "OAuth refresh serialization supports one server process",
+    "Previously documented development dependency advisories remain"
+  ],
+  "resume": "Read summary.md, decisions.md, and final docs/VALIDATION.md. Preserve the verified scope; reproduce new failures before making further changes."
+}

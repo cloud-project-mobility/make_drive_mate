@@ -1,0 +1,64 @@
+{
+  "name": "drivemate",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "dependencies": {
+    "@expo/vector-icons": "^15.0.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "decode-uri-component": "file:./vendor/decode-uri-component",
+    "expo": "~57.0.31",
+    "expo-constants": "~57.0.22",
+    "expo-font": "~57.0.4",
+    "expo-linking": "~57.0.13",
+    "expo-location": "~57.0.22",
+    "expo-notifications": "~57.0.24",
+    "expo-router": "~57.0.29",
+    "expo-status-bar": "~57.0.1",
+    "expo-system-ui": "~57.0.4",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.2",
+    "react-native-worklets": "0.10.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.5",
+    "@types/react": "~19.2.2",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.2",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/domain/*.test.ts",
+    "test:e2e": "playwright test",
+    "test:integrated": "node scripts/test-integrated.cjs",
+    "backend": "cd backend-spring && java -jar target/drivemate-api-0.2.0.jar",
+    "build:backend": "backend-spring/mvnw -f pom.xml -DskipTests package",
+    "check:backend": "backend-spring/mvnw -f pom.xml test",
+    "lint": "eslint .",
+    "export:web": "expo export --platform web",
+    "check": "npm run typecheck && npm run lint && npm test",
+    "test:a11y": "node scripts/audit-accessibility.cjs",
+    "format:check": "prettier --check src tests scripts *.json *.ts *.js README.md AGENTS.md docs/*.md"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "overrides": {
+    "decode-uri-component": "$decode-uri-component"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "decode-uri-component",
+  "version": "0.5.1+drivemate.cjs.1",
+  "description": "CommonJS compatibility adaptation of the upstream 0.5.1 decoder",
+  "main": "index.cjs",
+  "license": "MIT",
+  "private": true,
+  "sideEffects": false,
+  "files": [
+    "index.cjs",
+    "license",
+    "README.md"
+  ],
+  "repository": "https://github.com/SamVerschueren/decode-uri-component"
+}

@@ -1,0 +1,10 @@
+# Python 3.12 analysis and inference environment; independent of the FastAPI server.
+numpy==2.2.6
+pandas==2.2.3
+scikit-learn==1.6.1
+joblib==1.4.2
+scipy==1.15.3
+threadpoolctl==3.6.0
+python-dateutil==2.9.0.post0
+pytz==2026.6
+tzdata==2026.6

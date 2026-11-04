@@ -1,0 +1,58 @@
+name: Legacy FastAPI quality (manual)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python: ['3.11', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - run: uv sync --locked
+        working-directory: backend
+      - run: uv run --no-env-file ruff check . && uv run --no-env-file ruff format --check .
+        working-directory: backend
+      - run: uv run --no-env-file pytest --cov=app --cov-branch --cov-report=term-missing --cov-fail-under=90
+        working-directory: backend
+      - run: uv run --no-env-file python scripts/verify_restart.py
+        working-directory: backend
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.13'
+          enable-cache: true
+      - run: uv sync --locked
+        working-directory: backend
+      - run: npm run check
+      - name: Record dependency advisory report
+        run: npm audit --json > dependency-audit.json
+        continue-on-error: true
+      - run: npx expo install --check
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:integrated
+      - run: npx expo export --platform all
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-test-report
+          path: |
+            playwright-report/
+            dependency-audit.json
+          retention-days: 7

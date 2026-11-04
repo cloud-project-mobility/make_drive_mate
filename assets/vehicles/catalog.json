@@ -1,0 +1,182 @@
+[
+  {
+    "id": "avante-cn7-pe",
+    "manufacturer": "현대",
+    "model": "아반떼",
+    "generation": "CN7 부분변경",
+    "yearFrom": 2023,
+    "yearTo": 2023,
+    "powertrains": [
+      "ICE"
+    ],
+    "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Hyundai_Avante_Inspiration_CN7_PE_Cyber_Gray_Metallic_(front).jpg",
+    "imageAuthor": "Damian B Oh; 기존 크롭 Alex Neman",
+    "imageLicense": "CC BY-SA 4.0",
+    "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "representative": true,
+    "note": "2023년 촬영 CN7 페이스리프트 인스퍼레이션 사양. 앱의 2023년 차량이 페이스리프트 이전 모델이거나 다른 트림이면 외관이 다를 수 있습니다. 초기 지원 연식은 예시 차량 기준이며 판매 기간 전체가 아닙니다. AI 도구로 배경을 제거한 차종 참고 이미지입니다.",
+    "imageObjectKey": "data/vehicle-catalog/avante-cn7-pe.png"
+  },
+  {
+    "id": "k5-dl3-pe",
+    "manufacturer": "기아",
+    "model": "K5",
+    "generation": "DL3 부분변경 하이브리드",
+    "yearFrom": 2024,
+    "yearTo": 2024,
+    "powertrains": [
+      "HYB"
+    ],
+    "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Kia_K5_Hybrid_DL3_HEV_PE_Aurora_Black_Pearl_(5).jpg",
+    "imageAuthor": "Damian B Oh",
+    "imageLicense": "CC BY 4.0",
+    "imageLicenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "representative": true,
+    "note": "DL3 HEV 페이스리프트 2.0 노블레스 사양. 2023년 12월 촬영 사진이며 설명 페이지는 개별 차량의 2024 연식을 명시하지 않습니다. 앱 차량과 연식·트림·색상이 일치한다는 의미가 아닙니다. 초기 지원 연식은 예시 차량 기준이며 판매 기간 전체가 아닙니다. AI 도구로 배경을 제거한 차종 참고 이미지입니다.",
+    "imageObjectKey": "data/vehicle-catalog/k5-dl3-pe.png"
+  },
+  {
+    "id": "ioniq5-ne",
+    "manufacturer": "현대",
+    "model": "아이오닉 5",
+    "generation": "NE 부분변경 전",
+    "yearFrom": 2024,
+    "yearTo": 2024,
+    "powertrains": [
+      "EV"
+    ],
+    "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:2024_Hyundai_IONIQ_5_Preferred_Long_Range_AWD_in_Cyber_Grey,_front_left,_2024-03-31.jpg",
+    "imageAuthor": "Elise240SX",
+    "imageLicense": "CC BY-SA 4.0",
+    "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "representative": true,
+    "note": "설명 페이지에 2024년형으로 명시된 캐나다 Preferred Long Range AWD 사양. 한국 판매 차량과 세부 외관·트림이 다를 수 있습니다. 초기 지원 연식은 예시 차량 기준이며 판매 기간 전체가 아닙니다. AI 도구로 배경을 제거한 차종 참고 이미지입니다.",
+    "imageObjectKey": "data/vehicle-catalog/ioniq5-ne.png"
+  },
+  {
+    "id": "sonata-dn8-pe",
+    "manufacturer": "현대",
+    "model": "쏘나타",
+    "generation": "DN8 PE (디 엣지)",
+    "yearFrom": 2023,
+    "yearTo": 2025,
+    "powertrains": [
+      "HYB"
+    ],
+    "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Hyundai_Sonata_Hybrid_DN8_HEV_PE_Abyss_Black_Pearl_(1).jpg",
+    "imageAuthor": "Damian B Oh",
+    "imageLicense": "CC BY-SA 4.0",
+    "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "representative": true,
+    "note": "한국형 DN8 PE HEV, 2023-11-19 촬영. 촬영연도가 개별 차량의 모델연도를 보증하지 않는다. 2023년 5월 출시된 디 엣지에만 매칭하고 2023년 이전 외관 DN8과 분리한다. yearTo 2025는 이 카탈로그에서 검증한 지원 상한이며 단종연도가 아니다. 정확한 트림·색상은 사용자 차량과 다를 수 있다. AI 도구로 배경을 제거한 차종 참고 이미지입니다.",
+    "imageObjectKey": "data/vehicle-catalog/sonata-dn8-pe.png"
+  },
+  {
+    "id": "grandeur-gn7",
+    "manufacturer": "현대",
+    "model": "그랜저",
+    "generation": "GN7 (7세대, 부분변경 전)",
+    "yearFrom": 2022,
+    "yearTo": 2025,
+    "powertrains": [
+      "HYB"
+    ],
+    "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Hyundai_Grandeur_Hybrid_Calligraphy_GN7_HEV_Nocturne_Gray_Metallic_(1).jpg",
+    "imageAuthor": "Damian B Oh",
+    "imageLicense": "CC BY-SA 4.0",
+    "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "representative": true,
+    "note": "한국형 GN7 HEV 캘리그래피, 2024-09-10 촬영. 국내 출시 2022년 11월 기준으로 2022년 등록 차량은 IG/GN7 세대 선택 필수. 촬영연도와 차량 모델연도는 별개다. yearTo 2025는 이 카탈로그의 검증 범위이며 단종연도가 아니다. GN7 PE 또는 비하이브리드 차량에 자동 확대하지 않는다. AI 도구로 배경을 제거한 차종 참고 이미지입니다.",
+    "imageObjectKey": "data/vehicle-catalog/grandeur-gn7.png"
+  },
+  {
+    "id": "k8-gl3",
+    "manufacturer": "기아",
+    "model": "K8",
+    "generation": "GL3 (부분변경 전)",
+    "yearFrom": 2021,
+    "yearTo": 2024,
+    "powertrains": [
+      "HYB"
+    ],
+    "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Kia_K8_Hybrid_GL3_HEV_Snow_White_Pearl_(1)_(cropped).jpg",
+    "imageAuthor": "Damian B Oh",
+    "imageLicense": "CC BY-SA 4.0",
+    "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "representative": true,
+    "note": "한국형 K8 GL3 HEV, 2022-05-20 촬영. Wikimedia에 이미 공개된 크롭 파일의 썸네일. K8은 2021년 첫 출시, 2024년 8월 부분변경. 2024년은 GL3/GL3 PE가 겹치므로 세대 선택 없이 매칭하지 않는다. 촬영연도가 차량 모델연도를 보증하지 않는다. AI 도구로 배경을 제거한 차종 참고 이미지입니다.",
+    "imageObjectKey": "data/vehicle-catalog/k8-gl3.png"
+  },
+  {
+    "id": "sorento-mq4-pe",
+    "manufacturer": "기아",
+    "model": "쏘렌토",
+    "generation": "MQ4 PE (4세대 부분변경)",
+    "yearFrom": 2023,
+    "yearTo": 2025,
+    "powertrains": [
+      "HYB"
+    ],
+    "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Kia_Sorento_Hybrid_MQ4_HEV_PE_Snow_White_Pearl_(5)_(cropped).jpg",
+    "imageAuthor": "Damian B Oh",
+    "imageLicense": "CC BY-SA 4.0",
+    "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "representative": true,
+    "note": "한국형 MQ4 PE HEV, 2023-09-13 촬영. Wikimedia에 공개된 크롭 파일을 편집 원본으로 사용했다. 2023년은 MQ4/MQ4 PE를 구분해야 한다. yearTo 2025는 이 카탈로그의 검증 범위이며 단종연도가 아니다. 디젤/가솔린/PHEV에 확대하지 않는다. AI 도구로 배경을 제거한 차종 참고 이미지입니다.",
+    "imageObjectKey": "data/vehicle-catalog/sorento-mq4-pe.png"
+  },
+  {
+    "id": "sportage-nq5",
+    "manufacturer": "기아",
+    "model": "스포티지",
+    "generation": "NQ5 (5세대, 부분변경 전)",
+    "yearFrom": 2021,
+    "yearTo": 2024,
+    "powertrains": [
+      "HYB"
+    ],
+    "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Kia_Sportage_Hybrid_NQ5_white_(1)_(cropped).jpg",
+    "imageAuthor": "Damian B Oh",
+    "imageLicense": "CC BY-SA 4.0",
+    "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "representative": true,
+    "note": "한국형 장축 NQ5 HEV, 2021-09-07 촬영. Wikimedia에 이미 공개된 크롭 파일의 썸네일. 유럽형 단축 차체와 혼용하지 않는다. 2024년 11월 부분변경 차량은 NQ5 PE로 분리해야 한다. 촬영연도와 개별 차량 모델연도는 별개다. AI 도구로 배경을 제거한 차종 참고 이미지입니다.",
+    "imageObjectKey": "data/vehicle-catalog/sportage-nq5.png"
+  },
+  {
+    "id": "niro-sg2",
+    "manufacturer": "기아",
+    "model": "니로",
+    "generation": "SG2 (2세대, 부분변경 전)",
+    "yearFrom": 2022,
+    "yearTo": 2025,
+    "powertrains": [
+      "HYB"
+    ],
+    "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:2023_Kia_Niro_Hybrid_EX_in_Snow_White_Pearl,_front_right.jpg",
+    "imageAuthor": "Mr.choppers",
+    "imageLicense": "CC BY-SA 4.0",
+    "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "representative": true,
+    "note": "출처에 2023년형으로 명시된 북미 Hybrid EX FWD, 촬영일 2025-08-12. 국내 SG2는 2022년 1월 출시, 2026년 3월 부분변경. 국내 모델과 범퍼·등화·트림 세부 차이가 가능하다. PHEV/EV와 혼용하지 않는다. 2026년 전환기는 이번 검증 범위에서 제외한다. AI 도구로 배경을 제거한 차종 참고 이미지입니다.",
+    "imageObjectKey": "data/vehicle-catalog/niro-sg2.png"
+  },
+  {
+    "id": "ev6-cv",
+    "manufacturer": "기아",
+    "model": "EV6",
+    "generation": "CV (부분변경 전, 일반형)",
+    "yearFrom": 2021,
+    "yearTo": 2024,
+    "powertrains": [
+      "EV"
+    ],
+    "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:2022_Kia_EV6_Air_Long_Range_2WD_(Front).jpg",
+    "imageAuthor": "DieselFordMondeo",
+    "imageLicense": "CC BY-SA 4.0",
+    "imageLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "representative": true,
+    "note": "출처에 2022년형으로 명시된 영국 Air Long Range 2WD, 2022-04-23 촬영. 일반형 외관이며 GT/GT-Line과 구분한다. 국내 최초 출시는 2021년, 2024년 5월 부분변경이므로 2024년 차량은 CV/CV PE 선택 필수. 국내 차량과 등화·트림 세부 차이가 가능하다. AI 도구로 배경을 제거한 차종 참고 이미지입니다.",
+    "imageObjectKey": "data/vehicle-catalog/ev6-cv.png"
+  }
+]

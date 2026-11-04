@@ -1,0 +1,12 @@
+.git
+.env*
+node_modules
+backend/.venv*
+backend/data
+backend-spring/.tools
+backend-spring/target
+backend-spring/data
+**/__pycache__
+test-results
+playwright-report
+artifacts

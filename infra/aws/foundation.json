@@ -1,0 +1,136 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "DriveMate durable private artifacts and secrets; retained independently from compute.",
+  "Metadata": {
+    "AWSToolsMetrics": {
+      "AWSAgentToolkit": "aws-cloudformation@3"
+    }
+  },
+  "Resources": {
+    "Data": {
+      "Type": "AWS::S3::Bucket",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Original data and immutable releases survive compute replacement",
+          "must": [
+            "private",
+            "encrypted",
+            "retain"
+          ]
+        }
+      },
+      "Properties": {
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "IgnorePublicAcls": true,
+          "BlockPublicPolicy": true,
+          "RestrictPublicBuckets": true
+        },
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "IncompleteUploads",
+              "Status": "Enabled",
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 3
+              }
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "DriveMate"
+          }
+        ]
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "DataPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Reject plaintext object access",
+          "must": [
+            "TLS required"
+          ]
+        }
+      },
+      "Properties": {
+        "Bucket": {
+          "Ref": "Data"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "s3:*",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Data",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::Sub": "${Data.Arn}/*"
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": false
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "AppSecret": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Credentials never enter templates or release artifacts",
+          "must": [
+            "retain on replacement"
+          ]
+        }
+      },
+      "Properties": {
+        "Description": "DriveMate API credentials; populated out of band",
+        "SecretString": "{}"
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    }
+  },
+  "Outputs": {
+    "DataBucket": {
+      "Value": {
+        "Ref": "Data"
+      },
+      "Description": "Private artifact bucket"
+    },
+    "AppSecretArn": {
+      "Value": {
+        "Ref": "AppSecret"
+      },
+      "Description": "API secret ARN; never the value"
+    }
+  }
+}

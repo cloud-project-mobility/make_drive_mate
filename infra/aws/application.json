@@ -1,0 +1,1147 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "DriveMate Spring API, CPU ML and document RAG with private PostgreSQL and a repeatable SQS data cycle; current Free plan uses one database AZ.",
+  "Metadata": {
+    "AWSToolsMetrics": {
+      "AWSAgentToolkit": "aws-cloudformation@3"
+    }
+  },
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Isolate application and database traffic",
+          "must": []
+        }
+      },
+      "Properties": {
+        "CidrBlock": "10.41.0.0/16",
+        "EnableDnsSupport": true,
+        "EnableDnsHostnames": true
+      }
+    },
+    "Gateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Outbound API and package access",
+          "must": []
+        }
+      },
+      "Properties": {}
+    },
+    "GatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "CloudFront VPC origin requires attached gateway",
+          "must": []
+        }
+      },
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "InternetGatewayId": {
+          "Ref": "Gateway"
+        }
+      }
+    },
+    "AppSubnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Separate application egress and database subnets",
+          "must": [
+            "database subnets have no internet route"
+          ]
+        }
+      },
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.41.1.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "MapPublicIpOnLaunch": false
+      }
+    },
+    "DbSubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Separate application egress and database subnets",
+          "must": [
+            "database subnets have no internet route"
+          ]
+        }
+      },
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.41.10.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "MapPublicIpOnLaunch": false
+      }
+    },
+    "DbSubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Separate application egress and database subnets",
+          "must": [
+            "database subnets have no internet route"
+          ]
+        }
+      },
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.41.20.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "MapPublicIpOnLaunch": false
+      }
+    },
+    "AppRoutes": {
+      "Type": "AWS::EC2::RouteTable",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Only application host needs internet egress",
+          "must": []
+        }
+      },
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "EgressRoute": {
+      "Type": "AWS::EC2::Route",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Reach Onbid and OpenAI without a separate NAT gateway",
+          "must": []
+        }
+      },
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "AppRoutes"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "Gateway"
+        }
+      },
+      "DependsOn": "GatewayAttachment"
+    },
+    "AppRouteAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Explicit egress subnet",
+          "must": []
+        }
+      },
+      "Properties": {
+        "SubnetId": {
+          "Ref": "AppSubnet"
+        },
+        "RouteTableId": {
+          "Ref": "AppRoutes"
+        }
+      }
+    },
+    "AppSecurity": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "CloudFront VPC connection carries viewer requests; public address used for outbound calls",
+          "must": [
+            "no public CIDR ingress",
+            "Spring binds loopback",
+            "SSH closed"
+          ]
+        }
+      },
+      "Properties": {
+        "GroupDescription": "CloudFront origin only; no SSH or direct API ingress",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+            "SourcePrefixListId": {
+              "Ref": "CloudFrontPrefixList"
+            }
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "DbSecurity": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Restrict database access",
+          "must": [
+            "no public DB ingress"
+          ]
+        }
+      },
+      "Properties": {
+        "GroupDescription": "PostgreSQL from application only",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 5432,
+            "ToPort": 5432,
+            "SourceSecurityGroupId": {
+              "Ref": "AppSecurity"
+            }
+          }
+        ]
+      }
+    },
+    "DbSubnets": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Multi-AZ database placement",
+          "must": []
+        }
+      },
+      "Properties": {
+        "DBSubnetGroupDescription": "Private database subnets in two AZs",
+        "SubnetIds": [
+          {
+            "Ref": "DbSubnetA"
+          },
+          {
+            "Ref": "DbSubnetB"
+          }
+        ]
+      }
+    },
+    "DbParameters": {
+      "Type": "AWS::RDS::DBParameterGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Encrypt database connections",
+          "must": [
+            "verify-full in application client"
+          ]
+        }
+      },
+      "Properties": {
+        "Family": "postgres18",
+        "Description": "TLS required",
+        "Parameters": {
+          "rds.force_ssl": "1"
+        }
+      }
+    },
+    "Database": {
+      "Type": "AWS::RDS::DBInstance",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Persistent accounts and pgvector documents; user-selected Free plan requires micro, Single-AZ and one-day backup; no automatic standby failover",
+          "must": [
+            "encrypted",
+            "private",
+            "retain",
+            "backups enabled"
+          ]
+        }
+      },
+      "Properties": {
+        "Engine": "postgres",
+        "EngineVersion": "18.6",
+        "DBInstanceClass": "db.t4g.micro",
+        "DBName": "drivemate",
+        "MasterUsername": "drivemate_admin",
+        "ManageMasterUserPassword": true,
+        "AllocatedStorage": "20",
+        "MaxAllocatedStorage": 30,
+        "StorageType": "gp3",
+        "StorageEncrypted": true,
+        "MultiAZ": false,
+        "PubliclyAccessible": false,
+        "BackupRetentionPeriod": {
+          "Ref": "BackupRetentionDays"
+        },
+        "DeletionProtection": true,
+        "AutoMinorVersionUpgrade": true,
+        "DBSubnetGroupName": {
+          "Ref": "DbSubnets"
+        },
+        "DBParameterGroupName": {
+          "Ref": "DbParameters"
+        },
+        "VPCSecurityGroups": [
+          {
+            "Ref": "DbSecurity"
+          }
+        ],
+        "EnableCloudwatchLogsExports": [
+          "postgresql"
+        ],
+        "CopyTagsToSnapshot": true,
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "DriveMate"
+          },
+          {
+            "Key": "created_by",
+            "Value": "rds-oss-skill"
+          },
+          {
+            "Key": "generation_model",
+            "Value": "GPT-6"
+          }
+        ],
+        "DBInstanceIdentifier": {
+          "Fn::Sub": "${AWS::StackName}-postgres"
+        },
+        "KmsKeyId": {
+          "Fn::GetAtt": [
+            "DataKey",
+            "Arn"
+          ]
+        },
+        "EnablePerformanceInsights": true,
+        "PerformanceInsightsRetentionPeriod": 7,
+        "PerformanceInsightsKMSKeyId": {
+          "Fn::GetAtt": [
+            "DataKey",
+            "Arn"
+          ]
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "DependsOn": [
+        "DatabaseLogs",
+        "QueuePolicy",
+        "DeadLetterPolicy"
+      ]
+    },
+    "DeadLetters": {
+      "Type": "AWS::SQS::Queue",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Keep failed refresh jobs for investigation",
+          "must": [
+            "no silent failed-job deletion"
+          ]
+        }
+      },
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "SqsManagedSseEnabled": true
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "DataKey": {
+      "Type": "AWS::KMS::Key",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Customer-managed key for database and query logs",
+          "must": [
+            "retain key while encrypted data exists"
+          ]
+        }
+      },
+      "Properties": {
+        "Description": "DriveMate database and logs encryption",
+        "EnableKeyRotation": true,
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+                }
+              },
+              "Action": "kms:*",
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": {
+                  "Fn::Sub": "logs.${AWS::Region}.amazonaws.com"
+                }
+              },
+              "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:ReEncrypt*",
+                "kms:GenerateDataKey*",
+                "kms:DescribeKey"
+              ],
+              "Resource": "*",
+              "Condition": {
+                "ArnLike": {
+                  "kms:EncryptionContext:aws:logs:arn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/rds/instance/${AWS::StackName}-postgres/*"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "DatabaseLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Encrypt database logs and bound retention",
+          "must": [
+            "do not log application payloads"
+          ]
+        }
+      },
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Sub": "/aws/rds/instance/${AWS::StackName}-postgres/postgresql"
+        },
+        "RetentionInDays": 14,
+        "KmsKeyId": {
+          "Fn::GetAtt": [
+            "DataKey",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "RefreshQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Separate scheduled collection from interactive inference",
+          "must": [
+            "worker renews visibility",
+            "idempotent completion marker"
+          ]
+        }
+      },
+      "Properties": {
+        "VisibilityTimeout": 900,
+        "ReceiveMessageWaitTimeSeconds": 20,
+        "SqsManagedSseEnabled": true,
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "DeadLetters",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 3
+        }
+      }
+    },
+    "WeeklyRefresh": {
+      "Type": "AWS::Events::Rule",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Weekly Monday 02:00 KST data refresh; enable after validation",
+          "must": [
+            "candidate models never auto-promoted"
+          ]
+        }
+      },
+      "Properties": {
+        "ScheduleExpression": "cron(0 17 ? * SUN *)",
+        "State": {
+          "Ref": "EnableSchedule"
+        },
+        "Targets": [
+          {
+            "Id": "Refresh",
+            "Arn": {
+              "Fn::GetAtt": [
+                "RefreshQueue",
+                "Arn"
+              ]
+            },
+            "Input": "{\"kind\":\"refresh\",\"schema_version\":1}"
+          }
+        ]
+      }
+    },
+    "QueuePolicy": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Only this schedule may enqueue scheduled jobs",
+          "must": [
+            "TLS required"
+          ]
+        }
+      },
+      "Properties": {
+        "Queues": [
+          {
+            "Ref": "RefreshQueue"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "sqs:*",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "RefreshQueue",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": false
+                }
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": "sqs:SendMessage",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "RefreshQueue",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::GetAtt": [
+                      "WeeklyRefresh",
+                      "Arn"
+                    ]
+                  }
+                },
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "Logs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Bound operational log storage",
+          "must": [
+            "no credentials or request bodies"
+          ]
+        }
+      },
+      "Properties": {
+        "RetentionInDays": 14
+      }
+    },
+    "DeadLetterPolicy": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Require TLS for the retained failed-job queue",
+          "must": [
+            "one resource per SQS statement"
+          ]
+        }
+      },
+      "Properties": {
+        "Queues": [
+          {
+            "Ref": "DeadLetters"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "sqs:*",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "DeadLetters",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": false
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "HostRole": {
+      "Type": "AWS::IAM::Role",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Instance credentials instead of stored AWS keys",
+          "must": [
+            "scoped data prefixes and queues",
+            "no administrative credentials"
+          ]
+        }
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "Runtime",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:s3:::${DataBucket}/releases/*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject",
+                    "s3:PutObject"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:s3:::${DataBucket}/data/*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:ListBucket"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:s3:::${DataBucket}"
+                  },
+                  "Condition": {
+                    "StringLike": {
+                      "s3:prefix": [
+                        "releases/*",
+                        "data/*"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "secretsmanager:GetSecretValue"
+                  ],
+                  "Resource": [
+                    {
+                      "Ref": "AppSecretArn"
+                    },
+                    {
+                      "Fn::GetAtt": [
+                        "Database",
+                        "MasterUserSecret.SecretArn"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:ReceiveMessage",
+                    "sqs:DeleteMessage",
+                    "sqs:ChangeMessageVisibility",
+                    "sqs:GetQueueAttributes"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "RefreshQueue",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "logs:DescribeLogStreams"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "Logs",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:SignalResource"
+                  ],
+                  "Resource": {
+                    "Ref": "AWS::StackId"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "HostProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Attach scoped role",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Roles": [
+          {
+            "Ref": "HostRole"
+          }
+        ]
+      }
+    },
+    "Host": {
+      "Type": "AWS::EC2::Instance",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Free-plan eligible 2-vCPU/4-GiB application host; CPU inference avoids a continuously billed GPU",
+          "must": [
+            "no user data on ephemeral host",
+            "IMDSv2 required",
+            "outbound routing ready before bootstrap"
+          ]
+        }
+      },
+      "Properties": {
+        "ImageId": {
+          "Ref": "ImageId"
+        },
+        "InstanceType": "c7i-flex.large",
+        "IamInstanceProfile": {
+          "Ref": "HostProfile"
+        },
+        "NetworkInterfaces": [
+          {
+            "DeviceIndex": "0",
+            "SubnetId": {
+              "Ref": "AppSubnet"
+            },
+            "GroupSet": [
+              {
+                "Ref": "AppSecurity"
+              }
+            ],
+            "AssociatePublicIpAddress": true
+          }
+        ],
+        "MetadataOptions": {
+          "HttpTokens": "required",
+          "HttpPutResponseHopLimit": 1
+        },
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/sda1",
+            "Ebs": {
+              "VolumeSize": 30,
+              "VolumeType": "gp3",
+              "Encrypted": true,
+              "DeleteOnTermination": true
+            }
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Sub": "#!/bin/bash\nset -euo pipefail\numask 077\nexport DEBIAN_FRONTEND=noninteractive\napt-get -o DPkg::Lock::Timeout=120 update\napt-get -o DPkg::Lock::Timeout=120 install -y --no-install-recommends python3-boto3\npython3 - <<'PY'\nimport boto3, hashlib, json, pathlib, subprocess\nfrom botocore.config import Config\nvalues = json.loads('{\"REGION\": \"${AWS::Region}\", \"BUCKET\": \"${DataBucket}\", \"RELEASE_KEY\": \"${ReleaseKey}\", \"RELEASE_SHA256\": \"${ReleaseSha256}\", \"DB_HOST\": \"${Database.Endpoint.Address}\", \"DB_SECRET_ARN\": \"${Database.MasterUserSecret.SecretArn}\", \"APP_SECRET_ARN\": \"${AppSecretArn}\", \"QUEUE_URL\": \"${RefreshQueue}\", \"STACK_NAME\": \"${AWS::StackName}\", \"LOG_GROUP\": \"${Logs}\"}')\nclient = boto3.client('s3', region_name=values['REGION'], config=Config(connect_timeout=10, read_timeout=60, retries={'total_max_attempts':5,'mode':'standard'}))\nfolder = pathlib.Path('/var/lib/drivemate-bootstrap')\nfolder.mkdir(mode=0o700, parents=True, exist_ok=True)\npath = folder / 'bootstrap.tpl'\nclient.download_file(values['BUCKET'], '${BootstrapKey}', str(path))\ncontent = path.read_bytes()\nif hashlib.sha256(content).hexdigest() != '${BootstrapSha256}':\n    raise SystemExit('Bootstrap checksum mismatch')\nscript = content.decode('utf-8')\nfor key, value in values.items():\n    script = script.replace('@@' + key + '@@', value)\ntarget = folder / 'bootstrap.sh'\ntarget.write_text(script)\ntarget.chmod(0o700)\nsubprocess.run(['bash',str(target)],check=True)\nPY\n"
+          }
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}-app"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": "DriveMate"
+          }
+        ]
+      },
+      "DependsOn": [
+        "EgressRoute",
+        "AppRouteAssociation"
+      ],
+      "CreationPolicy": {
+        "ResourceSignal": {
+          "Count": 1,
+          "Timeout": "PT30M"
+        }
+      },
+      "Condition": "ComputeEnabled"
+    },
+    "VpcOrigin": {
+      "Type": "AWS::CloudFront::VpcOrigin",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Private origin path avoids public inbound application exposure",
+          "must": [
+            "viewer HTTPS",
+            "origin limited to CloudFront"
+          ]
+        }
+      },
+      "Properties": {
+        "VpcOriginEndpointConfig": {
+          "Arn": {
+            "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${Host}"
+          },
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}-origin"
+          },
+          "HTTPPort": 80,
+          "HTTPSPort": 443,
+          "OriginProtocolPolicy": "http-only"
+        }
+      },
+      "DependsOn": "GatewayAttachment",
+      "Condition": "ComputeEnabled"
+    },
+    "Distribution": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Managed HTTPS address without purchasing a domain",
+          "must": [
+            "cache disabled for authenticated data",
+            "Authorization and viewer host forwarded"
+          ]
+        }
+      },
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": true,
+          "Comment": "DriveMate HTTPS application",
+          "DefaultRootObject": "index.html",
+          "HttpVersion": "http2and3",
+          "IPV6Enabled": true,
+          "PriceClass": "PriceClass_All",
+          "Origins": [
+            {
+              "Id": "App",
+              "DomainName": {
+                "Fn::GetAtt": [
+                  "Host",
+                  "PrivateDnsName"
+                ]
+              },
+              "VpcOriginConfig": {
+                "VpcOriginId": {
+                  "Fn::GetAtt": [
+                    "VpcOrigin",
+                    "Id"
+                  ]
+                },
+                "OriginReadTimeout": 120,
+                "OriginKeepaliveTimeout": 5
+              }
+            }
+          ],
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "App",
+            "ViewerProtocolPolicy": "redirect-to-https",
+            "AllowedMethods": [
+              "DELETE",
+              "GET",
+              "HEAD",
+              "OPTIONS",
+              "PATCH",
+              "POST",
+              "PUT"
+            ],
+            "CachedMethods": [
+              "GET",
+              "HEAD"
+            ],
+            "Compress": true,
+            "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+            "OriginRequestPolicyId": "216adef6-5c7f-47e4-b989-5492eafa07d3"
+          },
+          "ViewerCertificate": {
+            "CloudFrontDefaultCertificate": true
+          }
+        }
+      },
+      "Condition": "ComputeEnabled"
+    },
+    "HostRecovery": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Automatic recovery for supported hardware failures",
+          "must": [
+            "not application-level multi-AZ availability"
+          ]
+        }
+      },
+      "Properties": {
+        "AlarmDescription": "Recover host after underlying system failure",
+        "Namespace": "AWS/EC2",
+        "MetricName": "StatusCheckFailed_System",
+        "Dimensions": [
+          {
+            "Name": "InstanceId",
+            "Value": {
+              "Ref": "Host"
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 60,
+        "EvaluationPeriods": 2,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "AlarmActions": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:automate:${AWS::Region}:ec2:recover"
+          }
+        ]
+      },
+      "Condition": "ComputeEnabled"
+    },
+    "QueueFailures": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Expose failures in monitoring; no unsolicited messaging",
+          "must": []
+        }
+      },
+      "Properties": {
+        "AlarmDescription": "Refresh jobs require investigation",
+        "Namespace": "AWS/SQS",
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "DeadLetters",
+                "QueueName"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 300,
+        "EvaluationPeriods": 1,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "TreatMissingData": "notBreaching"
+      }
+    }
+  },
+  "Parameters": {
+    "DataBucket": {
+      "Type": "String",
+      "AllowedPattern": "[a-z0-9.-]{3,63}"
+    },
+    "AppSecretArn": {
+      "Type": "String",
+      "AllowedPattern": "arn:aws:secretsmanager:.*"
+    },
+    "ReleaseKey": {
+      "Type": "String",
+      "AllowedPattern": "releases/[a-zA-Z0-9._/-]+"
+    },
+    "ReleaseSha256": {
+      "Type": "String",
+      "AllowedPattern": "[a-f0-9]{64}"
+    },
+    "BootstrapKey": {
+      "Type": "String",
+      "AllowedPattern": "releases/[a-zA-Z0-9._/-]+"
+    },
+    "BootstrapSha256": {
+      "Type": "String",
+      "AllowedPattern": "[a-f0-9]{64}"
+    },
+    "ImageId": {
+      "Type": "AWS::EC2::Image::Id"
+    },
+    "CloudFrontPrefixList": {
+      "Type": "String",
+      "AllowedPattern": "pl-[a-f0-9]+"
+    },
+    "EnableSchedule": {
+      "Type": "String",
+      "AllowedValues": [
+        "ENABLED",
+        "DISABLED"
+      ],
+      "Default": "DISABLED"
+    },
+    "DeployCompute": {
+      "Type": "String",
+      "AllowedValues": [
+        "true",
+        "false"
+      ],
+      "Default": "true"
+    },
+    "BackupRetentionDays": {
+      "Type": "Number",
+      "AllowedValues": [
+        1,
+        7,
+        14
+      ],
+      "Default": 1,
+      "Description": "Use 1 for the current Free plan; 7 is the paid-plan target."
+    }
+  },
+  "Conditions": {
+    "ComputeEnabled": {
+      "Fn::Equals": [
+        {
+          "Ref": "DeployCompute"
+        },
+        "true"
+      ]
+    }
+  },
+  "Outputs": {
+    "Url": {
+      "Value": {
+        "Fn::Sub": "https://${Distribution.DomainName}"
+      },
+      "Description": "Application HTTPS URL",
+      "Condition": "ComputeEnabled"
+    },
+    "HostId": {
+      "Value": {
+        "Ref": "Host"
+      },
+      "Description": "SSM managed host",
+      "Condition": "ComputeEnabled"
+    },
+    "DatabaseHost": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Database",
+          "Endpoint.Address"
+        ]
+      },
+      "Description": "Private PostgreSQL endpoint"
+    },
+    "DatabaseSecret": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Database",
+          "MasterUserSecret.SecretArn"
+        ]
+      },
+      "Description": "RDS-managed credential ARN"
+    },
+    "QueueUrl": {
+      "Value": {
+        "Ref": "RefreshQueue"
+      },
+      "Description": "Refresh job queue"
+    },
+    "DistributionId": {
+      "Value": {
+        "Ref": "Distribution"
+      },
+      "Description": "CloudFront distribution",
+      "Condition": "ComputeEnabled"
+    },
+    "LogGroup": {
+      "Value": {
+        "Ref": "Logs"
+      },
+      "Description": "Operational logs"
+    }
+  }
+}

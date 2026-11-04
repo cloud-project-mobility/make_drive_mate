@@ -1,0 +1,76 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "DriveMate manual GitHub OIDC code deployment with a fixed SSM document, private release prefix and no access to application secrets.",
+  "Metadata": {
+    "AWSToolsMetrics": {"AWSAgentToolkit": "aws-cloudformation@3"},
+    "com.aws.cloudformation.Context": {"ref": [{"at": "docs/CICD.md", "has": "CI gates, immutable release identity and rollback limits", "scope": "cicd"}]}
+  },
+  "Parameters": {
+    "GitHubOidcProviderArn": {"Type": "String", "AllowedPattern": "arn:aws:iam::[0-9]{12}:oidc-provider/token.actions.githubusercontent.com", "Description": "Existing GitHub OIDC provider with sts.amazonaws.com audience"},
+    "ArtifactBucket": {"Type": "String", "AllowedPattern": "[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]", "Description": "Existing private encrypted deployment bucket"},
+    "InstanceId": {"Type": "AWS::EC2::Instance::Id", "Description": "Existing DriveMate instance with the fixed deploy_release.py installed"}
+  },
+  "Resources": {
+    "DeployDocument": {
+      "Type": "AWS::SSM::Document",
+      "Metadata": {"com.aws.cloudformation.Context": {"why": "A fixed root-owned deployment program accepts only immutable revision hashes", "must": ["No caller-supplied shell or path", "Keep the artifact bucket fixed", "Only code is replaced; private data and model are preserved"]}},
+      "Properties": {
+        "DocumentType": "Command", "DocumentFormat": "JSON", "UpdateMethod": "NewVersion",
+        "Content": {
+          "schemaVersion": "2.2",
+          "description": "Apply a previously reviewed DriveMate code-only release",
+          "parameters": {
+            "SourceRevision": {"type": "String", "allowedPattern": "^[a-f0-9]{40}$", "interpolationType": "ENV_VAR"},
+            "ArchiveSha256": {"type": "String", "allowedPattern": "^[a-f0-9]{64}$", "interpolationType": "ENV_VAR"}
+          },
+          "mainSteps": [{
+            "action": "aws:runShellScript", "name": "ApplyCodeRelease",
+            "precondition": {"StringEquals": ["platformType", "Linux"]},
+            "inputs": {
+              "timeoutSeconds": "900",
+              "runCommand": [
+                "set -eu",
+                "test -n \"$SSM_SourceRevision\" && test -n \"$SSM_ArchiveSha256\"",
+                {"Fn::Sub": "/opt/drivemate/venv/bin/python /opt/drivemate/infra/aws/deploy_release.py apply --revision \"$SSM_SourceRevision\" --sha256 \"$SSM_ArchiveSha256\" --bucket '${ArtifactBucket}' --region '${AWS::Region}'"}
+              ]
+            }
+          }]
+        }
+      }
+    },
+    "DeployRole": {
+      "Type": "AWS::IAM::Role",
+      "Metadata": {"com.aws.cloudformation.Context": {"why": "Short-lived GitHub credentials can publish code and invoke one fixed document on one host", "must": ["Trust only the exact main-branch subject and STS audience", "Never allow Secrets Manager or RDS access", "Never allow AWS-RunShellScript or caller-selected target instances"]}},
+      "Properties": {
+        "MaxSessionDuration": 3600,
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17", "Statement": [{
+            "Effect": "Allow", "Principal": {"Federated": {"Ref": "GitHubOidcProviderArn"}},
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {"StringEquals": {
+              "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+              "token.actions.githubusercontent.com:sub": "repo:cloud-project-mobility@341333303/make_drive_mate@1445282042:ref:refs/heads/main"
+            }}
+          }]
+        },
+        "Policies": [{"PolicyName": "CodeDeploymentOnly", "PolicyDocument": {
+          "Version": "2012-10-17", "Statement": [
+            {"Effect": "Allow", "Action": ["s3:PutObject", "s3:AbortMultipartUpload"], "Resource": {"Fn::Sub": "arn:${AWS::Partition}:s3:::${ArtifactBucket}/releases/code/*"}},
+            {"Effect": "Allow", "Action": "ssm:SendCommand", "Resource": [
+              {"Fn::Sub": "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${DeployDocument}"},
+              {"Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${InstanceId}"}
+            ]},
+            {"Effect": "Allow", "Action": "ssm:GetCommandInvocation", "Resource": "*"}
+          ]
+        }}]
+      }
+    }
+  },
+  "Outputs": {
+    "RoleArn": {"Value": {"Fn::GetAtt": ["DeployRole", "Arn"]}, "Description": "GitHub variable AWS_ROLE_ARN"},
+    "Region": {"Value": {"Ref": "AWS::Region"}, "Description": "GitHub variable AWS_REGION"},
+    "ArtifactBucket": {"Value": {"Ref": "ArtifactBucket"}, "Description": "GitHub variable AWS_S3_BUCKET"},
+    "InstanceId": {"Value": {"Ref": "InstanceId"}, "Description": "GitHub variable AWS_INSTANCE_ID"},
+    "DocumentName": {"Value": {"Ref": "DeployDocument"}, "Description": "GitHub variable AWS_SSM_DOCUMENT"}
+  }
+}

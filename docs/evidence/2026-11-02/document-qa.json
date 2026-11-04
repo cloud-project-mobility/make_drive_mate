@@ -1,0 +1,34 @@
+{
+  "checked_at": "2026-11-02",
+  "artifacts": [
+    {
+      "file": "/home/baemo_pc/261013/deliverables/03_DriveMate_PoC_계획설계서.docx",
+      "pages": 11,
+      "paragraphs": 103,
+      "tables": 17,
+      "characters": 13283,
+      "docx_opens": true,
+      "no_empty_or_orphan_pages": true,
+      "bounds_pass": true
+    },
+    {
+      "file": "/home/baemo_pc/261013/deliverables/04_DriveMate_중간보고서.docx",
+      "pages": 12,
+      "paragraphs": 130,
+      "tables": 14,
+      "characters": 11998,
+      "docx_opens": true,
+      "no_empty_or_orphan_pages": true,
+      "bounds_pass": true
+    }
+  ],
+  "report_toc_matches_pdf": true,
+  "notes": [
+    "문서 역할·양식·제목 순서 검토",
+    "전체 페이지 contact sheet 시각 확인",
+    "정적 목차 페이지와 PDF 본문 제목 페이지 일치",
+    "교수명 확인 필요와 업무분담 제안은 의도된 표시",
+    "모델 계수는 합성·실측 학습/API/AWS 미완료 명시",
+    "최종 Current Status: TypeScript·ESLint·도메인71·가치 E2E12(360px) 통과, 실기기 미검증. 보고서12쪽/계획서11쪽 유지 확인."
+  ]
+}

@@ -1,0 +1,73 @@
+name: Deploy reviewed DriveMate release
+on:
+  workflow_dispatch:
+    inputs:
+      ci_run_id:
+        description: Successful DriveMate CI run ID for a main push
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+concurrency:
+  group: drivemate-production-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_S3_BUCKET: ${{ vars.AWS_S3_BUCKET }}
+      AWS_INSTANCE_ID: ${{ vars.AWS_INSTANCE_ID }}
+      AWS_SSM_DOCUMENT: ${{ vars.AWS_SSM_DOCUMENT }}
+    steps:
+      - name: Verify the trusted successful main CI run
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        id: verified
+        env:
+          CI_RUN_ID: ${{ inputs.ci_run_id }}
+        with:
+          script: |
+            const raw = process.env.CI_RUN_ID;
+            if (!/^[0-9]{1,18}$/.test(raw)) throw new Error('Invalid run ID');
+            const {data: run} = await github.rest.actions.getWorkflowRun({...context.repo, run_id: Number(raw)});
+            if (run.conclusion !== 'success' || run.status !== 'completed' || run.event !== 'push' ||
+                run.head_branch !== 'main' || run.head_repository.full_name !== context.repo.owner + '/' + context.repo.repo ||
+                run.path !== '.github/workflows/ci.yml' || !/^[a-f0-9]{40}$/.test(run.head_sha)) {
+              throw new Error('Only a successful main push from this CI workflow can deploy');
+            }
+            core.setOutput('revision', run.head_sha);
+            core.setOutput('run_id', String(run.id));
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ steps.verified.outputs.revision }}
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: code-release-${{ steps.verified.outputs.revision }}
+          path: release-artifacts
+          run-id: ${{ steps.verified.outputs.run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r infra/aws/requirements-aws.txt
+      - name: Check release identity before requesting AWS credentials
+        env:
+          SOURCE_REVISION: ${{ steps.verified.outputs.revision }}
+        run: |
+          test "$(cat release-artifacts/source-revision.txt)" = "$SOURCE_REVISION"
+          python infra/aws/deploy_release.py inspect --archive release-artifacts/code-release.zip --revision "$SOURCE_REVISION" --sha256 "$(cat release-artifacts/code-release.sha256)"
+      - uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: drivemate-${{ github.run_id }}
+          role-duration-seconds: 1800
+      - name: Upload immutable code and invoke the fixed deployment document
+        env:
+          SOURCE_REVISION: ${{ steps.verified.outputs.revision }}
+        run: python infra/aws/deploy_release.py publish --archive release-artifacts/code-release.zip --revision "$SOURCE_REVISION" --sha256 "$(cat release-artifacts/code-release.sha256)"

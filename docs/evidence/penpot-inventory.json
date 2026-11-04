@@ -1,0 +1,4256 @@
+[
+  {
+    "id": "3ceab446-01bc-8074-8008-c426bde2304a",
+    "name": "01 · 로그인",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426bdfc8673",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "로그인",
+        "x": 20,
+        "y": 55,
+        "id": "3ceab446-01bc-8074-8008-c426be3a5b77",
+        "name": "화면 제목"
+      },
+      {
+        "text": "차량과 주행 기록을 관리할 계정으로 로그인하세요.",
+        "x": 20,
+        "y": 101,
+        "id": "3ceab446-01bc-8074-8008-c426be45cb10",
+        "name": "화면 설명"
+      },
+      {
+        "text": "이메일",
+        "x": 20,
+        "y": 178,
+        "id": "3ceab446-01bc-8074-8008-c426be5a5d1f",
+        "name": "이메일 입력 제목"
+      },
+      {
+        "text": "email@example.com",
+        "x": 34,
+        "y": 218,
+        "id": "3ceab446-01bc-8074-8008-c426be6e0742",
+        "name": "이메일 입력값"
+      },
+      {
+        "text": "비밀번호",
+        "x": 20,
+        "y": 284,
+        "id": "3ceab446-01bc-8074-8008-c426be7743aa",
+        "name": "비밀번호 입력 제목"
+      },
+      {
+        "text": "비밀번호를 입력하세요",
+        "x": 34,
+        "y": 324,
+        "id": "3ceab446-01bc-8074-8008-c426be89f98f",
+        "name": "비밀번호 입력값"
+      },
+      {
+        "text": "로그인",
+        "x": 32,
+        "y": 412.5,
+        "id": "3ceab446-01bc-8074-8008-c426be9ac107",
+        "name": "로그인 레이블"
+      },
+      {
+        "text": "Google 계정으로 로그인",
+        "x": 32,
+        "y": 476.5,
+        "id": "3ceab446-01bc-8074-8008-c426beab5103",
+        "name": "Google 계정으로 로그인 레이블"
+      },
+      {
+        "text": "아직 계정이 없나요?",
+        "x": 20,
+        "y": 558,
+        "id": "3ceab446-01bc-8074-8008-c426beb6f209",
+        "name": "아직 계정이 없나요?"
+      },
+      {
+        "text": "회원가입",
+        "x": 20,
+        "y": 589,
+        "id": "3ceab446-01bc-8074-8008-c426bec1638e",
+        "name": "회원가입 이동"
+      },
+      {
+        "text": "목업: 로그인과 계정 연결은 실제로 실행되지 않습니다.",
+        "x": 20,
+        "y": 743,
+        "id": "3ceab446-01bc-8074-8008-c426beced14a",
+        "name": "로그인 목업 상태"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "로그인 버튼",
+        "type": "rect",
+        "x": 20,
+        "y": 398,
+        "width": 350,
+        "height": 50,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "로그인 레이블",
+        "type": "text",
+        "x": 32,
+        "y": 412.5,
+        "width": 326,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "Google 계정으로 로그인 레이블",
+        "type": "text",
+        "x": 32,
+        "y": 476.5,
+        "width": 326,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "Google 계정으로 로그인 버튼",
+        "type": "rect",
+        "x": 20,
+        "y": 462,
+        "width": 350,
+        "height": 50,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "회원가입 이동",
+        "type": "text",
+        "x": 20,
+        "y": 589,
+        "width": 350,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426bef5a453",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426bef5a453",
+    "name": "02 · 회원가입",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426beff52c8",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "‹",
+        "x": 20,
+        "y": 53,
+        "id": "3ceab446-01bc-8074-8008-c426bf2fe8cf",
+        "name": "뒤로 가기"
+      },
+      {
+        "text": "회원가입",
+        "x": 52,
+        "y": 55,
+        "id": "3ceab446-01bc-8074-8008-c426bf39bb49",
+        "name": "화면 제목"
+      },
+      {
+        "text": "계정을 만들고 첫 차량 등록 여부를 선택하세요.",
+        "x": 20,
+        "y": 101,
+        "id": "3ceab446-01bc-8074-8008-c426bf442f64",
+        "name": "화면 설명"
+      },
+      {
+        "text": "이름",
+        "x": 20,
+        "y": 164,
+        "id": "3ceab446-01bc-8074-8008-c426bf537684",
+        "name": "이름 입력 제목"
+      },
+      {
+        "text": "이름을 입력하세요",
+        "x": 34,
+        "y": 204,
+        "id": "3ceab446-01bc-8074-8008-c426bf64b89c",
+        "name": "이름 입력값"
+      },
+      {
+        "text": "이메일",
+        "x": 20,
+        "y": 257,
+        "id": "3ceab446-01bc-8074-8008-c426bf6dad90",
+        "name": "이메일 입력 제목"
+      },
+      {
+        "text": "email@example.com",
+        "x": 34,
+        "y": 297,
+        "id": "3ceab446-01bc-8074-8008-c426bf7e1f58",
+        "name": "이메일 입력값"
+      },
+      {
+        "text": "비밀번호",
+        "x": 20,
+        "y": 350,
+        "id": "3ceab446-01bc-8074-8008-c426bf86bf9b",
+        "name": "비밀번호 입력 제목"
+      },
+      {
+        "text": "비밀번호를 입력하세요",
+        "x": 34,
+        "y": 390,
+        "id": "3ceab446-01bc-8074-8008-c426bf97a1cd",
+        "name": "비밀번호 입력값"
+      },
+      {
+        "text": "첫 차량 등록은 선택이에요",
+        "x": 36,
+        "y": 478,
+        "id": "3ceab446-01bc-8074-8008-c426bfa52e23",
+        "name": "첫 차량 등록은 선택이에요"
+      },
+      {
+        "text": "지금 등록하면 소모품 정보와 주행 기록을바로 확인할 수 있어요. 나중에 추가해도 됩니다.",
+        "x": 36,
+        "y": 513,
+        "id": "3ceab446-01bc-8074-8008-c426bfafef6c",
+        "name": "지금 등록하면 소모품 정보와 주행 기록을 / 바로 확인할 수 있어요. 나중에 추가해도 됩니다."
+      },
+      {
+        "text": "가입하고 차량 등록",
+        "x": 32,
+        "y": 643.5,
+        "id": "3ceab446-01bc-8074-8008-c426bfc2a663",
+        "name": "가입하고 차량 등록 레이블"
+      },
+      {
+        "text": "가입하고 건너뛰기",
+        "x": 32,
+        "y": 707.5,
+        "id": "3ceab446-01bc-8074-8008-c426bfd3f0e3",
+        "name": "가입하고 건너뛰기 레이블"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "가입하고 차량 등록 버튼",
+        "type": "rect",
+        "x": 20,
+        "y": 629,
+        "width": 350,
+        "height": 50,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cbbbf831",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "가입하고 건너뛰기 레이블",
+        "type": "text",
+        "x": 32,
+        "y": 707.5,
+        "width": 326,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c01b1b8a",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "가입하고 차량 등록 레이블",
+        "type": "text",
+        "x": 32,
+        "y": 643.5,
+        "width": 326,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cbbbf831",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "가입하고 건너뛰기 버튼",
+        "type": "rect",
+        "x": 20,
+        "y": 693,
+        "width": 350,
+        "height": 50,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c01b1b8a",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "뒤로 가기",
+        "type": "text",
+        "x": 20,
+        "y": 53,
+        "width": 26,
+        "height": 34,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426bde2304a",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426c01b1b8a",
+    "name": "03 · 내 차량 · 0대",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426c0283053",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "DriveMate",
+        "x": 22,
+        "y": 52,
+        "id": "3ceab446-01bc-8074-8008-c426c05334f2",
+        "name": "앱 이름"
+      },
+      {
+        "text": "＋ 차량 추가",
+        "x": 282,
+        "y": 60,
+        "id": "3ceab446-01bc-8074-8008-c426c064f514",
+        "name": "차량 추가"
+      },
+      {
+        "text": "등록 차량 0/3",
+        "x": 22,
+        "y": 100,
+        "id": "3ceab446-01bc-8074-8008-c426c0708dc5",
+        "name": "등록 차량 수"
+      },
+      {
+        "text": "＋",
+        "x": 181,
+        "y": 192,
+        "id": "3ceab446-01bc-8074-8008-c426c087b025",
+        "name": "첫 차량 등록 표시 글자"
+      },
+      {
+        "text": "내 차부터 등록해 볼까요?",
+        "x": 32,
+        "y": 281,
+        "id": "3ceab446-01bc-8074-8008-c426c09397b0",
+        "name": "빈 상태 제목"
+      },
+      {
+        "text": "주행거리와 점검 기록을 한곳에서차량은 최대 3대까지 관리할 수 있어요.",
+        "x": 32,
+        "y": 327,
+        "id": "3ceab446-01bc-8074-8008-c426c09fcfb0",
+        "name": "빈 상태 안내"
+      },
+      {
+        "text": "첫 차량 등록",
+        "x": 68,
+        "y": 463.5,
+        "id": "3ceab446-01bc-8074-8008-c426c0b66690",
+        "name": "첫 차량 등록 레이블"
+      },
+      {
+        "text": "차량 등록은 나중에 해도 괜찮아요.",
+        "x": 24,
+        "y": 570,
+        "id": "3ceab446-01bc-8074-8008-c426c0c193f1",
+        "name": "가입 선택 안내"
+      },
+      {
+        "text": "차량을 등록해 주세요",
+        "x": 28,
+        "y": 718.5,
+        "id": "3ceab446-01bc-8074-8008-c426c0d2fc03",
+        "name": "차량을 등록해 주세요 레이블"
+      },
+      {
+        "text": "차량",
+        "x": 44,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426c0e870b1",
+        "name": "하단 메뉴 차량"
+      },
+      {
+        "text": "일정",
+        "x": 146,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426c0f3e047",
+        "name": "하단 메뉴 일정"
+      },
+      {
+        "text": "설정",
+        "x": 256,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426c0ff4d45",
+        "name": "하단 메뉴 설정"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "차량 추가",
+        "type": "text",
+        "x": 282,
+        "y": 60,
+        "width": 78,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cbbbf831",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "첫 차량 등록 레이블",
+        "type": "text",
+        "x": 68,
+        "y": 463.5,
+        "width": 254,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cbbbf831",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 차량",
+        "type": "text",
+        "x": 44,
+        "y": 791,
+        "width": 90,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "첫 차량 등록 표시",
+        "type": "circle",
+        "x": 167,
+        "y": 192,
+        "width": 56,
+        "height": 56,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cbbbf831",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "첫 차량 등록 표시 글자",
+        "type": "text",
+        "x": 181,
+        "y": 192,
+        "width": 28,
+        "height": 45,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cbbbf831",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 설정",
+        "type": "text",
+        "x": 256,
+        "y": 791,
+        "width": 90,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d40abb51",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 일정",
+        "type": "text",
+        "x": 146,
+        "y": 791,
+        "width": 90,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426ced6136b",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "첫 차량 등록 버튼",
+        "type": "rect",
+        "x": 56,
+        "y": 449,
+        "width": 278,
+        "height": 50,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cbbbf831",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "차량 추가 배경",
+        "type": "rect",
+        "x": 274,
+        "y": 53,
+        "width": 94,
+        "height": 34,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cbbbf831",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426c1396bee",
+    "name": "04 · 내 차량 · 1대",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426c144812d",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "DriveMate",
+        "x": 22,
+        "y": 52,
+        "id": "3ceab446-01bc-8074-8008-c426c16dd9f6",
+        "name": "앱 이름"
+      },
+      {
+        "text": "＋ 차량 추가",
+        "x": 282,
+        "y": 60,
+        "id": "3ceab446-01bc-8074-8008-c426c17acc24",
+        "name": "차량 추가"
+      },
+      {
+        "text": "등록 차량 1/3",
+        "x": 22,
+        "y": 100,
+        "id": "3ceab446-01bc-8074-8008-c426c18353b5",
+        "name": "등록 차량 수"
+      },
+      {
+        "text": "나의 아반떼",
+        "x": 32,
+        "y": 149,
+        "id": "3ceab446-01bc-8074-8008-c426c1932619",
+        "name": "선택 차량 이름"
+      },
+      {
+        "text": "내연기관 · 가솔린",
+        "x": 32,
+        "y": 182,
+        "id": "3ceab446-01bc-8074-8008-c426c19c3148",
+        "name": "선택 차량 구동 방식"
+      },
+      {
+        "text": "48,250",
+        "x": 32,
+        "y": 372,
+        "id": "3ceab446-01bc-8074-8008-c426c1ab8012",
+        "name": "선택 차량 누적 주행거리"
+      },
+      {
+        "text": "km",
+        "x": 210,
+        "y": 382,
+        "id": "3ceab446-01bc-8074-8008-c426c1b5c850",
+        "name": "주행거리 단위"
+      },
+      {
+        "text": "1/1",
+        "x": 288,
+        "y": 383,
+        "id": "3ceab446-01bc-8074-8008-c426c1c0d2fd",
+        "name": "현재 차량 순서"
+      },
+      {
+        "text": "이 차량으로 주행을 기록해요",
+        "x": 24,
+        "y": 466,
+        "id": "3ceab446-01bc-8074-8008-c426c1d1f076",
+        "name": "캐러셀 안내"
+      },
+      {
+        "text": "소모품",
+        "x": 22,
+        "y": 512,
+        "id": "3ceab446-01bc-8074-8008-c426c1ddfedd",
+        "name": "관리 요약 제목"
+      },
+      {
+        "text": "전체 보기 ›",
+        "x": 283,
+        "y": 514,
+        "id": "3ceab446-01bc-8074-8008-c426c1e8f670",
+        "name": "관리 상세 열기"
+      },
+      {
+        "text": "엔진오일",
+        "x": 32,
+        "y": 565,
+        "id": "3ceab446-01bc-8074-8008-c426c1fc0757",
+        "name": "엔진오일 이름"
+      },
+      {
+        "text": "750 km 남음",
+        "x": 210,
+        "y": 565,
+        "id": "3ceab446-01bc-8074-8008-c426c2082f95",
+        "name": "엔진오일 남은 거리"
+      },
+      {
+        "text": "엔진 에어필터",
+        "x": 32,
+        "y": 613,
+        "id": "3ceab446-01bc-8074-8008-c426c213bb5d",
+        "name": "엔진 에어필터 이름"
+      },
+      {
+        "text": "250 km 남음",
+        "x": 210,
+        "y": 613,
+        "id": "3ceab446-01bc-8074-8008-c426c21f0171",
+        "name": "엔진 에어필터 남은 거리"
+      },
+      {
+        "text": "점검주기와 상태는 예시예요. 제조사 지침을 확인하세요.",
+        "x": 22,
+        "y": 676,
+        "id": "3ceab446-01bc-8074-8008-c426c2316d4f",
+        "name": "점검 기준 예시 안내"
+      },
+      {
+        "text": "나의 아반떼 · 주행 시작",
+        "x": 28,
+        "y": 718.5,
+        "id": "3ceab446-01bc-8074-8008-c426c24391ec",
+        "name": "나의 아반떼 · 주행 시작 레이블"
+      },
+      {
+        "text": "차량",
+        "x": 44,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426c25b04bd",
+        "name": "하단 메뉴 차량"
+      },
+      {
+        "text": "일정",
+        "x": 146,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426c2666693",
+        "name": "하단 메뉴 일정"
+      },
+      {
+        "text": "설정",
+        "x": 256,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426c2728844",
+        "name": "하단 메뉴 설정"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "엔진오일 남은 거리",
+        "type": "text",
+        "x": 210,
+        "y": 565,
+        "width": 145,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c608043a",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "엔진오일 이름",
+        "type": "text",
+        "x": 32,
+        "y": 565,
+        "width": 185,
+        "height": 19.5,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c608043a",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "관리 상세 열기",
+        "type": "text",
+        "x": 283,
+        "y": 514,
+        "width": 85,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c608043a",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "엔진 에어필터 남은 거리",
+        "type": "text",
+        "x": 210,
+        "y": 613,
+        "width": 145,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c608043a",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "차량 추가 배경",
+        "type": "rect",
+        "x": 274,
+        "y": 53,
+        "width": 94,
+        "height": 34,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cbbbf831",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 일정",
+        "type": "text",
+        "x": 146,
+        "y": 791,
+        "width": 90,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426ced6136b",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 차량",
+        "type": "text",
+        "x": 44,
+        "y": 791,
+        "width": 90,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "엔진 에어필터 이름",
+        "type": "text",
+        "x": 32,
+        "y": 613,
+        "width": 185,
+        "height": 19.5,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c608043a",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "나의 아반떼 · 주행 시작 버튼",
+        "type": "rect",
+        "x": 16,
+        "y": 703,
+        "width": 358,
+        "height": 52,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "차량 추가",
+        "type": "text",
+        "x": 282,
+        "y": 60,
+        "width": 78,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cbbbf831",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 설정",
+        "type": "text",
+        "x": 256,
+        "y": 791,
+        "width": 90,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d40abb51",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "차량 관리 요약 카드",
+        "type": "rect",
+        "x": 16,
+        "y": 548,
+        "width": 358,
+        "height": 114,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c608043a",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "나의 아반떼 · 주행 시작 레이블",
+        "type": "text",
+        "x": 28,
+        "y": 718.5,
+        "width": 334,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426c2bdee82",
+    "name": "05 · 내 차량 · 2대 · HYB 선택",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426c2c760f8",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "DriveMate",
+        "x": 22,
+        "y": 52,
+        "id": "3ceab446-01bc-8074-8008-c426c2ed9559",
+        "name": "앱 이름"
+      },
+      {
+        "text": "＋ 차량 추가",
+        "x": 282,
+        "y": 60,
+        "id": "3ceab446-01bc-8074-8008-c426c2fa4dd3",
+        "name": "차량 추가"
+      },
+      {
+        "text": "등록 차량 2/3",
+        "x": 22,
+        "y": 100,
+        "id": "3ceab446-01bc-8074-8008-c426c303cebe",
+        "name": "등록 차량 수"
+      },
+      {
+        "text": "우리 집 K5",
+        "x": 32,
+        "y": 149,
+        "id": "3ceab446-01bc-8074-8008-c426c31109b7",
+        "name": "선택 차량 이름"
+      },
+      {
+        "text": "하이브리드",
+        "x": 32,
+        "y": 182,
+        "id": "3ceab446-01bc-8074-8008-c426c31b56e0",
+        "name": "선택 차량 구동 방식"
+      },
+      {
+        "text": "‹",
+        "x": 22,
+        "y": 265,
+        "id": "3ceab446-01bc-8074-8008-c426c348da68",
+        "name": "이전 차량"
+      },
+      {
+        "text": "›",
+        "x": 345,
+        "y": 265,
+        "id": "3ceab446-01bc-8074-8008-c426c3532024",
+        "name": "다음 차량"
+      },
+      {
+        "text": "26,340",
+        "x": 32,
+        "y": 372,
+        "id": "3ceab446-01bc-8074-8008-c426c32bd255",
+        "name": "선택 차량 누적 주행거리"
+      },
+      {
+        "text": "km",
+        "x": 210,
+        "y": 382,
+        "id": "3ceab446-01bc-8074-8008-c426c3358aba",
+        "name": "주행거리 단위"
+      },
+      {
+        "text": "2/2",
+        "x": 288,
+        "y": 383,
+        "id": "3ceab446-01bc-8074-8008-c426c33ec889",
+        "name": "현재 차량 순서"
+      },
+      {
+        "text": "좌우로 밀어 차량을 선택하세요",
+        "x": 24,
+        "y": 466,
+        "id": "3ceab446-01bc-8074-8008-c426c368b484",
+        "name": "캐러셀 안내"
+      },
+      {
+        "text": "소모품",
+        "x": 22,
+        "y": 512,
+        "id": "3ceab446-01bc-8074-8008-c426c373fc15",
+        "name": "관리 요약 제목"
+      },
+      {
+        "text": "전체 보기 ›",
+        "x": 283,
+        "y": 514,
+        "id": "3ceab446-01bc-8074-8008-c426c37de4ac",
+        "name": "관리 상세 열기"
+      },
+      {
+        "text": "엔진오일",
+        "x": 32,
+        "y": 565,
+        "id": "3ceab446-01bc-8074-8008-c426c38ef998",
+        "name": "엔진오일 이름"
+      },
+      {
+        "text": "4,660 km 남음",
+        "x": 210,
+        "y": 565,
+        "id": "3ceab446-01bc-8074-8008-c426c39956b4",
+        "name": "엔진오일 남은 거리"
+      },
+      {
+        "text": "브레이크 점검",
+        "x": 32,
+        "y": 613,
+        "id": "3ceab446-01bc-8074-8008-c426c3a48eec",
+        "name": "브레이크 점검 이름"
+      },
+      {
+        "text": "9,660 km 남음",
+        "x": 210,
+        "y": 613,
+        "id": "3ceab446-01bc-8074-8008-c426c3aee318",
+        "name": "브레이크 점검 남은 거리"
+      },
+      {
+        "text": "점검주기와 상태는 예시예요. 제조사 지침을 확인하세요.",
+        "x": 22,
+        "y": 676,
+        "id": "3ceab446-01bc-8074-8008-c426c3c0bb96",
+        "name": "점검 기준 예시 안내"
+      },
+      {
+        "text": "우리 집 K5 · 주행 시작",
+        "x": 28,
+        "y": 718.5,
+        "id": "3ceab446-01bc-8074-8008-c426c3d1dbd8",
+        "name": "우리 집 K5 · 주행 시작 레이블"
+      },
+      {
+        "text": "차량",
+        "x": 44,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426c3e8c417",
+        "name": "하단 메뉴 차량"
+      },
+      {
+        "text": "일정",
+        "x": 146,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426c3f4c59f",
+        "name": "하단 메뉴 일정"
+      },
+      {
+        "text": "설정",
+        "x": 256,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426c4022133",
+        "name": "하단 메뉴 설정"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "엔진오일 남은 거리",
+        "type": "text",
+        "x": 210,
+        "y": 565,
+        "width": 145,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c7f7ed25",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 차량",
+        "type": "text",
+        "x": 44,
+        "y": 791,
+        "width": 90,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "차량 관리 요약 카드",
+        "type": "rect",
+        "x": 16,
+        "y": 548,
+        "width": 358,
+        "height": 114,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c7f7ed25",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 설정",
+        "type": "text",
+        "x": 256,
+        "y": 791,
+        "width": 90,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d40abb51",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "차량 추가",
+        "type": "text",
+        "x": 282,
+        "y": 60,
+        "width": 78,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cbbbf831",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 일정",
+        "type": "text",
+        "x": 146,
+        "y": 791,
+        "width": 90,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426ced6136b",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "엔진오일 이름",
+        "type": "text",
+        "x": 32,
+        "y": 565,
+        "width": 185,
+        "height": 19.5,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c7f7ed25",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "차량 추가 배경",
+        "type": "rect",
+        "x": 274,
+        "y": 53,
+        "width": 94,
+        "height": 34,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cbbbf831",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "브레이크 점검 남은 거리",
+        "type": "text",
+        "x": 210,
+        "y": 613,
+        "width": 145,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c7f7ed25",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "우리 집 K5 · 주행 시작 레이블",
+        "type": "text",
+        "x": 28,
+        "y": 718.5,
+        "width": 334,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "우리 집 K5 · 주행 시작 버튼",
+        "type": "rect",
+        "x": 16,
+        "y": 703,
+        "width": 358,
+        "height": 52,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "관리 상세 열기",
+        "type": "text",
+        "x": 283,
+        "y": 514,
+        "width": 85,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c7f7ed25",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "브레이크 점검 이름",
+        "type": "text",
+        "x": 32,
+        "y": 613,
+        "width": 185,
+        "height": 19.5,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c7f7ed25",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426c44d0762",
+    "name": "06 · 내 차량 · 3대 · EV 선택",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426c455bea1",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "DriveMate",
+        "x": 22,
+        "y": 52,
+        "id": "3ceab446-01bc-8074-8008-c426c484b09f",
+        "name": "앱 이름"
+      },
+      {
+        "text": "등록 차량 3/3",
+        "x": 22,
+        "y": 100,
+        "id": "3ceab446-01bc-8074-8008-c426c48cdb73",
+        "name": "등록 차량 수"
+      },
+      {
+        "text": "아이오닉 5",
+        "x": 32,
+        "y": 149,
+        "id": "3ceab446-01bc-8074-8008-c426c49b7c88",
+        "name": "선택 차량 이름"
+      },
+      {
+        "text": "전기차",
+        "x": 32,
+        "y": 182,
+        "id": "3ceab446-01bc-8074-8008-c426c4a3d93f",
+        "name": "선택 차량 구동 방식"
+      },
+      {
+        "text": "‹",
+        "x": 22,
+        "y": 265,
+        "id": "3ceab446-01bc-8074-8008-c426c4e87f31",
+        "name": "이전 차량"
+      },
+      {
+        "text": "›",
+        "x": 345,
+        "y": 265,
+        "id": "3ceab446-01bc-8074-8008-c426c4f1cc9c",
+        "name": "다음 차량"
+      },
+      {
+        "text": "31,780",
+        "x": 32,
+        "y": 372,
+        "id": "3ceab446-01bc-8074-8008-c426c4b43a59",
+        "name": "선택 차량 누적 주행거리"
+      },
+      {
+        "text": "km",
+        "x": 210,
+        "y": 382,
+        "id": "3ceab446-01bc-8074-8008-c426c4ca8f04",
+        "name": "주행거리 단위"
+      },
+      {
+        "text": "3/3",
+        "x": 288,
+        "y": 383,
+        "id": "3ceab446-01bc-8074-8008-c426c4dea4a6",
+        "name": "현재 차량 순서"
+      },
+      {
+        "text": "좌우로 밀어 차량을 선택하세요",
+        "x": 24,
+        "y": 466,
+        "id": "3ceab446-01bc-8074-8008-c426c50bc3f5",
+        "name": "캐러셀 안내"
+      },
+      {
+        "text": "소모품",
+        "x": 22,
+        "y": 512,
+        "id": "3ceab446-01bc-8074-8008-c426c5186bb3",
+        "name": "관리 요약 제목"
+      },
+      {
+        "text": "전체 보기 ›",
+        "x": 283,
+        "y": 514,
+        "id": "3ceab446-01bc-8074-8008-c426c5233a47",
+        "name": "관리 상세 열기"
+      },
+      {
+        "text": "실내 필터",
+        "x": 32,
+        "y": 565,
+        "id": "3ceab446-01bc-8074-8008-c426c535b1a9",
+        "name": "실내 필터 이름"
+      },
+      {
+        "text": "5,220 km 남음",
+        "x": 210,
+        "y": 565,
+        "id": "3ceab446-01bc-8074-8008-c426c5408e74",
+        "name": "실내 필터 남은 거리"
+      },
+      {
+        "text": "타이어 점검",
+        "x": 32,
+        "y": 613,
+        "id": "3ceab446-01bc-8074-8008-c426c54be515",
+        "name": "타이어 점검 이름"
+      },
+      {
+        "text": "6,220 km 남음",
+        "x": 210,
+        "y": 613,
+        "id": "3ceab446-01bc-8074-8008-c426c5575a61",
+        "name": "타이어 점검 남은 거리"
+      },
+      {
+        "text": "점검주기와 상태는 예시예요. 제조사 지침을 확인하세요.",
+        "x": 22,
+        "y": 676,
+        "id": "3ceab446-01bc-8074-8008-c426c56d8f4a",
+        "name": "점검 기준 예시 안내"
+      },
+      {
+        "text": "아이오닉 5 · 주행 시작",
+        "x": 28,
+        "y": 718.5,
+        "id": "3ceab446-01bc-8074-8008-c426c58d20d3",
+        "name": "아이오닉 5 · 주행 시작 레이블"
+      },
+      {
+        "text": "차량",
+        "x": 44,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426c5a7b4aa",
+        "name": "하단 메뉴 차량"
+      },
+      {
+        "text": "일정",
+        "x": 146,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426c5b41b0d",
+        "name": "하단 메뉴 일정"
+      },
+      {
+        "text": "설정",
+        "x": 256,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426c5c10eac",
+        "name": "하단 메뉴 설정"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "실내 필터 남은 거리",
+        "type": "text",
+        "x": 210,
+        "y": 565,
+        "width": 145,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c9e49f00",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "타이어 점검 이름",
+        "type": "text",
+        "x": 32,
+        "y": 613,
+        "width": 185,
+        "height": 19.5,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c9e49f00",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "차량 관리 요약 카드",
+        "type": "rect",
+        "x": 16,
+        "y": 548,
+        "width": 358,
+        "height": 114,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c9e49f00",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "아이오닉 5 · 주행 시작 레이블",
+        "type": "text",
+        "x": 28,
+        "y": 718.5,
+        "width": 334,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "아이오닉 5 · 주행 시작 버튼",
+        "type": "rect",
+        "x": 16,
+        "y": 703,
+        "width": 358,
+        "height": 52,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "관리 상세 열기",
+        "type": "text",
+        "x": 283,
+        "y": 514,
+        "width": 85,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c9e49f00",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "타이어 점검 남은 거리",
+        "type": "text",
+        "x": 210,
+        "y": 613,
+        "width": 145,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c9e49f00",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 설정",
+        "type": "text",
+        "x": 256,
+        "y": 791,
+        "width": 90,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d40abb51",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 일정",
+        "type": "text",
+        "x": 146,
+        "y": 791,
+        "width": 90,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426ced6136b",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "실내 필터 이름",
+        "type": "text",
+        "x": 32,
+        "y": 565,
+        "width": 185,
+        "height": 19.5,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c9e49f00",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 차량",
+        "type": "text",
+        "x": 44,
+        "y": 791,
+        "width": 90,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426c608043a",
+    "name": "07 · ICE 소모품 상세",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426c6118ec0",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "‹",
+        "x": 20,
+        "y": 53,
+        "id": "3ceab446-01bc-8074-8008-c426c6415fec",
+        "name": "뒤로 가기"
+      },
+      {
+        "text": "소모품 관리",
+        "x": 52,
+        "y": 55,
+        "id": "3ceab446-01bc-8074-8008-c426c64b24dc",
+        "name": "화면 제목"
+      },
+      {
+        "text": "아반떼 · ICE · 42,350 km",
+        "x": 20,
+        "y": 101,
+        "id": "3ceab446-01bc-8074-8008-c426c653e567",
+        "name": "화면 설명"
+      },
+      {
+        "text": "아래 주기와 상태는 모두 목업 예시입니다.",
+        "x": 20,
+        "y": 153,
+        "id": "3ceab446-01bc-8074-8008-c426c6630f0d",
+        "name": "예시 주기 고지"
+      },
+      {
+        "text": "타이어",
+        "x": 34,
+        "y": 193,
+        "id": "3ceab446-01bc-8074-8008-c426c67262e7",
+        "name": "타이어 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 196,
+        "id": "3ceab446-01bc-8074-8008-c426c67b6ce9",
+        "name": "타이어 상태"
+      },
+      {
+        "text": "예시 · 40,000 km마다 상태 확인",
+        "x": 34,
+        "y": 219,
+        "id": "3ceab446-01bc-8074-8008-c426c684d81a",
+        "name": "타이어 예시 주기"
+      },
+      {
+        "text": "브레이크",
+        "x": 34,
+        "y": 271,
+        "id": "3ceab446-01bc-8074-8008-c426c6955cc0",
+        "name": "브레이크 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 274,
+        "id": "3ceab446-01bc-8074-8008-c426c69dfd1b",
+        "name": "브레이크 상태"
+      },
+      {
+        "text": "예시 · 20,000 km마다 상태 점검",
+        "x": 34,
+        "y": 297,
+        "id": "3ceab446-01bc-8074-8008-c426c6a90d28",
+        "name": "브레이크 예시 주기"
+      },
+      {
+        "text": "에어컨 필터",
+        "x": 34,
+        "y": 349,
+        "id": "3ceab446-01bc-8074-8008-c426c6b98000",
+        "name": "에어컨 필터 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 352,
+        "id": "3ceab446-01bc-8074-8008-c426c6c309e4",
+        "name": "에어컨 필터 상태"
+      },
+      {
+        "text": "예시 · 10,000 km 또는 12개월",
+        "x": 34,
+        "y": 375,
+        "id": "3ceab446-01bc-8074-8008-c426c6cf1a85",
+        "name": "에어컨 필터 예시 주기"
+      },
+      {
+        "text": "와이퍼",
+        "x": 34,
+        "y": 427,
+        "id": "3ceab446-01bc-8074-8008-c426c6e1afe0",
+        "name": "와이퍼 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 430,
+        "id": "3ceab446-01bc-8074-8008-c426c6ec2cb2",
+        "name": "와이퍼 상태"
+      },
+      {
+        "text": "예시 · 12개월마다 상태 확인",
+        "x": 34,
+        "y": 453,
+        "id": "3ceab446-01bc-8074-8008-c426c6f885f5",
+        "name": "와이퍼 예시 주기"
+      },
+      {
+        "text": "엔진오일",
+        "x": 34,
+        "y": 505,
+        "id": "3ceab446-01bc-8074-8008-c426c70c1b60",
+        "name": "엔진오일 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 508,
+        "id": "3ceab446-01bc-8074-8008-c426c71a5c7e",
+        "name": "엔진오일 상태"
+      },
+      {
+        "text": "예시 · 10,000 km 또는 12개월",
+        "x": 34,
+        "y": 531,
+        "id": "3ceab446-01bc-8074-8008-c426c7278f69",
+        "name": "엔진오일 예시 주기"
+      },
+      {
+        "text": "엔진 에어필터",
+        "x": 34,
+        "y": 583,
+        "id": "3ceab446-01bc-8074-8008-c426c73b72bd",
+        "name": "엔진 에어필터 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 586,
+        "id": "3ceab446-01bc-8074-8008-c426c746f4bd",
+        "name": "엔진 에어필터 상태"
+      },
+      {
+        "text": "예시 · 20,000 km마다 상태 확인",
+        "x": 34,
+        "y": 609,
+        "id": "3ceab446-01bc-8074-8008-c426c753cad6",
+        "name": "엔진 에어필터 예시 주기"
+      },
+      {
+        "text": "정비소 방문 전 확인하세요",
+        "x": 34,
+        "y": 681,
+        "id": "3ceab446-01bc-8074-8008-c426c767f1d8",
+        "name": "정비소 방문 전 확인하세요"
+      },
+      {
+        "text": "차종·연식·운행 환경과 실제 부품 상태를 확인해요.제조사 매뉴얼과 정비 기록을 기준으로 판단하세요.",
+        "x": 34,
+        "y": 709,
+        "id": "3ceab446-01bc-8074-8008-c426c773f32a",
+        "name": "차종·연식·운행 환경과 실제 부품 상태를 확인해요. / 제조사 매뉴얼과 정비 기록을 기준으로 판단하세요."
+      },
+      {
+        "text": "차량",
+        "x": 35,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426c789a73c",
+        "name": "하단 메뉴 차량"
+      },
+      {
+        "text": "이동 계획",
+        "x": 147,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426c7980385",
+        "name": "하단 메뉴 이동 계획"
+      },
+      {
+        "text": "설정",
+        "x": 276,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426c7a72419",
+        "name": "하단 메뉴 설정"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "하단 메뉴 차량",
+        "type": "text",
+        "x": 35,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 설정",
+        "type": "text",
+        "x": 276,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d40abb51",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 이동 계획",
+        "type": "text",
+        "x": 147,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "뒤로 가기",
+        "type": "text",
+        "x": 20,
+        "y": 53,
+        "width": 26,
+        "height": 34,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c44d0762",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426c7f7ed25",
+    "name": "08 · HYB 소모품 상세",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426c8024ec7",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "‹",
+        "x": 20,
+        "y": 53,
+        "id": "3ceab446-01bc-8074-8008-c426c83820da",
+        "name": "뒤로 가기"
+      },
+      {
+        "text": "소모품 관리",
+        "x": 52,
+        "y": 55,
+        "id": "3ceab446-01bc-8074-8008-c426c842994c",
+        "name": "화면 제목"
+      },
+      {
+        "text": "쏘나타 · HYB · 32,150 km",
+        "x": 20,
+        "y": 101,
+        "id": "3ceab446-01bc-8074-8008-c426c84d3507",
+        "name": "화면 설명"
+      },
+      {
+        "text": "아래 주기와 상태는 모두 목업 예시입니다.",
+        "x": 20,
+        "y": 153,
+        "id": "3ceab446-01bc-8074-8008-c426c85a6f2d",
+        "name": "예시 주기 고지"
+      },
+      {
+        "text": "타이어",
+        "x": 34,
+        "y": 193,
+        "id": "3ceab446-01bc-8074-8008-c426c8680ede",
+        "name": "타이어 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 196,
+        "id": "3ceab446-01bc-8074-8008-c426c8705350",
+        "name": "타이어 상태"
+      },
+      {
+        "text": "예시 · 40,000 km마다 상태 확인",
+        "x": 34,
+        "y": 219,
+        "id": "3ceab446-01bc-8074-8008-c426c879490b",
+        "name": "타이어 예시 주기"
+      },
+      {
+        "text": "브레이크",
+        "x": 34,
+        "y": 271,
+        "id": "3ceab446-01bc-8074-8008-c426c8883d28",
+        "name": "브레이크 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 274,
+        "id": "3ceab446-01bc-8074-8008-c426c8909c05",
+        "name": "브레이크 상태"
+      },
+      {
+        "text": "예시 · 20,000 km마다 상태 점검",
+        "x": 34,
+        "y": 297,
+        "id": "3ceab446-01bc-8074-8008-c426c89badaf",
+        "name": "브레이크 예시 주기"
+      },
+      {
+        "text": "에어컨 필터",
+        "x": 34,
+        "y": 349,
+        "id": "3ceab446-01bc-8074-8008-c426c8ac3751",
+        "name": "에어컨 필터 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 352,
+        "id": "3ceab446-01bc-8074-8008-c426c8b4b55f",
+        "name": "에어컨 필터 상태"
+      },
+      {
+        "text": "예시 · 10,000 km 또는 12개월",
+        "x": 34,
+        "y": 375,
+        "id": "3ceab446-01bc-8074-8008-c426c8bf0a08",
+        "name": "에어컨 필터 예시 주기"
+      },
+      {
+        "text": "와이퍼",
+        "x": 34,
+        "y": 427,
+        "id": "3ceab446-01bc-8074-8008-c426c8cf67c5",
+        "name": "와이퍼 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 430,
+        "id": "3ceab446-01bc-8074-8008-c426c8d842f1",
+        "name": "와이퍼 상태"
+      },
+      {
+        "text": "예시 · 12개월마다 상태 확인",
+        "x": 34,
+        "y": 453,
+        "id": "3ceab446-01bc-8074-8008-c426c8e358fd",
+        "name": "와이퍼 예시 주기"
+      },
+      {
+        "text": "엔진오일",
+        "x": 34,
+        "y": 505,
+        "id": "3ceab446-01bc-8074-8008-c426c8f44341",
+        "name": "엔진오일 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 508,
+        "id": "3ceab446-01bc-8074-8008-c426c9005a5a",
+        "name": "엔진오일 상태"
+      },
+      {
+        "text": "예시 · 10,000 km 또는 12개월",
+        "x": 34,
+        "y": 531,
+        "id": "3ceab446-01bc-8074-8008-c426c90e150d",
+        "name": "엔진오일 예시 주기"
+      },
+      {
+        "text": "엔진 에어필터",
+        "x": 34,
+        "y": 583,
+        "id": "3ceab446-01bc-8074-8008-c426c92321bb",
+        "name": "엔진 에어필터 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 586,
+        "id": "3ceab446-01bc-8074-8008-c426c92f1850",
+        "name": "엔진 에어필터 상태"
+      },
+      {
+        "text": "예시 · 20,000 km마다 상태 확인",
+        "x": 34,
+        "y": 609,
+        "id": "3ceab446-01bc-8074-8008-c426c93c7897",
+        "name": "엔진 에어필터 예시 주기"
+      },
+      {
+        "text": "정비소 방문 전 확인하세요",
+        "x": 34,
+        "y": 681,
+        "id": "3ceab446-01bc-8074-8008-c426c9508abb",
+        "name": "정비소 방문 전 확인하세요"
+      },
+      {
+        "text": "차종·연식·운행 환경과 실제 부품 상태를 확인해요.제조사 매뉴얼과 정비 기록을 기준으로 판단하세요.",
+        "x": 34,
+        "y": 709,
+        "id": "3ceab446-01bc-8074-8008-c426c95d78b6",
+        "name": "차종·연식·운행 환경과 실제 부품 상태를 확인해요. / 제조사 매뉴얼과 정비 기록을 기준으로 판단하세요."
+      },
+      {
+        "text": "차량",
+        "x": 35,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426c973a47e",
+        "name": "하단 메뉴 차량"
+      },
+      {
+        "text": "이동 계획",
+        "x": 147,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426c9817ef4",
+        "name": "하단 메뉴 이동 계획"
+      },
+      {
+        "text": "설정",
+        "x": 276,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426c98f4cd7",
+        "name": "하단 메뉴 설정"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "하단 메뉴 이동 계획",
+        "type": "text",
+        "x": 147,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 설정",
+        "type": "text",
+        "x": 276,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d40abb51",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 차량",
+        "type": "text",
+        "x": 35,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "뒤로 가기",
+        "type": "text",
+        "x": 20,
+        "y": 53,
+        "width": 26,
+        "height": 34,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c44d0762",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426c9e49f00",
+    "name": "09 · EV 소모품 상세",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426c9f1092b",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "‹",
+        "x": 20,
+        "y": 53,
+        "id": "3ceab446-01bc-8074-8008-c426ca263345",
+        "name": "뒤로 가기"
+      },
+      {
+        "text": "소모품 관리",
+        "x": 52,
+        "y": 55,
+        "id": "3ceab446-01bc-8074-8008-c426ca309774",
+        "name": "화면 제목"
+      },
+      {
+        "text": "아이오닉 5 · EV · 18,420 km",
+        "x": 20,
+        "y": 101,
+        "id": "3ceab446-01bc-8074-8008-c426ca3bc1cc",
+        "name": "화면 설명"
+      },
+      {
+        "text": "아래 주기와 상태는 모두 목업 예시입니다.",
+        "x": 20,
+        "y": 153,
+        "id": "3ceab446-01bc-8074-8008-c426ca4d172a",
+        "name": "예시 주기 고지"
+      },
+      {
+        "text": "타이어",
+        "x": 34,
+        "y": 193,
+        "id": "3ceab446-01bc-8074-8008-c426ca5f8edb",
+        "name": "타이어 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 196,
+        "id": "3ceab446-01bc-8074-8008-c426ca6970c0",
+        "name": "타이어 상태"
+      },
+      {
+        "text": "예시 · 40,000 km마다 상태 확인",
+        "x": 34,
+        "y": 219,
+        "id": "3ceab446-01bc-8074-8008-c426ca754bf0",
+        "name": "타이어 예시 주기"
+      },
+      {
+        "text": "브레이크",
+        "x": 34,
+        "y": 271,
+        "id": "3ceab446-01bc-8074-8008-c426ca8653e4",
+        "name": "브레이크 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 274,
+        "id": "3ceab446-01bc-8074-8008-c426ca932a1d",
+        "name": "브레이크 상태"
+      },
+      {
+        "text": "예시 · 20,000 km마다 상태 점검",
+        "x": 34,
+        "y": 297,
+        "id": "3ceab446-01bc-8074-8008-c426ca9fb7db",
+        "name": "브레이크 예시 주기"
+      },
+      {
+        "text": "에어컨 필터",
+        "x": 34,
+        "y": 349,
+        "id": "3ceab446-01bc-8074-8008-c426cab183be",
+        "name": "에어컨 필터 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 352,
+        "id": "3ceab446-01bc-8074-8008-c426cabc7301",
+        "name": "에어컨 필터 상태"
+      },
+      {
+        "text": "예시 · 10,000 km 또는 12개월",
+        "x": 34,
+        "y": 375,
+        "id": "3ceab446-01bc-8074-8008-c426cac81b90",
+        "name": "에어컨 필터 예시 주기"
+      },
+      {
+        "text": "와이퍼",
+        "x": 34,
+        "y": 427,
+        "id": "3ceab446-01bc-8074-8008-c426cadb2364",
+        "name": "와이퍼 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 430,
+        "id": "3ceab446-01bc-8074-8008-c426cae6527e",
+        "name": "와이퍼 상태"
+      },
+      {
+        "text": "예시 · 12개월마다 상태 확인",
+        "x": 34,
+        "y": 453,
+        "id": "3ceab446-01bc-8074-8008-c426caf2e012",
+        "name": "와이퍼 예시 주기"
+      },
+      {
+        "text": "냉각 시스템 점검 (선택)",
+        "x": 34,
+        "y": 505,
+        "id": "3ceab446-01bc-8074-8008-c426cb073432",
+        "name": "냉각 시스템 점검 (선택) 이름"
+      },
+      {
+        "text": "확인",
+        "x": 275,
+        "y": 508,
+        "id": "3ceab446-01bc-8074-8008-c426cb152ac4",
+        "name": "냉각 시스템 점검 (선택) 상태"
+      },
+      {
+        "text": "예시 · 제조사 매뉴얼에 따라 점검",
+        "x": 34,
+        "y": 531,
+        "id": "3ceab446-01bc-8074-8008-c426cb2249d8",
+        "name": "냉각 시스템 점검 (선택) 예시 주기"
+      },
+      {
+        "text": "정비소 방문 전 확인하세요",
+        "x": 34,
+        "y": 681,
+        "id": "3ceab446-01bc-8074-8008-c426cb369738",
+        "name": "정비소 방문 전 확인하세요"
+      },
+      {
+        "text": "차종·연식·운행 환경과 실제 부품 상태를 확인해요.제조사 매뉴얼과 정비 기록을 기준으로 판단하세요.",
+        "x": 34,
+        "y": 709,
+        "id": "3ceab446-01bc-8074-8008-c426cb4238f1",
+        "name": "차종·연식·운행 환경과 실제 부품 상태를 확인해요. / 제조사 매뉴얼과 정비 기록을 기준으로 판단하세요."
+      },
+      {
+        "text": "차량",
+        "x": 35,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426cb582384",
+        "name": "하단 메뉴 차량"
+      },
+      {
+        "text": "이동 계획",
+        "x": 147,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426cb65f521",
+        "name": "하단 메뉴 이동 계획"
+      },
+      {
+        "text": "설정",
+        "x": 276,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426cb73b0d3",
+        "name": "하단 메뉴 설정"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "하단 메뉴 설정",
+        "type": "text",
+        "x": 276,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d40abb51",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 차량",
+        "type": "text",
+        "x": 35,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "뒤로 가기",
+        "type": "text",
+        "x": 20,
+        "y": 53,
+        "width": 26,
+        "height": 34,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c44d0762",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 이동 계획",
+        "type": "text",
+        "x": 147,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426cbbbf831",
+    "name": "10 · 차량 등록",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426cbc6c007",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "‹",
+        "x": 20,
+        "y": 53,
+        "id": "3ceab446-01bc-8074-8008-c426cbf986c4",
+        "name": "뒤로 가기"
+      },
+      {
+        "text": "차량 등록",
+        "x": 52,
+        "y": 55,
+        "id": "3ceab446-01bc-8074-8008-c426cc03c696",
+        "name": "화면 제목"
+      },
+      {
+        "text": "최대 3대까지 등록할 수 있어요.",
+        "x": 20,
+        "y": 101,
+        "id": "3ceab446-01bc-8074-8008-c426cc105a9a",
+        "name": "화면 설명"
+      },
+      {
+        "text": "차량 이름",
+        "x": 20,
+        "y": 157,
+        "id": "3ceab446-01bc-8074-8008-c426cc20840a",
+        "name": "차량 이름 입력 제목"
+      },
+      {
+        "text": "예: 내 차 / 아반떼",
+        "x": 34,
+        "y": 197,
+        "id": "3ceab446-01bc-8074-8008-c426cc331112",
+        "name": "차량 이름 입력값"
+      },
+      {
+        "text": "제조사 · 모델 · 연식",
+        "x": 20,
+        "y": 254,
+        "id": "3ceab446-01bc-8074-8008-c426cc3d4be1",
+        "name": "제조사 · 모델 · 연식 입력 제목"
+      },
+      {
+        "text": "예: 현대 아반떼 2023",
+        "x": 34,
+        "y": 294,
+        "id": "3ceab446-01bc-8074-8008-c426cc4f2441",
+        "name": "제조사 · 모델 · 연식 입력값"
+      },
+      {
+        "text": "현재 누적 주행거리",
+        "x": 20,
+        "y": 351,
+        "id": "3ceab446-01bc-8074-8008-c426cc58dfd2",
+        "name": "현재 누적 주행거리 입력 제목"
+      },
+      {
+        "text": "42,350",
+        "x": 34,
+        "y": 391,
+        "id": "3ceab446-01bc-8074-8008-c426cc6b1ce6",
+        "name": "현재 누적 주행거리 입력값"
+      },
+      {
+        "text": "km",
+        "x": 323,
+        "y": 391,
+        "id": "3ceab446-01bc-8074-8008-c426cc75418f",
+        "name": "현재 누적 주행거리 단위"
+      },
+      {
+        "text": "구동 방식",
+        "x": 20,
+        "y": 462,
+        "id": "3ceab446-01bc-8074-8008-c426cc80e05f",
+        "name": "구동 방식"
+      },
+      {
+        "text": "내연기관",
+        "x": 32,
+        "y": 531,
+        "id": "3ceab446-01bc-8074-8008-c426cca1609f",
+        "name": "내연기관 이름"
+      },
+      {
+        "text": "하이브리드",
+        "x": 153,
+        "y": 531,
+        "id": "3ceab446-01bc-8074-8008-c426ccca14d2",
+        "name": "하이브리드 이름"
+      },
+      {
+        "text": "전기차",
+        "x": 274,
+        "y": 531,
+        "id": "3ceab446-01bc-8074-8008-c426ccf3d696",
+        "name": "전기차 이름"
+      },
+      {
+        "text": "ICE",
+        "x": 32,
+        "y": 552,
+        "id": "3ceab446-01bc-8074-8008-c426ccad89f2",
+        "name": "내연기관 코드"
+      },
+      {
+        "text": "HYB",
+        "x": 153,
+        "y": 552,
+        "id": "3ceab446-01bc-8074-8008-c426ccd743ff",
+        "name": "하이브리드 코드"
+      },
+      {
+        "text": "EV",
+        "x": 274,
+        "y": 552,
+        "id": "3ceab446-01bc-8074-8008-c426cd02e282",
+        "name": "전기차 코드"
+      },
+      {
+        "text": "구동 방식에 맞는 소모품 목록을 보여드립니다.",
+        "x": 20,
+        "y": 598,
+        "id": "3ceab446-01bc-8074-8008-c426cd142056",
+        "name": "구동 방식에 맞는 소모품 목록을 보여드립니다."
+      },
+      {
+        "text": "차량 저장",
+        "x": 32,
+        "y": 749.5,
+        "id": "3ceab446-01bc-8074-8008-c426cd2a92c3",
+        "name": "차량 저장 레이블"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "뒤로 가기",
+        "type": "text",
+        "x": 20,
+        "y": 53,
+        "width": 26,
+        "height": 34,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "차량 저장 버튼",
+        "type": "rect",
+        "x": 20,
+        "y": 735,
+        "width": 350,
+        "height": 50,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "차량 저장 레이블",
+        "type": "text",
+        "x": 32,
+        "y": 749.5,
+        "width": 326,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426cd6b8276",
+    "name": "11 · 주행 시작",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426cd76322e",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "‹",
+        "x": 20,
+        "y": 53,
+        "id": "3ceab446-01bc-8074-8008-c426cdaa2e4d",
+        "name": "뒤로 가기"
+      },
+      {
+        "text": "주행 시작",
+        "x": 52,
+        "y": 55,
+        "id": "3ceab446-01bc-8074-8008-c426cdb383c7",
+        "name": "화면 제목"
+      },
+      {
+        "text": "이동 계획을 만들 방법을 선택하세요.",
+        "x": 20,
+        "y": 101,
+        "id": "3ceab446-01bc-8074-8008-c426cdbdf6ec",
+        "name": "화면 설명"
+      },
+      {
+        "text": "선택 차량",
+        "x": 36,
+        "y": 176,
+        "id": "3ceab446-01bc-8074-8008-c426cdd6a8df",
+        "name": "선택 차량"
+      },
+      {
+        "text": "변경 ›",
+        "x": 301,
+        "y": 199,
+        "id": "3ceab446-01bc-8074-8008-c426cdebc561",
+        "name": "변경 ›"
+      },
+      {
+        "text": "아반떼 · 가솔린 (ICE)",
+        "x": 36,
+        "y": 204,
+        "id": "3ceab446-01bc-8074-8008-c426cde0e267",
+        "name": "아반떼 · 가솔린 (ICE)"
+      },
+      {
+        "text": "Google 캘린더",
+        "x": 36,
+        "y": 297,
+        "id": "3ceab446-01bc-8074-8008-c426cdff69ce",
+        "name": "Google 캘린더"
+      },
+      {
+        "text": "일정 시간과 장소를 받아권장 출발 시간을 계산합니다.",
+        "x": 36,
+        "y": 335,
+        "id": "3ceab446-01bc-8074-8008-c426ce0c9fc7",
+        "name": "일정 시간과 장소를 받아 / 권장 출발 시간을 계산합니다."
+      },
+      {
+        "text": "일정 가져오기",
+        "x": 48,
+        "y": 390.5,
+        "id": "3ceab446-01bc-8074-8008-c426ce202bee",
+        "name": "일정 가져오기 레이블"
+      },
+      {
+        "text": "출발·도착지 직접 선택",
+        "x": 36,
+        "y": 473,
+        "id": "3ceab446-01bc-8074-8008-c426ce355ad9",
+        "name": "출발·도착지 직접 선택"
+      },
+      {
+        "text": "주소를 입력하거나 지도에서출발지와 도착지를 선택합니다.",
+        "x": 36,
+        "y": 511,
+        "id": "3ceab446-01bc-8074-8008-c426ce443fa0",
+        "name": "주소를 입력하거나 지도에서 / 출발지와 도착지를 선택합니다."
+      },
+      {
+        "text": "경로 직접 입력",
+        "x": 48,
+        "y": 566.5,
+        "id": "3ceab446-01bc-8074-8008-c426ce5c99d9",
+        "name": "경로 직접 입력 레이블"
+      },
+      {
+        "text": "주행 기록은 시작 확인 후 선택 차량에 저장됩니다.",
+        "x": 20,
+        "y": 649,
+        "id": "3ceab446-01bc-8074-8008-c426ce697796",
+        "name": "주행 기록은 시작 확인 후 선택 차량에 저장됩니다."
+      },
+      {
+        "text": "차량",
+        "x": 35,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426ce7f60ad",
+        "name": "하단 메뉴 차량"
+      },
+      {
+        "text": "이동 계획",
+        "x": 147,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426ce8c4c39",
+        "name": "하단 메뉴 이동 계획"
+      },
+      {
+        "text": "설정",
+        "x": 276,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426ce99293a",
+        "name": "하단 메뉴 설정"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "캘린더 일정 가져오기 카드",
+        "type": "rect",
+        "x": 20,
+        "y": 279,
+        "width": 350,
+        "height": 156,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426ced6136b",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "경로 직접 입력 버튼",
+        "type": "rect",
+        "x": 36,
+        "y": 558,
+        "width": 318,
+        "height": 38,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d051bde2",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "선택 차량",
+        "type": "rect",
+        "x": 20,
+        "y": 161,
+        "width": 350,
+        "height": 86,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 이동 계획",
+        "type": "text",
+        "x": 147,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "경로 직접 입력 레이블",
+        "type": "text",
+        "x": 48,
+        "y": 566.5,
+        "width": 294,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d051bde2",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 설정",
+        "type": "text",
+        "x": 276,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d40abb51",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "직접 경로 입력 카드",
+        "type": "rect",
+        "x": 20,
+        "y": 455,
+        "width": 350,
+        "height": 156,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d051bde2",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "변경 ›",
+        "type": "text",
+        "x": 301,
+        "y": 199,
+        "width": 50,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 차량",
+        "type": "text",
+        "x": 35,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "뒤로 가기",
+        "type": "text",
+        "x": 20,
+        "y": 53,
+        "width": 26,
+        "height": 34,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "일정 가져오기 레이블",
+        "type": "text",
+        "x": 48,
+        "y": 390.5,
+        "width": 294,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426ced6136b",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "일정 가져오기 버튼",
+        "type": "rect",
+        "x": 36,
+        "y": 382,
+        "width": 318,
+        "height": 38,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426ced6136b",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426ced6136b",
+    "name": "12 · 캘린더 일정 선택",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426cee23b0a",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "‹",
+        "x": 20,
+        "y": 53,
+        "id": "3ceab446-01bc-8074-8008-c426cf1bf017",
+        "name": "뒤로 가기"
+      },
+      {
+        "text": "캘린더 일정 선택",
+        "x": 52,
+        "y": 55,
+        "id": "3ceab446-01bc-8074-8008-c426cf25f3bd",
+        "name": "화면 제목"
+      },
+      {
+        "text": "Google 캘린더에서 가져온 일정 · 목업",
+        "x": 20,
+        "y": 101,
+        "id": "3ceab446-01bc-8074-8008-c426cf308e3b",
+        "name": "화면 설명"
+      },
+      {
+        "text": "오늘 15:00 · 강남 미팅",
+        "x": 36,
+        "y": 171,
+        "id": "3ceab446-01bc-8074-8008-c426cf48cf1a",
+        "name": "오늘 15:00 · 강남 미팅"
+      },
+      {
+        "text": "장소 · 강남역",
+        "x": 36,
+        "y": 208,
+        "id": "3ceab446-01bc-8074-8008-c426cf534894",
+        "name": "장소 · 강남역"
+      },
+      {
+        "text": "일정 변경 ›",
+        "x": 36,
+        "y": 237,
+        "id": "3ceab446-01bc-8074-8008-c426cf5da68e",
+        "name": "일정 변경 ›"
+      },
+      {
+        "text": "도착까지 필요한 시간",
+        "x": 20,
+        "y": 290,
+        "id": "3ceab446-01bc-8074-8008-c426cf68d2dd",
+        "name": "도착까지 필요한 시간"
+      },
+      {
+        "text": "예상 차량 이동",
+        "x": 20,
+        "y": 327,
+        "id": "3ceab446-01bc-8074-8008-c426cf73c131",
+        "name": "예상 차량 이동"
+      },
+      {
+        "text": "80분",
+        "x": 300,
+        "y": 327,
+        "id": "3ceab446-01bc-8074-8008-c426cf7e8c05",
+        "name": "80분"
+      },
+      {
+        "text": "주차 후 도보",
+        "x": 20,
+        "y": 367,
+        "id": "3ceab446-01bc-8074-8008-c426cf899b3e",
+        "name": "주차 후 도보"
+      },
+      {
+        "text": "10분",
+        "x": 300,
+        "y": 367,
+        "id": "3ceab446-01bc-8074-8008-c426cf952c1c",
+        "name": "10분"
+      },
+      {
+        "text": "여유 시간",
+        "x": 20,
+        "y": 407,
+        "id": "3ceab446-01bc-8074-8008-c426cfa0dfca",
+        "name": "여유 시간"
+      },
+      {
+        "text": "10분",
+        "x": 300,
+        "y": 407,
+        "id": "3ceab446-01bc-8074-8008-c426cfabca75",
+        "name": "10분"
+      },
+      {
+        "text": "총 준비 시간",
+        "x": 20,
+        "y": 462,
+        "id": "3ceab446-01bc-8074-8008-c426cfc07d35",
+        "name": "총 준비 시간"
+      },
+      {
+        "text": "100분",
+        "x": 282,
+        "y": 462,
+        "id": "3ceab446-01bc-8074-8008-c426cfcd3a8c",
+        "name": "100분"
+      },
+      {
+        "text": "권장 출발 시간",
+        "x": 36,
+        "y": 529,
+        "id": "3ceab446-01bc-8074-8008-c426cfe0dcd0",
+        "name": "권장 출발 시간"
+      },
+      {
+        "text": "13:20",
+        "x": 36,
+        "y": 559,
+        "id": "3ceab446-01bc-8074-8008-c426cfedd71b",
+        "name": "13:20"
+      },
+      {
+        "text": "15:00 − 80분 − 10분 − 10분",
+        "x": 36,
+        "y": 611,
+        "id": "3ceab446-01bc-8074-8008-c426cffb3745",
+        "name": "15:00 − 80분 − 10분 − 10분"
+      },
+      {
+        "text": "이동 계획 확인",
+        "x": 32,
+        "y": 739.5,
+        "id": "3ceab446-01bc-8074-8008-c426d0127777",
+        "name": "이동 계획 확인 레이블"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "뒤로 가기",
+        "type": "text",
+        "x": 20,
+        "y": 53,
+        "width": 26,
+        "height": 34,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "이동 계획 확인 레이블",
+        "type": "text",
+        "x": 32,
+        "y": 739.5,
+        "width": 326,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d2007553",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "이동 계획 확인 버튼",
+        "type": "rect",
+        "x": 20,
+        "y": 725,
+        "width": 350,
+        "height": 50,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d2007553",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426d051bde2",
+    "name": "13 · 직접 경로 입력",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426d05d3518",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "‹",
+        "x": 20,
+        "y": 53,
+        "id": "3ceab446-01bc-8074-8008-c426d094c5d5",
+        "name": "뒤로 가기"
+      },
+      {
+        "text": "직접 경로 입력",
+        "x": 52,
+        "y": 55,
+        "id": "3ceab446-01bc-8074-8008-c426d0aac6f1",
+        "name": "화면 제목"
+      },
+      {
+        "text": "출발지와 도착지를 입력하세요.",
+        "x": 20,
+        "y": 101,
+        "id": "3ceab446-01bc-8074-8008-c426d0c76646",
+        "name": "화면 설명"
+      },
+      {
+        "text": "출발지",
+        "x": 20,
+        "y": 157,
+        "id": "3ceab446-01bc-8074-8008-c426d0e594b9",
+        "name": "출발지 입력 제목"
+      },
+      {
+        "text": "현재 위치 / 주소 검색",
+        "x": 34,
+        "y": 197,
+        "id": "3ceab446-01bc-8074-8008-c426d10456eb",
+        "name": "출발지 입력값"
+      },
+      {
+        "text": "도착지",
+        "x": 20,
+        "y": 252,
+        "id": "3ceab446-01bc-8074-8008-c426d118cd28",
+        "name": "도착지 입력 제목"
+      },
+      {
+        "text": "강남역",
+        "x": 34,
+        "y": 292,
+        "id": "3ceab446-01bc-8074-8008-c426d131d2f3",
+        "name": "도착지 입력값"
+      },
+      {
+        "text": "지도",
+        "x": 40,
+        "y": 378,
+        "id": "3ceab446-01bc-8074-8008-c426d14c1f24",
+        "name": "직접 경로 지도 제목"
+      },
+      {
+        "text": "실제 MapLibre 화면을 연결할 영역",
+        "x": 40,
+        "y": 406,
+        "id": "3ceab446-01bc-8074-8008-c426d15906c3",
+        "name": "직접 경로 지도 연결 설명"
+      },
+      {
+        "text": "출발",
+        "x": 93,
+        "y": 499.48,
+        "id": "3ceab446-01bc-8074-8008-c426d18a001a",
+        "name": "직접 경로 지도 출발 이름"
+      },
+      {
+        "text": "강남역",
+        "x": 205,
+        "y": 581.6799999999998,
+        "id": "3ceab446-01bc-8074-8008-c426d198a277",
+        "name": "직접 경로 지도 도착 이름"
+      },
+      {
+        "text": "지도에서 위치 선택",
+        "x": 20,
+        "y": 653,
+        "id": "3ceab446-01bc-8074-8008-c426d1a6d835",
+        "name": "지도에서 위치 선택"
+      },
+      {
+        "text": "이동 계획 계산",
+        "x": 32,
+        "y": 749.5,
+        "id": "3ceab446-01bc-8074-8008-c426d1bedf06",
+        "name": "이동 계획 계산 레이블"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "뒤로 가기",
+        "type": "text",
+        "x": 20,
+        "y": 53,
+        "width": 26,
+        "height": 34,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "이동 계획 계산 버튼",
+        "type": "rect",
+        "x": 20,
+        "y": 735,
+        "width": 350,
+        "height": 50,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d2007553",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "이동 계획 계산 레이블",
+        "type": "text",
+        "x": 32,
+        "y": 749.5,
+        "width": 326,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d2007553",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426d2007553",
+    "name": "14 · 전체 지도 · 경로 확인",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426d2210302",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "‹",
+        "x": 36,
+        "y": 63,
+        "id": "3ceab446-01bc-8074-8008-c426d276ddc3",
+        "name": "경로 닫기"
+      },
+      {
+        "text": "강남역으로 이동",
+        "x": 76,
+        "y": 67,
+        "id": "3ceab446-01bc-8074-8008-c426d283b591",
+        "name": "목적지 제목"
+      },
+      {
+        "text": "서울역 출발 · 최단거리 예시 경로",
+        "x": 76,
+        "y": 103,
+        "id": "3ceab446-01bc-8074-8008-c426d291e1de",
+        "name": "지도 상태"
+      },
+      {
+        "text": "최단거리 · 예시 경로",
+        "x": 27,
+        "y": 173,
+        "id": "3ceab446-01bc-8074-8008-c426d2a86c8e",
+        "name": "경로 기준"
+      },
+      {
+        "text": "앱 활성 중 5분마다 경로 갱신",
+        "x": 27,
+        "y": 221,
+        "id": "3ceab446-01bc-8074-8008-c426d2bf2180",
+        "name": "경로 갱신 안내"
+      },
+      {
+        "text": "＋",
+        "x": 338,
+        "y": 222,
+        "id": "3ceab446-01bc-8074-8008-c426d2d51a3f",
+        "name": "지도 확대"
+      },
+      {
+        "text": "−",
+        "x": 338,
+        "y": 274,
+        "id": "3ceab446-01bc-8074-8008-c426d2ee8eca",
+        "name": "지도 축소"
+      },
+      {
+        "text": "◎",
+        "x": 338,
+        "y": 461,
+        "id": "3ceab446-01bc-8074-8008-c426d30ca2ef",
+        "name": "현재 위치로"
+      },
+      {
+        "text": "OpenFreeMap · © OpenMapTiles · © OpenStreetMap",
+        "x": 26,
+        "y": 565,
+        "id": "3ceab446-01bc-8074-8008-c426d326d904",
+        "name": "지도 출처"
+      },
+      {
+        "text": "80분",
+        "x": 22,
+        "y": 611,
+        "id": "3ceab446-01bc-8074-8008-c426d34d740d",
+        "name": "예상 이동 시간"
+      },
+      {
+        "text": "18.2 km",
+        "x": 189,
+        "y": 619,
+        "id": "3ceab446-01bc-8074-8008-c426d35de42f",
+        "name": "경로 예상 거리"
+      },
+      {
+        "text": "도착 예시 14:50  ·  일정 시작 15:00",
+        "x": 22,
+        "y": 661,
+        "id": "3ceab446-01bc-8074-8008-c426d36e86bb",
+        "name": "도착 및 일정 시간"
+      },
+      {
+        "text": "권장 출발 13:20  ·  출발 알림 켜짐",
+        "x": 22,
+        "y": 691,
+        "id": "3ceab446-01bc-8074-8008-c426d37df40a",
+        "name": "출발 알림 상태"
+      },
+      {
+        "text": "주행 기록 시작",
+        "x": 28,
+        "y": 744.5,
+        "id": "3ceab446-01bc-8074-8008-c426d39d5e87",
+        "name": "주행 기록 시작 레이블"
+      },
+      {
+        "text": "앱이 화면에 열려 있을 때만 거리를 측정해요.",
+        "x": 22,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426d3ae706a",
+        "name": "전경 GPS 기록 안내"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "경로 닫기 배경",
+        "type": "circle",
+        "x": 27,
+        "y": 68,
+        "width": 36,
+        "height": 36,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "주행 기록 시작 레이블",
+        "type": "text",
+        "x": 28,
+        "y": 744.5,
+        "width": 334,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d827ce12",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "경로 닫기",
+        "type": "text",
+        "x": 36,
+        "y": 63,
+        "width": 18,
+        "height": 44,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "주행 기록 시작 버튼",
+        "type": "rect",
+        "x": 16,
+        "y": 730,
+        "width": 358,
+        "height": 50,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d827ce12",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426d40abb51",
+    "name": "15 · 설정",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426d41b49ac",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "‹",
+        "x": 20,
+        "y": 53,
+        "id": "3ceab446-01bc-8074-8008-c426d462e81e",
+        "name": "뒤로 가기"
+      },
+      {
+        "text": "설정",
+        "x": 52,
+        "y": 55,
+        "id": "3ceab446-01bc-8074-8008-c426d4747ceb",
+        "name": "화면 제목"
+      },
+      {
+        "text": "출발 알림과 주행 감지 조건을 조정하세요.",
+        "x": 20,
+        "y": 101,
+        "id": "3ceab446-01bc-8074-8008-c426d4838ded",
+        "name": "화면 설명"
+      },
+      {
+        "text": "출발 알림",
+        "x": 20,
+        "y": 160,
+        "id": "3ceab446-01bc-8074-8008-c426d49e1215",
+        "name": "출발 알림"
+      },
+      {
+        "text": "여유 시간",
+        "x": 36,
+        "y": 214,
+        "id": "3ceab446-01bc-8074-8008-c426d4ba0d98",
+        "name": "여유 시간"
+      },
+      {
+        "text": "10분",
+        "x": 298,
+        "y": 214,
+        "id": "3ceab446-01bc-8074-8008-c426d4c9d544",
+        "name": "10분"
+      },
+      {
+        "text": "일정 전에 추가로 확보할 시간",
+        "x": 36,
+        "y": 249,
+        "id": "3ceab446-01bc-8074-8008-c426d4dae191",
+        "name": "일정 전에 추가로 확보할 시간"
+      },
+      {
+        "text": "5분",
+        "x": 36,
+        "y": 319,
+        "id": "3ceab446-01bc-8074-8008-c426d50e0e77",
+        "name": "5분"
+      },
+      {
+        "text": "30분",
+        "x": 305,
+        "y": 319,
+        "id": "3ceab446-01bc-8074-8008-c426d51f0a49",
+        "name": "30분"
+      },
+      {
+        "text": "주차 후 도보",
+        "x": 36,
+        "y": 394,
+        "id": "3ceab446-01bc-8074-8008-c426d53e5400",
+        "name": "주차 후 도보"
+      },
+      {
+        "text": "10분",
+        "x": 298,
+        "y": 406,
+        "id": "3ceab446-01bc-8074-8008-c426d566b251",
+        "name": "10분"
+      },
+      {
+        "text": "목적지까지 걸어가는 시간",
+        "x": 36,
+        "y": 423,
+        "id": "3ceab446-01bc-8074-8008-c426d550dbf4",
+        "name": "목적지까지 걸어가는 시간"
+      },
+      {
+        "text": "주행 감지",
+        "x": 20,
+        "y": 493,
+        "id": "3ceab446-01bc-8074-8008-c426d57ad55d",
+        "name": "주행 감지"
+      },
+      {
+        "text": "백그라운드 주행 감지",
+        "x": 36,
+        "y": 548,
+        "id": "3ceab446-01bc-8074-8008-c426d599a67d",
+        "name": "백그라운드 주행 감지"
+      },
+      {
+        "text": "감지 기준 속도 · 30 km/h",
+        "x": 36,
+        "y": 592,
+        "id": "3ceab446-01bc-8074-8008-c426d5c0604c",
+        "name": "감지 기준 속도 · 30 km / h"
+      },
+      {
+        "text": "감지 시 “주행 중인가요?” 알림을 보내요.확인한 뒤 선택 차량의 기록을 시작합니다.",
+        "x": 36,
+        "y": 623,
+        "id": "3ceab446-01bc-8074-8008-c426d5d55ceb",
+        "name": "감지 시 “주행 중인가요?” 알림을 보내요. / 확인한 뒤 선택 차량의 기록을 시작합니다."
+      },
+      {
+        "text": "30 km/h 이상이 지속되면 확인 알림 · 기록은 자동 시작 안 함",
+        "x": 20,
+        "y": 705,
+        "id": "3ceab446-01bc-8074-8008-c426d5eca22b",
+        "name": "주행 감지 기준 안내"
+      },
+      {
+        "text": "차량",
+        "x": 35,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426d60f3e61",
+        "name": "하단 메뉴 차량"
+      },
+      {
+        "text": "이동 계획",
+        "x": 147,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426d623a8aa",
+        "name": "하단 메뉴 이동 계획"
+      },
+      {
+        "text": "설정",
+        "x": 276,
+        "y": 792,
+        "id": "3ceab446-01bc-8074-8008-c426d6386edc",
+        "name": "하단 메뉴 설정"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "하단 메뉴 설정",
+        "type": "text",
+        "x": 276,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d40abb51",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "뒤로 가기",
+        "type": "text",
+        "x": 20,
+        "y": 53,
+        "width": 26,
+        "height": 34,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 차량",
+        "type": "text",
+        "x": 35,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "하단 메뉴 이동 계획",
+        "type": "text",
+        "x": 147,
+        "y": 792,
+        "width": 80,
+        "height": 18,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426d68a0d03",
+    "name": "16 · 알림",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426d69af632",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "‹",
+        "x": 20,
+        "y": 53,
+        "id": "3ceab446-01bc-8074-8008-c426d6e5a1b5",
+        "name": "뒤로 가기"
+      },
+      {
+        "text": "알림",
+        "x": 52,
+        "y": 55,
+        "id": "3ceab446-01bc-8074-8008-c426d6f7c22e",
+        "name": "화면 제목"
+      },
+      {
+        "text": "주행 확인과 일정 출발 알림 예시",
+        "x": 20,
+        "y": 101,
+        "id": "3ceab446-01bc-8074-8008-c426d7096640",
+        "name": "화면 설명"
+      },
+      {
+        "text": "주행 감지 알림",
+        "x": 20,
+        "y": 159,
+        "id": "3ceab446-01bc-8074-8008-c426d721153f",
+        "name": "주행 감지 알림"
+      },
+      {
+        "text": "DriveMate · 지금",
+        "x": 36,
+        "y": 214,
+        "id": "3ceab446-01bc-8074-8008-c426d73a7c6c",
+        "name": "차량 관리 · 지금"
+      },
+      {
+        "text": "주행 중인가요?",
+        "x": 36,
+        "y": 245,
+        "id": "3ceab446-01bc-8074-8008-c426d74d4399",
+        "name": "주행 중인가요?"
+      },
+      {
+        "text": "이동이 감지됐어요. 아반떼로주행 기록을 시작할까요?",
+        "x": 36,
+        "y": 286,
+        "id": "3ceab446-01bc-8074-8008-c426d75f71f4",
+        "name": "이동이 감지됐어요. 아반떼로 / 주행 기록을 시작할까요?"
+      },
+      {
+        "text": "기록 시작",
+        "x": 48,
+        "y": 363.5,
+        "id": "3ceab446-01bc-8074-8008-c426d77913c6",
+        "name": "기록 시작 레이블"
+      },
+      {
+        "text": "아니요",
+        "x": 213,
+        "y": 363.5,
+        "id": "3ceab446-01bc-8074-8008-c426d7924666",
+        "name": "아니요 레이블"
+      },
+      {
+        "text": "일정 출발 알림",
+        "x": 20,
+        "y": 460,
+        "id": "3ceab446-01bc-8074-8008-c426d7a06115",
+        "name": "일정 출발 알림"
+      },
+      {
+        "text": "DriveMate · 13:20",
+        "x": 36,
+        "y": 515,
+        "id": "3ceab446-01bc-8074-8008-c426d7b74aec",
+        "name": "차량 관리 · 13:20"
+      },
+      {
+        "text": "강남 미팅에 맞춰 출발하세요",
+        "x": 36,
+        "y": 546,
+        "id": "3ceab446-01bc-8074-8008-c426d7c585b4",
+        "name": "강남 미팅에 맞춰 출발하세요"
+      },
+      {
+        "text": "15:00 일정 · 이동 80분주차·도보 10분 + 여유 10분",
+        "x": 36,
+        "y": 586,
+        "id": "3ceab446-01bc-8074-8008-c426d7d3ddf7",
+        "name": "15:00 일정 · 이동 80분 / 주차·도보 10분 + 여유 10분"
+      },
+      {
+        "text": "이동 계획 열기",
+        "x": 48,
+        "y": 662.5,
+        "id": "3ceab446-01bc-8074-8008-c426d7ece8c9",
+        "name": "이동 계획 열기 레이블"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "뒤로 가기",
+        "type": "text",
+        "x": 20,
+        "y": 53,
+        "width": 26,
+        "height": 34,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "이동 계획 열기 버튼",
+        "type": "rect",
+        "x": 36,
+        "y": 650,
+        "width": 318,
+        "height": 46,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d2007553",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "아니요 버튼",
+        "type": "rect",
+        "x": 201,
+        "y": 350,
+        "width": 153,
+        "height": 48,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "아니요 레이블",
+        "type": "text",
+        "x": 213,
+        "y": 363.5,
+        "width": 129,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "기록 시작 레이블",
+        "type": "text",
+        "x": 48,
+        "y": 363.5,
+        "width": 131,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d2007553",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "기록 시작 버튼",
+        "type": "rect",
+        "x": 36,
+        "y": 350,
+        "width": 155,
+        "height": 48,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d2007553",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "이동 계획 열기 레이블",
+        "type": "text",
+        "x": 48,
+        "y": 662.5,
+        "width": 294,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426d2007553",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3ceab446-01bc-8074-8008-c426d827ce12",
+    "name": "17 · 전체 지도 · 주행 중",
+    "texts": [
+      {
+        "text": "9:41",
+        "x": 22,
+        "y": 13,
+        "id": "3ceab446-01bc-8074-8008-c426d843f46f",
+        "name": "상태 표시줄 시간"
+      },
+      {
+        "text": "‹",
+        "x": 36,
+        "y": 63,
+        "id": "3ceab446-01bc-8074-8008-c426d88d82d9",
+        "name": "경로 닫기"
+      },
+      {
+        "text": "강남역으로 이동",
+        "x": 76,
+        "y": 67,
+        "id": "3ceab446-01bc-8074-8008-c426d89a53b7",
+        "name": "목적지 제목"
+      },
+      {
+        "text": "주행 기록 중 · 현재 위치 따라가기",
+        "x": 76,
+        "y": 103,
+        "id": "3ceab446-01bc-8074-8008-c426d8a6b769",
+        "name": "지도 상태"
+      },
+      {
+        "text": "GPS 거리 측정 중",
+        "x": 48,
+        "y": 174,
+        "id": "3ceab446-01bc-8074-8008-c426d8c2d5b2",
+        "name": "주행 기록 상태"
+      },
+      {
+        "text": "확인한 위치만 기록해요",
+        "x": 31,
+        "y": 198,
+        "id": "3ceab446-01bc-8074-8008-c426d8cf9b3b",
+        "name": "GPS 측정 안내"
+      },
+      {
+        "text": "＋",
+        "x": 338,
+        "y": 222,
+        "id": "3ceab446-01bc-8074-8008-c426d8fca9f6",
+        "name": "지도 확대"
+      },
+      {
+        "text": "앱 활성 중 5분마다 경로 갱신",
+        "x": 27,
+        "y": 244,
+        "id": "3ceab446-01bc-8074-8008-c426d8e498a2",
+        "name": "경로 갱신 안내"
+      },
+      {
+        "text": "−",
+        "x": 338,
+        "y": 274,
+        "id": "3ceab446-01bc-8074-8008-c426d913db9d",
+        "name": "지도 축소"
+      },
+      {
+        "text": "◎",
+        "x": 338,
+        "y": 461,
+        "id": "3ceab446-01bc-8074-8008-c426d92914dc",
+        "name": "현재 위치로"
+      },
+      {
+        "text": "OpenFreeMap · © OpenMapTiles · © OpenStreetMap",
+        "x": 26,
+        "y": 565,
+        "id": "3ceab446-01bc-8074-8008-c426d9406965",
+        "name": "지도 출처"
+      },
+      {
+        "text": "80분",
+        "x": 22,
+        "y": 611,
+        "id": "3ceab446-01bc-8074-8008-c426d95f9da0",
+        "name": "예상 이동 시간"
+      },
+      {
+        "text": "18.2 km",
+        "x": 189,
+        "y": 619,
+        "id": "3ceab446-01bc-8074-8008-c426d96db3aa",
+        "name": "경로 예상 거리"
+      },
+      {
+        "text": "도착 예시 14:50  ·  일정 시작 15:00",
+        "x": 22,
+        "y": 661,
+        "id": "3ceab446-01bc-8074-8008-c426d97d504d",
+        "name": "도착 및 일정 시간"
+      },
+      {
+        "text": "이번 주행 1.24 km  ·  GPS 측정 예시",
+        "x": 22,
+        "y": 691,
+        "id": "3ceab446-01bc-8074-8008-c426d98c5719",
+        "name": "이번 주행 거리"
+      },
+      {
+        "text": "주행 종료 · 기록 저장",
+        "x": 28,
+        "y": 744.5,
+        "id": "3ceab446-01bc-8074-8008-c426d9a47313",
+        "name": "주행 종료 · 기록 저장 레이블"
+      },
+      {
+        "text": "앱이 화면에 열려 있을 때만 거리를 측정해요.",
+        "x": 22,
+        "y": 791,
+        "id": "3ceab446-01bc-8074-8008-c426d9b41bc6",
+        "name": "전경 GPS 기록 안내"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "주행 종료 · 기록 저장 레이블",
+        "type": "text",
+        "x": 28,
+        "y": 744.5,
+        "width": 334,
+        "height": 21,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "주행 종료 · 기록 저장 버튼",
+        "type": "rect",
+        "x": 16,
+        "y": 730,
+        "width": 358,
+        "height": 50,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426c1396bee",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "경로 닫기",
+        "type": "text",
+        "x": 36,
+        "y": 63,
+        "width": 18,
+        "height": 44,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      },
+      {
+        "name": "경로 닫기 배경",
+        "type": "circle",
+        "x": 27,
+        "y": 68,
+        "width": 36,
+        "height": 36,
+        "interactions": [
+          {
+            "event-type": "click",
+            "action-type": "navigate",
+            "destination": "3ceab446-01bc-8074-8008-c426cd6b8276",
+            "position-relative-to": null,
+            "preserve-scroll": false
+          }
+        ]
+      }
+    ]
+  }
+]

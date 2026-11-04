@@ -1,5 +1,7 @@
 import { expect, test, type Page, type WebSocketRoute } from '@playwright/test';
 
+const hasMapKey = Boolean(process.env.EXPO_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim());
+
 type Harness = {
   count: () => number;
   cleared: number[];
@@ -14,8 +16,11 @@ async function prepare(page: Page) {
   const mapRequests: string[] = [];
   let tickets = 0;
   page.on('request', (request) => {
-    if (/dapi\.kakao\.com|maps\.daum\.net/.test(request.url())) mapRequests.push(request.url());
+    const url = new URL(request.url());
+    if (/^(dapi\.kakao\.com|maps\.daum\.net)$/.test(url.hostname))
+      mapRequests.push(url.origin + url.pathname);
   });
+  await page.route('https://dapi.kakao.com/**', (route) => route.abort());
   await page.addInitScript(() => {
     const watches = new Map<
       number,
@@ -123,7 +128,9 @@ test('device sharing waits for explicit opt-in, receives peers, and stops withou
   expect(harness.tickets()).toBe(0);
   expect(harness.sockets).toHaveLength(0);
   expect(harness.mapRequests).toHaveLength(0);
-  await expect(page.getByText('지도 미연결', { exact: true })).toBeVisible();
+  // CI exports include the public map key; local key-free exports show its missing-key notice.
+  if (hasMapKey) await expect(page.getByText('지도 미연결', { exact: true })).toHaveCount(0);
+  else await expect(page.getByText('지도 미연결', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '카카오 지도 연결', exact: true })).toBeDisabled();
   await page.getByTestId('connect-live-location').click();
   await expect(page.getByText('기기 연결됨', { exact: true })).toBeVisible();
@@ -146,6 +153,9 @@ test('device sharing waits for explicit opt-in, receives peers, and stops withou
   await expect.poll(() => gps(page, 'count')).toBe(1);
   await gps(page, 'emit');
   await expect(page.getByTestId('own-live-location')).toContainText('37.54321, 127.12345');
+  const mapButton = page.getByRole('button', { name: '카카오 지도 연결', exact: true });
+  if (hasMapKey) await expect(mapButton).toBeEnabled();
+  else await expect(mapButton).toBeDisabled();
   await expect
     .poll(() => harness.messages.filter((item) => item.type === 'position').length)
     .toBe(1);

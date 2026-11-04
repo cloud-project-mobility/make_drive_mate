@@ -49,6 +49,7 @@ jobs:
           python -m unittest discover -s backend/scripts -p 'test_onbid*.py' -v
           python -m unittest discover -s backend/scripts -p 'test_document_rag.py' -v
           python -m unittest discover -s infra/aws -p 'test_*.py' -v
+          python -m unittest discover -s infra/containers -p 'test_*.py' -v
   web:
     needs: spring
     runs-on: ubuntu-24.04

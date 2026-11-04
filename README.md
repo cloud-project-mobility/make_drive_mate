@@ -8,18 +8,19 @@
 
 ## 현재 구현 상태
 
-기준일: **2026-11-04**. 공개 저장소의 소스와 별도로 준비한 비공개 데이터가 필요한 기능을 구분합니다.
+기준일: **2026-11-04, ECS 서비스 생성 전**. 기존 EC2 환경의 공개 HTTPS 검증을 마쳤고 ECS Fargate로 전환을 준비하고 있습니다. **ECS 운영 완료와 최종 서비스 URL은 아직 확인되지 않았습니다.** 공개 저장소의 소스와 별도로 준비한 비공개 데이터가 필요한 기능을 구분합니다.
 
-| 영역          | 구현·검증 상태                                                                    | 실행 조건·남은 일                                                                                                           |
-| ------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| 프런트엔드    | React Native / Expo / TypeScript. 차량 관리, 가치 비교, 분석 집계, 문서 검색 화면 | 웹 검증 완료. 모바일 실기기 검증은 별도                                                                                     |
-| Spring API    | Spring Boot 4.1.2 / Java 17 / JDBC. 로그인, 계정별 차량·백업, 가격·분석·문서 API  | 로컬 H2 사용. 운영 PostgreSQL 연결 검증 필요                                                                                |
-| 가격 모델     | 온비드 정제 2,197행 기반 Random Forest. 실제 로컬 추론 확인                       | 모델·데이터 파일은 공개 저장소에서 제외                                                                                     |
-| GPT 설명      | 검증된 사실·사례에서 설명 근거 선택. 실제 API 연결 확인                           | OpenAI 키와 서버 설정 필요. GPT가 가격을 생성하지 않음                                                                      |
-| 문서 RAG      | 6개 문서·83개 청크. BM25 + 벡터 검색 + 출처 표시                                  | 로컬 검색 확인. 운영 pgvector/RDS 적재·검색은 미검증                                                                        |
-| 데이터 사이클 | 수집 → 저장 → 전처리 → 모델 비교·평가 → 집계·시각화 CLI                           | SQS worker 코드 준비. AWS 정기 실행은 미가동                                                                                |
-| CI            | Spring·Python·웹 검사와 코드 배포 산출물 생성 성공                                | [검증된 실행 기록](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41794335643), 코드 기준 `ede6d2c` |
-| AWS / CD      | 인프라·Nginx·수동 배포 워크플로 작성                                              | **공개 서비스 미배포, CD 미활성**. 실행 중인 DriveMate EC2·RDS 없음                                                         |
+| 영역          | 구현·검증 상태                                                                    | 실행 조건·남은 일                                                                                                                                              |
+| ------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 프런트엔드    | React Native / Expo / TypeScript. 차량 관리, 가치 비교, 분석 집계, 문서 검색 화면 | 웹 검증 완료. 모바일 실기기 검증은 별도                                                                                                                        |
+| Spring API    | Spring Boot 4.1.2 / Java 17 / JDBC. 로그인, 계정별 차량·백업, 가격·분석·문서 API  | 기존 AWS 환경에서 RDS 연결·공개 HTTPS 인증 검증. ECS 서비스 기동은 대기                                                                                        |
+| 가격 모델     | 온비드 정제 2,197행 기반 Random Forest. AWS HTTPS 지원 차량·템플릿 응답 확인      | 14,867행 새 모델은 평가 후보이며 서비스에 승격하지 않음. 모델·데이터는 공개 저장소 제외                                                                        |
+| GPT 설명      | 검증된 사실·사례에서 설명 근거 선택. 실제 API 연결 확인                           | OpenAI 키와 서버 설정 필요. GPT가 가격을 생성하지 않음                                                                                                         |
+| 문서 RAG      | 6개 문서·83개 청크. RDS pgvector 적재와 AWS HTTPS 검색·권한 검증 완료             | 기존 EC2 경로에서 확인. ECS 전환 후 재검증 필요                                                                                                                |
+| 실시간 위치   | 같은 계정 기기의 최근 위치 중계·중지, 다른 계정 격리                              | AWS HTTPS/WSS에서 합성 좌표로 검증. 실제 GPS·모바일 실기기 검증과 구분                                                                                         |
+| 데이터 사이클 | 수집 → 저장 → 전처리 → 모델 비교·평가 → 집계·시각화 CLI                           | 별도 ECS 일회 worker 준비. AWS 주간 자동 실행은 미가동                                                                                                         |
+| CI            | 기준 커밋에서 Spring·Python·웹 검사와 코드 배포 산출물 생성 성공                  | [검증된 실행 기록](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41794335643), 코드 기준 `ede6d2c`. 이후 커밋은 Actions에서 별도 확인 |
+| AWS / CD      | 기존 EC2 스택·RDS 초기화 완료. ECS 클러스터·ECR 생성, 컨테이너 검증 완료          | **ECS 서비스 미생성, CD 미활성**. GitHub OIDC 조회가 조직 SCP에 거절되어 자동 배포 활성화 차단                                                                 |
 
 공개 clone에는 **소스·테스트·기술 문서·코드 전용 노트북**이 있습니다. API 키, 계정 DB, 원시·정제 데이터, 학습 모델, 원본 Word/PPT, 문서 본문·검색 인덱스, 데이터가 내장된 Colab 사본은 포함하지 않습니다.
 
@@ -50,26 +51,28 @@
 ```mermaid
 flowchart LR
     UI["Expo 앱 / 웹"] --> API["Spring Boot HTTP API"]
-    API --> DB["계정·차량 저장<br/>로컬 H2 / 운영 PostgreSQL 예정"]
+    API --> DB["계정·차량 저장<br/>로컬 H2 / AWS RDS PostgreSQL"]
     API --> ML["Python 작업 프로세스<br/>가격 추론"]
     API --> REPORT["사전 생성된 분석 집계 JSON"]
     API --> RAG["Python 문서 검색<br/>BM25 + 벡터 검색"]
     ML --> MODEL["검증된 Random Forest 모델"]
-    RAG --> INDEX["로컬 벡터 파일<br/>운영 pgvector 검증 예정"]
+    RAG --> INDEX["AWS RDS pgvector<br/>로컬 검증용 벡터 파일"]
     ML --> LLM["OpenAI · 근거 선택"]
     RAG --> LLM
 ```
 
 Spring이 인증·접근 권한·입력 검증·요청 한도를 처리하고, 고정된 Python 작업을 제한된 프로세스로 호출합니다. 프런트엔드가 Python HTTP 서버나 OpenAI에 직접 연결하는 구조가 아닙니다.
 
-| 구성           | 기술                                                                     |
-| -------------- | ------------------------------------------------------------------------ |
-| 앱·웹          | Expo SDK 57, React Native 0.86, React 19, TypeScript                     |
-| API·계정 저장  | Java 17, Spring Boot 4.1.2, JDBC, H2 / PostgreSQL                        |
-| 분석·학습      | Python 3.12, scikit-learn, Random Forest / Extra Trees 비교              |
-| 설명·검색      | GPT `gpt-6-astra`, `text-embedding-3-small` 1,536차원, BM25 + RRF        |
-| 운영 구성 코드 | CloudFront → EC2 Nginx → Spring, RDS, S3, SQS, EventBridge               |
-| 검증·배포 설정 | GitHub Actions, JUnit, Python unittest, Playwright, OIDC + SSM 배포 설정 |
+| 구성           | 기술                                                                                      |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| 앱·웹          | Expo SDK 57, React Native 0.86, React 19, TypeScript                                      |
+| API·계정 저장  | Java 17, Spring Boot 4.1.2, JDBC, H2 / PostgreSQL                                         |
+| 분석·학습      | Python 3.12, scikit-learn, Random Forest / Extra Trees 비교                               |
+| 설명·검색      | GPT `gpt-6-astra`, `text-embedding-3-small` 1,536차원, BM25 + RRF                         |
+| 전환 목표 구성 | CloudFront → ALB → ECS Fargate의 Nginx·Spring·Python, RDS, S3, SQS                        |
+| 검증·배포 설정 | GitHub Actions, JUnit, Python unittest, Playwright, 코드 전용 이미지·ECR digest 배포 설정 |
+
+목표 API task는 **1 vCPU·3 GiB·replica 1**입니다. 위치 중계가 메모리에 있어 배포 교체 중 재연결이 필요합니다. 별도 cycle task는 SQS 메시지를 한 번 확인하고 종료합니다. 코드만 이미지에 넣고 비공개 모델·집계는 S3에서 해시를 검증해 읽습니다. DB 스키마·문서 색인·소유자 초기화는 일반 API task에서 실행하지 않습니다. [컨테이너 실행 계약](infra/containers/README.md)
 
 ## 로컬 실행
 
@@ -134,7 +137,7 @@ flowchart LR
     E --> F["Spring 분석 API<br/>화면에서 확인"]
 ```
 
-`backend/scripts/onbid_pipeline.py`가 사이클을 실행합니다. 실패한 실행이 마지막 성공 결과를 덮어쓰지 않으며, 새 후보 모델을 서비스 모델로 자동 교체하지 않습니다. EventBridge·SQS 정기 실행은 배포 후 검증할 구성입니다.
+`backend/scripts/onbid_pipeline.py`가 사이클을 실행합니다. 실패한 실행이 마지막 성공 결과를 덮어쓰지 않으며, 새 후보 모델을 서비스 모델로 자동 교체하지 않습니다. 목표 운영 경로는 EventBridge → SQS → 별도 ECS 일회 worker → S3 집계 → API의 집계 갱신입니다. 전체 AWS 사이클과 주간 자동 실행은 아직 확인하지 않았습니다.
 
 현재 모델 데이터의 **개찰일 기준 조회 기간은 2025-11-04~2026-11-03**이며 실제 수집일은 2026-11-04입니다. 원본 5,268행 → 승용 범주 2,284행 → 정제 2,197행이며, 폐차·고철·점검용·다수 차량 묶음과 단위가 불명확한 자료를 구분했습니다.
 
@@ -153,6 +156,8 @@ flowchart LR
 
 상세 분할·오차·제공 조건은 [모델 문서](docs/ONBID-MODEL.md), 재현 코드는 [코드 전용 노트북](notebooks/README.md)에 있습니다. 기존 원본 부스팅 노트북의 점수를 현재 차량 모델 성능으로 사용하지 않습니다.
 
+남은 제품 작업은 **실제 ML 결과와 사용자의 매도 목표·최소 보유기간을 함께 적용하는 추천 흐름**, 실제 미래 시장가격 검증과 보유비용 근거 확보입니다. 현재 오프라인 합성 계산의 매도 조건 비교를 이 ML 통합의 완료로 표현하지 않습니다. 신규 차량 관련 RAG 자료 확대, 팀원 모바일 검증, 원본 PoC·중간보고서·PPT 수정도 남아 있습니다.
+
 ## RAG 구성과 문서 사용
 
 문서 검색은 가격 모델과 분리되어 있습니다. 현재 6개 문서는 PoC·중간보고서·발표자료 사본, 온비드 공식 목록·상세 설명, 검증된 모델 평가 기록입니다.
@@ -161,7 +166,7 @@ flowchart LR
 - 한국어 BM25와 코사인 검색 결과를 RRF로 결합하고 중복 상위 절을 정리합니다.
 - 문서명·절/문단·슬라이드와 `계획 / 보고 / 공식 / 코드 검증` 상태를 보존합니다.
 - GPT는 검색된 출처 ID를 선택합니다. 근거 부족은 보류하고, LLM 실패는 검색 결과만 제공하는 상태로 구분합니다.
-- 현재 로컬은 `DRIVEMATE_RAG_BACKEND=local`을 명시합니다. 운영 기본값은 `pgvector`이며 실제 RDS 검증은 남아 있습니다.
+- 로컬 파일 검색은 `DRIVEMATE_RAG_BACKEND=local`을 명시합니다. AWS의 기본 `pgvector` 경로는 RDS 적재와 HTTPS 검색으로 검증했고, ECS 전환 후 같은 경로를 다시 확인합니다.
 
 추가 자료는 용도에 맞게 분리합니다. 규정·설명문은 RAG 후보, 가격표·잔가율은 단위와 조건이 보존되는 구조화 조회 후보, 공매 낙찰 사례는 정제 후 모델 학습 후보입니다. 행정상 시가표준액을 시장가격으로 취급하거나 모든 숫자표를 문서 검색에만 맡기지 않습니다.
 
@@ -180,9 +185,11 @@ DRIVEMATE_WEB_STATIC=1 npm run test:integrated -- tests/e2e/valuation.spec.ts te
 
 통합 검사는 별도 H2 메모리 DB와 Spring `18086`, 웹 `18087`을 사용합니다. ML/RAG 화면의 합성 응답 검사는 실제 모델 성능이나 유료 API 호출 검증을 의미하지 않습니다. Python 의존성과 검사는 [CI 워크플로](.github/workflows/ci.yml)에 고정되어 있습니다.
 
-기록된 기준 검증은 Spring 47개, 프런트 도메인 90개, Python 54개, 선택 브라우저 시나리오 34개 통과입니다. [기준 커밋의 원격 CI](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41794335643)는 `spring`, `python`, `web`, `release`가 모두 성공했습니다. 새 커밋 결과는 [Actions](https://github.com/cloud-project-mobility/make_drive_mate/actions)에서 확인합니다.
+이전 기준 커밋의 검증은 Spring 47개, 프런트 도메인 90개, Python 54개와 선택 브라우저 시나리오 34개입니다. [해당 원격 CI](https://github.com/cloud-project-mobility/make_drive_mate/actions/runs/41794335643)는 `spring`, `python`, `web`, `release`가 모두 성공했습니다. 이후 로컬 추가 검증은 Spring 57개, 프런트 98개, 위치 브라우저 12개, 컨테이너 준비 로직 10개가 통과했습니다. 실제 컨테이너에서도 비루트 권한·읽기 전용 루트·Spring/Nginx·합성 위치 중계를 확인했습니다. 새 커밋의 원격 결과는 [Actions](https://github.com/cloud-project-mobility/make_drive_mate/actions)에서 확인합니다.
 
-현재 CI는 **웹 export**, Spring JAR, 코드 전용 배포 ZIP을 만듭니다. Android/iOS 실기기 시험이나 서명된 APK/IPA 배포를 수행하지 않습니다. CD는 성공한 main CI 산출물을 지정해 OIDC·SSM으로 배포하는 수동 워크플로이며, 현재 AWS 대상 서버가 없어 활성화하지 않았습니다. [CI/CD 안내](docs/CICD.md)와 [AWS 실제 상태](infra/aws/DEPLOYMENT-STATUS.md)를 참고하세요.
+현재 CI는 **웹 export**, Spring JAR, 코드 전용 배포 ZIP을 만듭니다. Android/iOS 실기기 시험이나 서명된 APK/IPA 배포를 수행하지 않습니다. ECS용 CD는 성공한 main CI의 JAR·웹 산출물을 코드 전용 이미지로 만들고 ECR digest를 배포하도록 준비했습니다. **현재 GitHub OIDC 조회가 조직 SCP에 거절되어 CD 활성화는 차단된 상태**입니다. Kubernetes 설정은 렌더링만 검사했으며 실제 클러스터는 없습니다. [CI/CD 안내](docs/CICD.md)와 [AWS 실제 상태](infra/aws/DEPLOYMENT-STATUS.md)를 참고하세요.
+
+월 20만원은 운영 목표이며 확정 상한이 아닙니다. 준비 시 계산한 Fargate 실행비 참고값은 약 **US$47/월**이고, RDS·ALB·S3·CloudFront·로그·외부 API 사용료 등이 추가됩니다. 현재 RDS는 PostgreSQL 18.6, `db.t4g.micro`, Single-AZ, 백업 1일이며 대기 DB를 통한 자동 장애 전환은 제공하지 않습니다.
 
 ## 팀 작업과 문서
 
@@ -215,6 +222,8 @@ notebooks/        데이터 없는 코드 전용 모델 비교 노트북
 scripts/          로컬 실행·웹 제공·통합 검증 도구
 tests/e2e/        브라우저 통합 검사
 infra/aws/        인프라·Nginx·배포·SQS worker 설정
+infra/containers/ 코드 전용 이미지·런타임·검증
+infra/k8s/        Kubernetes 렌더링 검증용 설정, 실제 클러스터 없음
 .github/workflows/ CI 및 수동 CD
 docs/             설계·검증·데이터·팀 인수 문서
 ```
@@ -223,6 +232,6 @@ docs/             설계·검증·데이터·팀 인수 문서
 
 Kakao·Google 연동 경계는 구현했으나 실제 키·실계정 검증은 미완료이며 현대 실차 연결은 미지원입니다. 계정 이메일 확인·비밀번호 복구, 백업 자동 병합은 제공하지 않습니다. 이전 Python 서버의 계정·토큰 자동 이전도 지원하지 않습니다. [외부 연동](backend-spring/PROVIDERS.md)과 [연동 범위](docs/INTEGRATION.md)를 참고하세요.
 
-GPS는 앱이 활성화된 동안 측정하며 화면 잠금·다른 앱 전환 시 멈춥니다. 지도 화면은 경로 개요이고 실제 지도·교통은 외부 지도 앱에서 확인합니다. 기기 저장은 암호화된 클라우드 보관함이 아니며 삭제에 대비해 사용자가 백업해야 합니다.
+GPS는 앱이 활성화된 동안 측정하며 화면 잠금·다른 앱 전환 시 멈춥니다. 기존 이동 경로 도식은 실제 지도가 아닙니다. 실시간 기기 위치 화면의 카카오 지도는 별도 SDK 키·도메인 설정과 사용자의 연결 동작이 필요합니다. 기기 저장은 암호화된 클라우드 보관함이 아니며 삭제에 대비해 사용자가 백업해야 합니다.
 
 차량 일러스트는 사용자 제공 Penpot 원안에서 가져왔고 출처는 [UX 조사](docs/UX-AUDIT.md)에 기록했습니다. 추가 차량 사진은 [사진 출처·이용 조건](docs/VEHICLE-PHOTOS.md)을 따릅니다. 자동 검사와 구현 점검을 실제 사용자 연구 또는 모바일 실기기 검증으로 표현하지 않습니다.

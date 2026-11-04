@@ -1,21 +1,42 @@
 # AWS execution status — November 4, 2026
 
-The user switched priority to local execution and team debugging. No new AWS application resources were launched after that instruction. **There is no deployed public DriveMate URL.**
+This is an **ECS transition checkpoint, before creation of the ECS application service**. The existing EC2 application stack is `CREATE_COMPLETE` and its public HTTPS baseline has passed. The requested final deployment is ECS Fargate. **No final ECS service URL or successful ECS rollout is recorded yet.**
 
-## Completed cleanup
+## Completed and verified
 
-- The failed `drivemate-poc-20261104` stack no longer exists.
-- Its failed RDS instance was deleted after preserving the encrypted final snapshot `drivemate-poc-20261104-precleanup-01`. AWS reported the snapshot available at 100% and no remaining RDS instances in the deployment region.
-- Empty failed-job queues and the failed deployment VPC were deleted. No DriveMate EC2 host was created.
-- The snapshot encryption key remains enabled so the backup stays recoverable. Do not delete that key while retaining the snapshot.
-- The separately created foundation stack, private artifact bucket, and application secret remain. Backup, key, secret, and object storage can still incur retention costs; no application EC2 or RDS compute remains running.
+| Area                  | Evidence at this checkpoint                                                                                                                                                                                                                                                                    |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Existing EC2 baseline | Bootstrap completed; Spring and Nginx are active. Keep this temporary baseline until the ECS replacement is verified.                                                                                                                                                                          |
+| RDS                   | PostgreSQL 18.6, `db.t4g.micro`, Single-AZ, one-day backups. Application schema and owner account initialized.                                                                                                                                                                                 |
+| Document RAG          | Six documents and 83 chunks loaded into RDS pgvector. Owner HTTPS retrieval returned six sources; another account received 403.                                                                                                                                                                |
+| Authentication        | Owner login passed; public registration of the reserved owner email returned 403.                                                                                                                                                                                                              |
+| ML and analytics      | Public HTTPS supported-vehicle template inference passed. Analytics reported 14,867 clean candidate rows with `production_promoted=false`; the serving model remains the validated 2,197-row model.                                                                                            |
+| WebSocket             | Public WSS ready, synthetic same-account position relay, cross-account isolation and stop passed. Timestamp values were compared as instants rather than raw formatting strings. No real device location was used. Temporary test accounts were deleted and the test owner session logged out. |
+| ECS foundation        | Cluster and ECR exist. The first foundation attempt hit IAM role propagation failure; retained ECR/log resources were imported into the completed v2 foundation. Log retention is 14 days.                                                                                                     |
+| Runtime image         | Code-only image built locally. Ten artifact/runtime unit tests and an isolated container check passed: UID 10001, read-only root, writable ephemeral volumes, Spring/Nginx health and synthetic WebSocket relay/isolation/stop.                                                                |
 
-## What was verified
+The metadata-only RAG serving pointer contains collection identifiers, hashes, counts and storage metadata. It does not contain document excerpts, chunks, embeddings or credentials. The API reads document content from RDS; it does not follow the pointer's local-index path into another S3 object.
 
-Local Spring tests, frontend tests, real local model/LLM calls, template syntax, selected Guard controls, AWS template validation, supported instance classes, and the account's CloudFront response timeout quota were checked. See `VALIDATION.md` for the deliberate Single-AZ exception.
+## Prepared target and remaining work
 
-## Remaining AWS verification
+The target is **CloudFront → ALB → one ECS Fargate task with separate Nginx and Spring/Python containers**, sized at 1 vCPU and 3 GiB. The API replica count stays at one because live-location relay state is in memory. A separate on-demand/weekly cycle task consumes SQS once and exits; it is not a continuously running worker service.
 
-The application bootstrap has not run on EC2. PostgreSQL schema creation, prepared pgvector import, initial account setup and bootstrap-token removal, CloudWatch file-log delivery, public HTTPS login/prediction/document search, and a complete SQS refresh cycle remain unverified on AWS.
+- ECR upload and the ECS application service still require final completion evidence. Cluster creation and local image tests are not application deployment completion.
+- After ECS starts, repeat HTTPS authentication, ML, candidate analytics, owner/non-owner RAG and WSS synthetic relay checks through the new public route.
+- Verify CloudWatch delivery, ALB/task health, release/pointer checksums and cleanup before removing the temporary EC2 host.
+- A full SQS → cycle task → S3 → API aggregate refresh and the weekly schedule remain unverified. The schedule must stay disabled until validated. A completed cycle must not promote the service model.
+- Kubernetes manifests have been rendered only. No Kubernetes cluster or Kubernetes deployment exists.
 
-Before resuming deployment, rebuild and repackage the latest source. Previously uploaded release drafts predate subsequent local-runtime and worker-file-permission fixes. Keep automatic rollback enabled, retain the documented backups, and validate the new artifact checksum before launching.
+## CI/CD blocker
+
+ECS CD code builds from verified main CI outputs, publishes an immutable ECR digest and replaces the API/Nginx task revision with rollback checks. It is **not active**. GitHub OIDC provider `Get` and `List` operations are denied by organization SCP **`p-5httx2mw`**. An organization-policy change or another explicitly reviewed authentication route is needed before OIDC/CD can be enabled. Local image builds and manual deployment preparation do not resolve this blocker.
+
+## Privileges, availability and cost
+
+The API task receives selected application secret fields and uses `drivemate_app`; it does not receive the RDS master secret, initial owner password or bootstrap token, and runtime schema initialization is disabled. The role created by the existing bootstrap still owns application schema/tables. This is **not a claim that the database role has already been reduced to DML-only permissions**.
+
+Single-AZ with one-day backups is the user's selected configuration. It has no database standby failover. The approximate prepared Fargate compute estimate is **US$47/month**, before RDS, ALB, storage, traffic, logs and external API usage. KRW 200,000/month is a planning target, not an enforced or verified spending ceiling.
+
+Earlier failed deployment resources were cleaned up with the final encrypted snapshot `drivemate-poc-20261104-precleanup-01` preserved. That historical cleanup does not mean the newly created EC2/RDS resources are absent. Keep the snapshot's encryption key while retaining the backup, and include retained storage/secrets/keys in cost review.
+
+Update this checkpoint only after recording the actual ECS task revision, public route and post-deployment results. See [validation scope](VALIDATION.md) and [container runtime contract](../containers/README.md).

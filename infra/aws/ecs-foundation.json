@@ -1,0 +1,150 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "DriveMate immutable container images and Fargate cluster; no application compute or database replacement.",
+  "Metadata": {
+    "AWSToolsMetrics": {
+      "AWSAgentToolkit": "aws-cloudformation@3"
+    }
+  },
+  "Resources": {
+    "Repository": {
+      "Type": "AWS::ECR::Repository",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Retain immutable tagged releases for deployment rollback",
+          "must": [
+            "no public repository policy",
+            "tagged images never expire automatically"
+          ]
+        }
+      },
+      "Properties": {
+        "ImageTagMutability": "IMMUTABLE",
+        "ImageScanningConfiguration": {
+          "ScanOnPush": true
+        },
+        "EncryptionConfiguration": {
+          "EncryptionType": "AES256"
+        },
+        "LifecyclePolicy": {
+          "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Remove only untagged images after 14 days\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":14},\"action\":{\"type\":\"expire\"}}]}"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "DriveMate"
+          }
+        ]
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Run containers without a persistent EC2 application host",
+          "must": [
+            "on-demand Fargate",
+            "no tasks until service deployment"
+          ]
+        }
+      },
+      "Properties": {
+        "CapacityProviders": [
+          "FARGATE"
+        ],
+        "DefaultCapacityProviderStrategy": [
+          {
+            "CapacityProvider": "FARGATE",
+            "Weight": 1
+          }
+        ],
+        "ClusterSettings": [
+          {
+            "Name": "containerInsights",
+            "Value": "disabled"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "DriveMate"
+          }
+        ]
+      }
+    },
+    "Logs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Retain bounded API, proxy and cycle operational logs",
+          "must": [
+            "no credentials, payloads or location coordinates"
+          ]
+        }
+      },
+      "Properties": {
+        "RetentionInDays": 14
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    }
+  },
+  "Outputs": {
+    "RepositoryName": {
+      "Value": {
+        "Ref": "Repository"
+      },
+      "Description": "Immutable ECR repository name"
+    },
+    "RepositoryUri": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Repository",
+          "RepositoryUri"
+        ]
+      },
+      "Description": "ECR image prefix; deploy by digest"
+    },
+    "RepositoryArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Repository",
+          "Arn"
+        ]
+      },
+      "Description": "Scoped ECR pull and push policy resource"
+    },
+    "ClusterName": {
+      "Value": {
+        "Ref": "Cluster"
+      },
+      "Description": "ECS cluster name"
+    },
+    "ClusterArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Cluster",
+          "Arn"
+        ]
+      },
+      "Description": "ECS cluster ARN"
+    },
+    "LogGroupName": {
+      "Value": {
+        "Ref": "Logs"
+      },
+      "Description": "Fourteen-day operational log group"
+    },
+    "LogGroupArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Logs",
+          "Arn"
+        ]
+      },
+      "Description": "Operational log group ARN"
+    }
+  }
+}

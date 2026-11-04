@@ -1,0 +1,99 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Optional disabled-by-default hourly Fargate cycle poller; reuse the existing SQS producer, queue and exact worker revision.",
+  "Metadata": {
+    "AWSToolsMetrics": {"AWSAgentToolkit": "aws-cloudformation@3"}
+  },
+  "Parameters": {
+    "RuleName": {"Type": "String", "AllowedPattern": "[A-Za-z0-9._-]{1,64}", "Description": "Unique rule name; also binds the execution-role trust to this exact rule."},
+    "EnableSchedule": {"Type": "String", "AllowedValues": ["DISABLED", "ENABLED"], "Default": "DISABLED"},
+    "ClusterArn": {"Type": "String", "AllowedPattern": "arn:aws:ecs:[a-z0-9-]+:[0-9]{12}:cluster/[A-Za-z0-9_-]+"},
+    "CycleTaskDefinitionArn": {"Type": "String", "AllowedPattern": "arn:aws:ecs:[a-z0-9-]+:[0-9]{12}:task-definition/[A-Za-z0-9_-]+:[1-9][0-9]*", "Description": "Exact reviewed cycle task revision; API CI does not update this schedule."},
+    "ExecutionRoleArn": {"Type": "String", "AllowedPattern": "arn:aws:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+"},
+    "CycleTaskRoleArn": {"Type": "String", "AllowedPattern": "arn:aws:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+"},
+    "TaskSubnetIds": {"Type": "List<AWS::EC2::Subnet::Id>", "Description": "Existing outbound-capable Fargate subnets from the ECS service stack."},
+    "TaskSecurityGroupId": {"Type": "AWS::EC2::SecurityGroup::Id", "Description": "Existing task security group with no public ingress; worker opens no listener."}
+  },
+  "Resources": {
+    "ScheduleRole": {
+      "Type": "AWS::IAM::Role",
+      "Metadata": {"com.aws.cloudformation.Context": {"why": "One trusted EventBridge rule may launch only the reviewed cycle revision in one cluster", "must": ["Exact SourceArn and SourceAccount", "No API task launch, secret fetch, S3 or SQS permissions", "Pass only existing cycle execution and task roles"]}},
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow", "Principal": {"Service": "events.amazonaws.com"}, "Action": "sts:AssumeRole",
+            "Condition": {
+              "ArnEquals": {"aws:SourceArn": {"Fn::Sub": "arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/${RuleName}"}},
+              "StringEquals": {"aws:SourceAccount": {"Ref": "AWS::AccountId"}}
+            }
+          }]
+        },
+        "Policies": [{
+          "PolicyName": "OneReviewedCycleTask",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {"Effect": "Allow", "Action": "ecs:RunTask", "Resource": {"Ref": "CycleTaskDefinitionArn"}, "Condition": {"ArnEquals": {"ecs:cluster": {"Ref": "ClusterArn"}}}},
+              {"Effect": "Allow", "Action": "iam:PassRole", "Resource": [{"Ref": "ExecutionRoleArn"}, {"Ref": "CycleTaskRoleArn"}], "Condition": {"StringEquals": {"iam:PassedToService": "ecs-tasks.amazonaws.com"}}}
+            ]
+          }
+        }]
+      }
+    },
+    "HourlyPoll": {
+      "Type": "AWS::Events::Rule",
+      "Metadata": {"com.aws.cloudformation.Context": {"why": "Poll an existing durable queue with a short-lived worker at minute five of each UTC hour", "must": ["Disabled until an actual cycle succeeds", "Does not enqueue new work", "Retry policy retries target invocation, not a failed task", "One shot worker and no continuous ECS service"]}},
+      "Properties": {
+        "Name": {"Ref": "RuleName"},
+        "Description": "DriveMate hourly SQS poll; a task exits after one empty 20-second poll or one bounded job.",
+        "ScheduleExpression": "cron(5 * * * ? *)",
+        "State": {"Ref": "EnableSchedule"},
+        "Targets": [{
+          "Id": "CycleWorker",
+          "Arn": {"Ref": "ClusterArn"},
+          "RoleArn": {"Fn::GetAtt": ["ScheduleRole", "Arn"]},
+          "EcsParameters": {
+            "TaskDefinitionArn": {"Ref": "CycleTaskDefinitionArn"},
+            "TaskCount": 1,
+            "LaunchType": "FARGATE",
+            "PlatformVersion": "1.4.0",
+            "NetworkConfiguration": {
+              "AwsVpcConfiguration": {
+                "AssignPublicIp": "ENABLED",
+                "SecurityGroups": [{"Ref": "TaskSecurityGroupId"}],
+                "Subnets": {"Ref": "TaskSubnetIds"}
+              }
+            }
+          },
+          "RetryPolicy": {"MaximumEventAgeInSeconds": 3600, "MaximumRetryAttempts": 2}
+        }]
+      }
+    },
+    "InvocationFailures": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {"com.aws.cloudformation.Context": {"why": "Expose exhausted EventBridge invocation failures without provisioning a notification destination", "must": ["Does not detect a worker process failing after RunTask succeeds", "No SNS notifications configured"]}},
+      "Properties": {
+        "AlarmDescription": "EventBridge could not invoke the cycle target after retries. Worker exit failures must be checked in ECS/SQS separately.",
+        "Namespace": "AWS/Events",
+        "MetricName": "FailedInvocations",
+        "Dimensions": [{"Name": "RuleName", "Value": {"Ref": "HourlyPoll"}}],
+        "Statistic": "Sum",
+        "Period": 300,
+        "EvaluationPeriods": 1,
+        "DatapointsToAlarm": 1,
+        "Threshold": 0,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "TreatMissingData": "notBreaching",
+        "ActionsEnabled": false
+      }
+    }
+  },
+  "Outputs": {
+    "RuleArn": {"Value": {"Fn::GetAtt": ["HourlyPoll", "Arn"]}, "Description": "Hourly cycle invocation rule"},
+    "RuleName": {"Value": {"Ref": "HourlyPoll"}},
+    "ScheduleState": {"Value": {"Ref": "EnableSchedule"}},
+    "CycleTaskDefinitionArn": {"Value": {"Ref": "CycleTaskDefinitionArn"}},
+    "InvocationFailureAlarm": {"Value": {"Ref": "InvocationFailures"}, "Description": "Console-visible alarm only; no external notification action"}
+  }
+}

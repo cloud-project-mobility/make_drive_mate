@@ -1,6 +1,7 @@
 """No AWS calls: exercise message idempotency, bounded retries, and publication order."""
 
 import json
+import io
 import os
 import stat
 import tempfile
@@ -8,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
-from cycle_worker import PREFIX, Settings, atomic_json, process_message, validate_message
+from cycle_worker import AwsAdapter, PREFIX, Settings, atomic_json, process_message, validate_message
 
 
 class FakeAws:
@@ -49,6 +50,31 @@ class QueueCycleTest(unittest.TestCase):
 
     def tearDown(self):
         self.temporary.cleanup()
+
+    def test_missing_s3_marker_is_checked_by_prefix_without_an_unauthorized_get(self):
+        adapter = AwsAdapter.__new__(AwsAdapter)
+        adapter.settings = self.settings
+        adapter.s3 = Mock()
+        key = f"{PREFIX}/completed/{self.job_id}.json"
+        for listing in ({}, {"Contents": [{"Key": key + ".other"}]}):
+            adapter.s3.list_objects_v2.return_value = listing
+            self.assertIsNone(adapter.read_json(key))
+        adapter.s3.list_objects_v2.assert_called_with(Bucket=self.settings.bucket, Prefix=key, MaxKeys=1)
+        adapter.s3.get_object.assert_not_called()
+        adapter.s3.list_objects_v2.side_effect = PermissionError("synthetic denied listing")
+        with self.assertRaises(PermissionError):
+            adapter.read_json(key)
+
+    def test_existing_control_object_is_read_and_closed(self):
+        adapter = AwsAdapter.__new__(AwsAdapter)
+        adapter.settings = self.settings
+        adapter.s3 = Mock()
+        key = f"{PREFIX}/completed/{self.job_id}.json"
+        adapter.s3.list_objects_v2.return_value = {"Contents": [{"Key": key}]}
+        body = io.BytesIO(b'{"status":"completed"}')
+        adapter.s3.get_object.return_value = {"Body": body}
+        self.assertEqual(adapter.read_json(key), {"status": "completed"})
+        self.assertTrue(body.closed)
 
     def prepared_run(self):
         job_root = self.settings.output_root / "jobs" / self.job_id

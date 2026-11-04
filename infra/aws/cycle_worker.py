@@ -121,6 +121,13 @@ class AwsAdapter:
             raise ValueError("Configure a dead-letter queue with maxReceiveCount three.")
 
     def read_json(self, key):
+        # With prefix-restricted ListBucket, a missing GetObject may return 403.
+        # An explicit exact-prefix listing distinguishes absence from denied access.
+        if not key.startswith(PREFIX + "/"):
+            raise ValueError("Control objects must be in the private cycle prefix.")
+        listing = self.s3.list_objects_v2(Bucket=self.settings.bucket, Prefix=key, MaxKeys=1)
+        if not any(item.get("Key") == key for item in listing.get("Contents", [])):
+            return None
         try:
             response = self.s3.get_object(Bucket=self.settings.bucket, Key=key)
         except self.s3.exceptions.NoSuchKey:

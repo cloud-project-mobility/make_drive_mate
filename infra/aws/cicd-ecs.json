@@ -1,0 +1,55 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "DriveMate manual GitHub OIDC deployment to one ECR repository and one existing ECS API service.",
+  "Metadata": {
+    "AWSToolsMetrics": {"AWSAgentToolkit": "aws-cloudformation@3"},
+    "com.aws.cloudformation.Context": {"ref": [{"at": "docs/CICD.md", "has": "Trusted CI identity, immutable images, stop-first rollout and rollback boundaries", "scope": "ecs-cicd"}]}
+  },
+  "Parameters": {
+    "GitHubOidcProviderArn": {"Type": "String", "AllowedPattern": "arn:aws:iam::[0-9]{12}:oidc-provider/token.actions.githubusercontent.com", "Description": "Existing GitHub OIDC provider; no new provider is created"},
+    "RepositoryName": {"Type": "String", "AllowedPattern": "[a-z0-9]+([._/-][a-z0-9]+)*", "MaxLength": 256, "Description": "Existing immutable-tag ECR repository from ecs-foundation"},
+    "ClusterName": {"Type": "String", "AllowedPattern": "[A-Za-z0-9_-]{1,255}", "Description": "Existing ECS cluster name"},
+    "ServiceName": {"Type": "String", "AllowedPattern": "[A-Za-z0-9_-]{1,255}", "Description": "Existing single-task ECS API service name"},
+    "ApiTaskFamily": {"Type": "String", "AllowedPattern": "[A-Za-z0-9_-]{1,255}", "Description": "Existing API task family, normally the service stack name followed by -api"},
+    "ExecutionRoleArn": {"Type": "String", "AllowedPattern": "arn:aws:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+", "Description": "Existing API task execution role; never a caller-selected role"},
+    "ApiTaskRoleArn": {"Type": "String", "AllowedPattern": "arn:aws:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+", "Description": "Existing application task role; cycle role is not delegated"}
+  },
+  "Resources": {
+    "DeployRole": {
+      "Type": "AWS::IAM::Role",
+      "Metadata": {"com.aws.cloudformation.Context": {"why": "A short-lived main-branch role may push code and update only the existing API task family and service", "must": ["Exact immutable GitHub main subject and STS audience", "No secret/data/DB access or arbitrary RunTask", "Pass only the two approved roles to ECS tasks"]}},
+      "Properties": {
+        "MaxSessionDuration": 3600,
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17", "Statement": [{
+            "Effect": "Allow", "Principal": {"Federated": {"Ref": "GitHubOidcProviderArn"}},
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {"StringEquals": {
+              "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+              "token.actions.githubusercontent.com:sub": "repo:cloud-project-mobility@341333303/make_drive_mate@1445282042:ref:refs/heads/main"
+            }}
+          }]
+        },
+        "Policies": [{"PolicyName": "ReviewedApiImageDeployment", "PolicyDocument": {
+          "Version": "2012-10-17", "Statement": [
+            {"Sid": "RegistryAuthentication", "Effect": "Allow", "Action": "ecr:GetAuthorizationToken", "Resource": "*"},
+            {"Sid": "OneRepository", "Effect": "Allow", "Action": ["ecr:DescribeRepositories", "ecr:DescribeImages", "ecr:BatchCheckLayerAvailability", "ecr:InitiateLayerUpload", "ecr:UploadLayerPart", "ecr:CompleteLayerUpload", "ecr:PutImage", "ecr:BatchGetImage"], "Resource": {"Fn::Sub": "arn:${AWS::Partition}:ecr:${AWS::Region}:${AWS::AccountId}:repository/${RepositoryName}"}},
+            {"Sid": "ReadTaskDefinition", "Effect": "Allow", "Action": "ecs:DescribeTaskDefinition", "Resource": "*"},
+            {"Sid": "RegisterApiFamily", "Effect": "Allow", "Action": "ecs:RegisterTaskDefinition", "Resource": {"Fn::Sub": "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/${ApiTaskFamily}:*"}},
+            {"Sid": "ReadOneService", "Effect": "Allow", "Action": "ecs:DescribeServices", "Resource": {"Fn::Sub": "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:service/${ClusterName}/${ServiceName}"}},
+            {"Sid": "UpdateOneService", "Effect": "Allow", "Action": "ecs:UpdateService", "Resource": {"Fn::Sub": "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:service/${ClusterName}/${ServiceName}"}, "Condition": {"ArnLike": {"ecs:task-definition": {"Fn::Sub": "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/${ApiTaskFamily}:*"}}}},
+            {"Sid": "PassOnlyApiRoles", "Effect": "Allow", "Action": "iam:PassRole", "Resource": [{"Ref": "ExecutionRoleArn"}, {"Ref": "ApiTaskRoleArn"}], "Condition": {"StringEquals": {"iam:PassedToService": "ecs-tasks.amazonaws.com"}}}
+          ]
+        }}]
+      }
+    }
+  },
+  "Outputs": {
+    "RoleArn": {"Value": {"Fn::GetAtt": ["DeployRole", "Arn"]}, "Description": "GitHub variable AWS_ROLE_ARN"},
+    "Region": {"Value": {"Ref": "AWS::Region"}, "Description": "GitHub variable AWS_REGION"},
+    "RepositoryName": {"Value": {"Ref": "RepositoryName"}, "Description": "GitHub variable ECR_REPOSITORY"},
+    "ClusterName": {"Value": {"Ref": "ClusterName"}, "Description": "GitHub variable ECS_CLUSTER"},
+    "ServiceName": {"Value": {"Ref": "ServiceName"}, "Description": "GitHub variable ECS_SERVICE"},
+    "ApiTaskFamily": {"Value": {"Ref": "ApiTaskFamily"}, "Description": "GitHub variable ECS_API_TASK_FAMILY"}
+  }
+}

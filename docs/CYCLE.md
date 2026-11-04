@@ -102,8 +102,10 @@ python -m unittest discover -s infra/aws -p test_cycle_worker.py -v
 
 실행 데이터는 우선 `pipeline/jobs/<job-id>/runs/<run-id>/`에 보관한다. 성공한 실행의 원본·정제 CSV·모델·보고서를 `s3://<data-bucket>/data/cycles/<run-id>/`로 올린 뒤, S3 `data/cycles/latest.json`을 단일 객체 PUT으로 게시한다. 이후 Spring이 읽는 로컬 `pipeline/latest.json`도 원자적으로 교체한다. `.env` 등 숨김 파일·심볼릭 링크·지원하지 않는 확장자는 업로드하지 않는다. 암호화는 기본 SSE-S3(AES256), KMS 환경변수가 있으면 지정 KMS 키를 사용한다. public ACL은 지정하지 않으며 버킷의 Block Public Access는 인프라에서 강제한다.
 
-instance profile에는 해당 큐의 ReceiveMessage, DeleteMessage, ChangeMessageVisibility, GetQueueAttributes, 데이터 버킷의 이 prefix에 대한 GetObject/PutObject, 필요한 경우 지정 Secret의 GetSecretValue와 지정 KMS 키 권한만 부여한다. 원문·모델은 비공개 객체이며 공개 분석 화면은 집계 JSON을 읽는다.
+instance profile 또는 ECS cycle task role에는 해당 큐의 ReceiveMessage, DeleteMessage, ChangeMessageVisibility, GetQueueAttributes, 데이터 버킷의 이 prefix에 대한 GetObject/PutObject, 필요한 경우 지정 Secret의 GetSecretValue와 지정 KMS 키 권한만 부여한다. 추가로 버킷 ARN에 ListBucket을 허용하되 `s3:prefix`를 `data/cycles/*`로 제한한다. worker는 정확한 객체 키를 Prefix로 한 `ListObjectsV2(MaxKeys=1)` 결과에서 동일 Key가 확인될 때만 GetObject한다. 없는 marker의 GetObject가 권한 구성에 따라 403으로 반환되는 문제를 피하고, 목록 권한 오류는 성공이나 없음으로 감추지 않는다. 기존 EC2 역할에 새 worker를 적용할 때도 이 제한된 ListBucket 권한을 먼저 추가해야 한다. 원문·모델은 비공개 객체이며 공개 분석 화면은 집계 JSON을 읽는다.
 
-7개 오프라인 어댑터 테스트로 완료 중복 방지, 업로드 전 게시 금지, 실패 시 미삭제, 재시도 예산 정산, 강제 종료 예약 보존, 메시지 본문 제한, 집계 파일 권한을 확인했다. worker의 `umask 077` 아래에서도 API와 공유하는 `latest.json`만 교체 전에 `0640`으로 지정해 같은 배포 그룹이 읽을 수 있도록 한다. 원본·모델 파일 권한은 넓히지 않는다. AWS 실환경 실행 성공은 별도 배포 및 실제 큐·S3 검증 기록으로 확인해야 한다.
+9개 오프라인 어댑터 테스트로 완료 중복 방지, 업로드 전 게시 금지, 실패 시 미삭제, 재시도 예산 정산, 강제 종료 예약 보존, 메시지 본문 제한, 집계 파일 권한, 정확한 S3 객체 존재 검사와 스트림 종료를 확인했다. worker의 `umask 077` 아래에서도 API와 공유하는 `latest.json`만 교체 전에 `0640`으로 지정해 같은 배포 그룹이 읽을 수 있도록 한다. 원본·모델 파일 권한은 넓히지 않는다. AWS 실환경 실행 성공은 별도 배포 및 실제 큐·S3 검증 기록으로 확인해야 한다.
+
+ECS의 `cycle` 컨테이너는 `--once`로 한 메시지만 처리하는 별도 task다. 현재 최초 ECS 템플릿은 task definition만 만들며 자동 실행 일정은 없다. API 이미지 CD가 cycle revision을 자동 갱신하거나 주기 실행을 시작하지 않는다. 별도 실행·동시 실행 수 1·재시도 보관 전략을 검토한 뒤 운영한다.
 
 공식 참고: [SQS visibility timeout](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html), [SQS long polling 설정](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_sqs.CfnQueueProps.html).

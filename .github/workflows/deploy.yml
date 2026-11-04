@@ -1,4 +1,4 @@
-name: Deploy reviewed DriveMate release
+name: Deploy reviewed DriveMate ECS release
 on:
   workflow_dispatch:
     inputs:
@@ -17,12 +17,13 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 85
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
-      AWS_S3_BUCKET: ${{ vars.AWS_S3_BUCKET }}
-      AWS_INSTANCE_ID: ${{ vars.AWS_INSTANCE_ID }}
-      AWS_SSM_DOCUMENT: ${{ vars.AWS_SSM_DOCUMENT }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+      ECS_API_TASK_FAMILY: ${{ vars.ECS_API_TASK_FAMILY }}
     steps:
       - name: Verify the trusted successful main CI run
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
@@ -61,13 +62,36 @@ jobs:
         run: |
           test "$(cat release-artifacts/source-revision.txt)" = "$SOURCE_REVISION"
           python infra/aws/deploy_release.py inspect --archive release-artifacts/code-release.zip --revision "$SOURCE_REVISION" --sha256 "$(cat release-artifacts/code-release.sha256)"
+          python infra/aws/deploy_ecs.py stage --repo . --archive release-artifacts/code-release.zip --revision "$SOURCE_REVISION" --sha256 "$(cat release-artifacts/code-release.sha256)"
+          python infra/containers/prepare_context.py --repo . --output container-context
       - uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
           role-session-name: drivemate-${{ github.run_id }}
-          role-duration-seconds: 1800
-      - name: Upload immutable code and invoke the fixed deployment document
+          role-duration-seconds: 3600
+      - name: Build or reuse the immutable source image in ECR
         env:
           SOURCE_REVISION: ${{ steps.verified.outputs.revision }}
-        run: python infra/aws/deploy_release.py publish --archive release-artifacts/code-release.zip --revision "$SOURCE_REVISION" --sha256 "$(cat release-artifacts/code-release.sha256)"
+        run: python infra/aws/deploy_ecs.py image --context container-context --revision "$SOURCE_REVISION" --output release-artifacts/image.json
+      - name: Refresh short-lived credentials for rollout and possible rollback
+        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: drivemate-deploy-${{ github.run_id }}
+          role-duration-seconds: 3600
+      - name: Deploy the API task and verify the expected revision
+        env:
+          SOURCE_REVISION: ${{ steps.verified.outputs.revision }}
+        run: python infra/aws/deploy_ecs.py deploy --image-file release-artifacts/image.json --revision "$SOURCE_REVISION" --report release-artifacts/ecs-deployment.json
+      - name: Save bounded deployment evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ecs-deployment-${{ github.run_id }}
+          path: |
+            release-artifacts/image.json
+            release-artifacts/ecs-deployment.json
+          if-no-files-found: ignore
+          retention-days: 30

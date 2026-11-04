@@ -1,0 +1,167 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drivemate
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  progressDeadlineSeconds: 600
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: drivemate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: drivemate
+    spec:
+      serviceAccountName: drivemate-api
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: verify-volume-access
+          image: drivemate-runtime:configure-immutable-digest
+          command: [/opt/drivemate/venv/bin/python, -c]
+          args:
+            - |
+              from pathlib import Path
+              for name in ('/opt/drivemate/runtime', '/srv/drivemate-web', '/tmp/api', '/tmp/nginx'):
+                  probe = Path(name) / '.uid-10001-write-check'
+                  probe.unlink(missing_ok=True)
+                  with probe.open('xb') as stream:
+                      stream.write(b'')
+                  probe.unlink()
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests: {cpu: 50m, memory: 32Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          volumeMounts:
+            - {name: runtime, mountPath: /opt/drivemate/runtime}
+            - {name: web, mountPath: /srv/drivemate-web}
+            - {name: api-tmp, mountPath: /tmp/api}
+            - {name: nginx-tmp, mountPath: /tmp/nginx}
+      containers:
+        - name: api
+          image: drivemate-runtime:configure-immutable-digest
+          command: [/opt/drivemate/venv/bin/python, -c]
+          args:
+            - |
+              import os
+              from pathlib import Path
+              import shutil
+              # Container restarts retain emptyDir; only these disposable mounts are reset.
+              for name in ('/opt/drivemate/runtime', '/srv/drivemate-web'):
+                  root = Path(name)
+                  if root.is_symlink() or root.resolve() != root:
+                      raise SystemExit('Unexpected ephemeral volume path')
+                  for child in root.iterdir():
+                      if child.is_symlink() or not child.is_dir():
+                          child.unlink()
+                      else:
+                          shutil.rmtree(child)
+              python = '/opt/drivemate/venv/bin/python'
+              os.execv(python, [python, '/opt/drivemate/container/entrypoint.py', 'api'])
+          envFrom:
+            - configMapRef: {name: drivemate-runtime}
+          env:
+            - name: DRIVEMATE_DB_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: drivemate-api-secrets, key: DRIVEMATE_DB_PASSWORD}
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef: {name: drivemate-api-secrets, key: OPENAI_API_KEY}
+            - name: OPENAI_MODEL
+              valueFrom:
+                secretKeyRef: {name: drivemate-api-secrets, key: OPENAI_MODEL}
+            - name: DRIVEMATE_KNOWLEDGE_ALLOWED_EMAILS
+              valueFrom:
+                secretKeyRef: {name: drivemate-api-secrets, key: DRIVEMATE_KNOWLEDGE_ALLOWED_EMAILS}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests: {cpu: 900m, memory: 2816Mi, ephemeral-storage: 3Gi}
+            limits: {cpu: "1", memory: 2816Mi, ephemeral-storage: 6Gi}
+          startupProbe:
+            exec:
+              command: [/opt/drivemate/venv/bin/python, /opt/drivemate/container/healthcheck.py, api]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            exec:
+              command: [/opt/drivemate/venv/bin/python, /opt/drivemate/container/healthcheck.py, api]
+            periodSeconds: 15
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: [/opt/drivemate/venv/bin/python, -c, "import socket; socket.create_connection(('127.0.0.1', 18085), 3).close()"]
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - {name: runtime, mountPath: /opt/drivemate/runtime}
+            - {name: web, mountPath: /srv/drivemate-web}
+            - {name: api-tmp, mountPath: /tmp}
+        - name: nginx
+          image: drivemate-runtime:configure-immutable-digest
+          command: [/opt/drivemate/venv/bin/python, -c]
+          args:
+            - |
+              import os
+              from pathlib import Path
+              import subprocess
+              import time
+              python = '/opt/drivemate/venv/bin/python'
+              deadline = time.monotonic() + 180
+              while time.monotonic() < deadline:
+                  if Path('/srv/drivemate-web/site/index.html').is_file():
+                      health = subprocess.run([python, '/opt/drivemate/container/healthcheck.py', 'api'], timeout=6)
+                      if health.returncode == 0:
+                          os.execv(python, [python, '/opt/drivemate/container/entrypoint.py', 'nginx'])
+                  time.sleep(2)
+              raise SystemExit('API readiness deadline exceeded')
+          ports:
+            - {name: http, containerPort: 8080}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests: {cpu: 100m, memory: 256Mi, ephemeral-storage: 128Mi}
+            limits: {cpu: 200m, memory: 256Mi, ephemeral-storage: 256Mi}
+          startupProbe:
+            tcpSocket: {port: http}
+            periodSeconds: 5
+            failureThreshold: 40
+          readinessProbe:
+            httpGet: {path: /api/v1/health, port: http}
+            periodSeconds: 15
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket: {port: http}
+            periodSeconds: 20
+          volumeMounts:
+            - {name: web, mountPath: /srv/drivemate-web, readOnly: true}
+            - {name: nginx-tmp, mountPath: /tmp}
+      volumes:
+        - {name: runtime, emptyDir: {sizeLimit: 3Gi}}
+        - {name: web, emptyDir: {sizeLimit: 256Mi}}
+        - {name: api-tmp, emptyDir: {sizeLimit: 512Mi}}
+        - {name: nginx-tmp, emptyDir: {sizeLimit: 128Mi}}

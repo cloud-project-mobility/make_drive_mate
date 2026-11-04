@@ -78,6 +78,7 @@ jobs:
           path: backend-spring/target
       - run: npm ci
       - run: npm run check
+      - run: node --test scripts/test-deploy-workflow.cjs
       - run: npx expo install --check
       - run: npx playwright install --with-deps chromium
       - run: npm run export:web

@@ -1,6 +1,10 @@
-# 자동 검사와 ECS 수동 배포
+# 자동 검사와 ECS 배포 연결
 
-`ci.yml`은 main push와 PR을 검사한다. `deploy.yml`은 성공한 main CI 실행 번호를 받아 수동으로 **기존 ECS Fargate API 서비스만** 갱신한다. 대상은 [cloud-project-mobility/make_drive_mate](https://github.com/cloud-project-mobility/make_drive_mate)다. 소스 준비, 원격 CI 성공, AWS 권한 연결, 실제 배포 완료를 구분한다. 로컬 회귀 검사만으로 AWS 배포 성공을 주장하지 않는다.
+`ci.yml`은 main push와 PR을 검사한다. `deploy.yml`은 성공한 `DriveMate CI`의 main push 완료를 받아 **기존 ECS Fargate API 서비스만** 자동 갱신하도록 준비되어 있다. 성공한 main CI 실행 번호를 지정하는 수동 실행도 유지한다. 대상은 [cloud-project-mobility/make_drive_mate](https://github.com/cloud-project-mobility/make_drive_mate)다. 소스 준비, 원격 CI 성공, AWS 권한 연결, 실제 배포 완료를 구분한다. 로컬 회귀 검사만으로 AWS 배포 성공을 주장하지 않는다.
+
+**현재 AWS OIDC 배포 연결은 완료되지 않았다.** 조직 정책의 OIDC 조회 거절로 provider와 배포 역할을 확인하지 못했으며, 확인 전에는 `AWS_ROLE_ARN`을 추정하여 등록하지 않는다. 해당 변수가 없으면 자동 배포 job은 건너뛴다. 수동 실행은 첫 검증 단계에서 연결 누락을 명시하며 실패한다. 다른 5개 변수를 설정하거나 workflow가 등록된 것만으로 자동 배포가 작동한다고 보지 않는다.
+
+조회 거절은 provider나 역할이 존재하지 않는다는 증거가 아니다. AWS Builder ID 간편 프로젝트 모드라면 AWS가 관리하는 조직 정책의 제한인지 먼저 확인하고, AWS Settings 및 [공식 고급 기능 활성화 안내](https://docs.aws.amazon.com/accounts/latest/reference/activate-advanced-features.html)에서 필요한 전환 조건을 확인한다. 공식 안내상 [Paid Plan 업그레이드](https://docs.aws.amazon.com/accounts/latest/reference/upgrade-account.html)가 선행되어야 하고, 고급 기능 활성화는 되돌릴 수 없으며 기존 지출 한도를 제거하고 다시 설정할 수 없게 한다. 단순 CD 설정 승인과 계정 모드·요금제 전환 승인을 구분하며, 이런 영향에 대한 사용자 확인 전에는 전환하지 않는다. 모드 확인 및 권한 해결 뒤 기존 provider·배포 역할을 실제 조회하고 신뢰 조건을 검증한다.
 
 자동 실행이 등록되지 않은 경우 CI를 `gh workflow run ci.yml --repo cloud-project-mobility/make_drive_mate --ref main`으로 수동 시작할 수 있다. 수동 CI는 검증용이며 release job을 건너뛴다. CD는 계속 **성공한 main push 실행만** 허용하므로 수동 CI 실행 번호로 배포할 수 없다.
 
@@ -36,12 +40,12 @@
 
 ## 배포와 복구
 
-1. ECS workflow·컨테이너 소스가 포함된 main CI 성공 후 `Deploy reviewed DriveMate ECS release`를 수동 실행한다. GitHub API로 같은 저장소·main push·정확한 ci.yml·성공 완료를 검증한다.
+1. 확인된 `AWS_ROLE_ARN`을 포함한 6개 변수가 설정되면 main push의 `DriveMate CI` 성공 완료가 자동 배포를 시작한다. 자동 실행은 이벤트의 CI 실행 번호를 사용하고, GitHub API로 같은 저장소·main push·정확한 ci.yml·성공 완료를 다시 검증한다. 현재 main SHA와 다르면 오래된 실행의 자동 배포를 거절한다. PR·수동 CI·실패 CI는 자동 배포하지 않는다. 수동 배포는 `Deploy reviewed DriveMate ECS release`에 성공한 main push CI 번호를 입력하며, 기존처럼 승인한 과거 실행을 선택할 수 있다.
 2. 해당 소스 SHA로 checkout하고 그 실행의 artifact만 받아 ZIP 정체성·허용 경로·전체/파일 해시를 검사한다.
 3. `deploy_ecs.py stage`는 JAR/dist만 새 checkout에 꺼낸다. 기존 파일은 덮어쓰지 않는다. `prepare_context.py`가 허용된 코드만 새 context로 모은다.
 4. OIDC로 인증하여 linux/amd64 이미지를 빌드하고 ECR에 소스 SHA 태그로 올린다. 저장소는 제외 규칙 없는 IMMUTABLE이어야 한다. 같은 SHA가 이미 있으면 재사용하며, 실행에는 `repository@sha256:...` digest를 사용한다. Docker 인증은 임시 config에만 저장한다.
 5. 빌드 뒤 OIDC 자격 증명을 다시 받아 배포·복구 시간을 확보한다. 서비스가 안정된 단일 task인지, API family·Fargate·awsvpc·api/nginx 두 health check·회로 차단기 rollback·0/100 배포 비율인지 확인한다.
-6. 현재 task의 런타임 역할·비밀 참조·환경·볼륨·CPU/메모리 등을 유지하고 두 이미지 값만 같은 digest로 교체한 revision을 등록한다. 준비 중 서비스가 바뀌면 중단한다.
+6. 자동 모드는 이미지 빌드·업로드 뒤 ECS 배포 직전에도 main SHA를 다시 조회한다. 준비 중 main이 바뀌면 ECS 갱신을 시작하지 않는다. 수동 모드에는 이 최신 SHA 제한을 적용하지 않는다. 현재 task의 런타임 역할·비밀 참조·환경·볼륨·CPU/메모리 등을 유지하고 두 이미지 값만 같은 digest로 교체한 revision을 등록한다. 준비 중 서비스가 바뀌면 중단한다.
 7. 새 revision으로 갱신하고 최대 약 20분 안정화를 기다린다. waiter가 성공해도 **기대한 새 revision이 COMPLETED인지** 재확인한다. 회로 차단기가 이전 revision으로 복구한 경우는 배포 실패다.
 8. 실패하면 이번/이전 revision일 때만 이전 revision 복구 및 안정화를 확인한다. 다른 운영자 revision이 관찰되면 덮어쓰지 않는다. 복구 미확인은 재시도 전에 ECS를 점검한다. 비밀 없는 image.json/ecs-deployment.json을 artifact로 남긴다.
 
@@ -58,6 +62,7 @@
 ```bash
 python -m unittest discover -s infra/aws -p test_deploy_ecs.py -v
 python -m unittest discover -s infra/aws -p test_cycle_worker.py -v
+node --test scripts/test-deploy-workflow.cjs
 cfn-lint --format json --regions ap-northeast-2 -t infra/aws/cicd-ecs.json
 ```
 

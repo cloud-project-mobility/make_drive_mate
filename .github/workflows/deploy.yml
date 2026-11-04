@@ -1,5 +1,9 @@
 name: Deploy reviewed DriveMate ECS release
 on:
+  workflow_run:
+    workflows: [DriveMate CI]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       ci_run_id:
@@ -15,7 +19,14 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        vars.AWS_ROLE_ARN != ''))
     runs-on: ubuntu-24.04
     timeout-minutes: 85
     env:
@@ -29,9 +40,13 @@ jobs:
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         id: verified
         env:
-          CI_RUN_ID: ${{ inputs.ci_run_id }}
+          CI_RUN_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.ci_run_id }}
+          AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
         with:
           script: |
+            if (!process.env.AWS_ROLE_ARN?.trim()) {
+              throw new Error('AWS_ROLE_ARN is not configured: AWS OIDC deployment is not connected');
+            }
             const raw = process.env.CI_RUN_ID;
             if (!/^[0-9]{1,18}$/.test(raw)) throw new Error('Invalid run ID');
             const {data: run} = await github.rest.actions.getWorkflowRun({...context.repo, run_id: Number(raw)});
@@ -39,6 +54,15 @@ jobs:
                 run.head_branch !== 'main' || run.head_repository.full_name !== context.repo.owner + '/' + context.repo.repo ||
                 run.path !== '.github/workflows/ci.yml' || !/^[a-f0-9]{40}$/.test(run.head_sha)) {
               throw new Error('Only a successful main push from this CI workflow can deploy');
+            }
+            if (context.eventName === 'workflow_run') {
+              if (String(context.payload.workflow_run?.id) !== String(run.id)) {
+                throw new Error('Triggered CI run identity does not match');
+              }
+              const {data: branch} = await github.rest.repos.getBranch({...context.repo, branch: 'main'});
+              if (branch.commit.sha !== run.head_sha) {
+                throw new Error('Automatic deployment refused: this CI revision is no longer current main');
+              }
             }
             core.setOutput('revision', run.head_sha);
             core.setOutput('run_id', String(run.id));
@@ -81,6 +105,17 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-session-name: drivemate-deploy-${{ github.run_id }}
           role-duration-seconds: 3600
+      - name: Recheck current main before automatic ECS rollout
+        if: github.event_name == 'workflow_run'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          SOURCE_REVISION: ${{ steps.verified.outputs.revision }}
+        with:
+          script: |
+            const {data: branch} = await github.rest.repos.getBranch({...context.repo, branch: 'main'});
+            if (branch.commit.sha !== process.env.SOURCE_REVISION) {
+              throw new Error('Automatic rollout refused: main changed while the image was being prepared');
+            }
       - name: Deploy the API task and verify the expected revision
         env:
           SOURCE_REVISION: ${{ steps.verified.outputs.revision }}

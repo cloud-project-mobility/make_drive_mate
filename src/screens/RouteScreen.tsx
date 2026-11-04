@@ -20,6 +20,7 @@ import { useTripRecorder } from '../services/useTripRecorder';
 import { dateLabel, durationLabel, RouteStops, TimeBreakdown, timeLabel } from './tripParts';
 import { useNow } from './useNow';
 import { mapsUrl } from '../domain/routing';
+import LiveLocationCard from '../components/LiveLocationCard';
 
 export default function RouteScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -252,6 +253,7 @@ export default function RouteScreen() {
       </Modal>
       <View style={s.columns}>
         <View style={s.main}>
+          <LiveLocationCard />
           {origin && destination ? (
             <Card style={s.routeCard}>
               <View style={s.diagram}>

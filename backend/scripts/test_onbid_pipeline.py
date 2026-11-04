@@ -8,10 +8,33 @@ from pathlib import Path
 from unittest.mock import patch
 from xml.etree import ElementTree
 
-from onbid_pipeline import bar_svg, copy_verified_raw, histogram, run_cycle, safe_label
+from onbid_pipeline import bar_svg, collection_provenance, copy_verified_raw, histogram, run_cycle, safe_label
 
 
 class CycleTest(unittest.TestCase):
+    def test_import_zero_calls_do_not_erase_unknown_original_calls(self):
+        manifest = {"complete": True, "date_start": "2020-01-01", "date_end": "2026-11-03",
+                    "source_format": "onbid-export-v1", "complete_scope": "local_import",
+                    "upstream_collection_verified": False, "request_count": 0,
+                    "original_request_count": None}
+        source = collection_provenance("reuse", manifest)
+        self.assertEqual(source["api_calls_this_run"], 0)
+        self.assertIsNone(source["original_collection_calls"])
+        self.assertEqual(source["source_format"], "onbid-export-v1")
+        self.assertEqual(source["complete_scope"], "local_import")
+        self.assertIs(source["upstream_collection_verified"], False)
+        del manifest["original_request_count"]
+        self.assertIsNone(collection_provenance("reuse", manifest)["original_collection_calls"])
+
+    def test_legacy_api_collection_retains_known_call_count(self):
+        manifest = {"complete": True, "date_start": "2025-11-04", "date_end": "2026-11-03",
+                    "request_count": 13}
+        source = collection_provenance("reuse", manifest)
+        self.assertEqual(source["original_collection_calls"], 13)
+        self.assertEqual(source["api_calls_this_run"], 0)
+        self.assertIs(source["upstream_collection_verified"], True)
+        self.assertEqual(collection_provenance("collect", manifest)["api_calls_this_run"], 13)
+
     def test_reuse_checks_hash_and_rejects_outside_paths(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -1,6 +1,6 @@
 # 온비드 실제 데이터 수집·전처리
 
-확인일: 2026-11-04 (Asia/Seoul). 실제 승인된 목록 API를 호출한 결과다.
+확인일: 2026-11-04 (Asia/Seoul). 아래 최초 실행은 실제 승인된 목록 API를 호출한 결과다. 추가 export의 오프라인 가져오기 결과는 마지막 절에 별도로 기록한다.
 
 ## 이번 실행
 
@@ -61,3 +61,48 @@ report = preprocess(Path("data"))
 목표 `price_krw`는 **공매 낙찰가격**이다. 소매 호가, 딜러 매입견적, 매매 완료가격과 같지 않다. 반복 공매의 관측이 있더라도 같은 차량의 장기 감가 경로가 검증된 것은 아니다. 사고·정비·트림 정보도 이번 데이터로 확보하지 않았다.
 
 출처: [공공데이터포털 목록 API](https://www.data.go.kr/data/15157252/openapi.do), [상세 API](https://www.data.go.kr/data/15157254/openapi.do).
+
+## 2026-11-04 추가 export 가져오기
+
+`import-export`는 사용자가 별도로 수집한 `{meta, items}` JSON을 읽는 오프라인 경로다. API 키나 재수집이 필요하지 않으며 원본을 API의 성공 응답으로 재포장하지 않는다. endpoint, 기간, 수집시각의 시간대, count/totalCount와 행수, 중복 JSON 키, 비유한 숫자, 자격증명 필드를 검증한다. 일부만 받은 export는 현재 자동 수용하지 않는다.
+
+```bash
+python backend/scripts/onbid_data.py import-export \
+  --files /private/onbid_car_bid_result_list_2020.json /private/onbid_car_bid_result_list_2021.json \
+  --output backend/data/onbid/NEW_RUN \
+  --baseline /private/prior/passenger_clean.csv
+```
+
+`--files`에는 필요한 모든 연도별 파일을 명시한다. 이미 존재하는 출력 폴더에는 쓰지 않는다. 원본 바이트를 `raw/export-NNN.json`에 그대로 보존하고 해시·원본 파일명·조회 조건·수집시각·가져온 시각·변환 코드 해시를 실행용 `manifest.json`에 기록한 뒤 공통 전처리를 실행한다. 이 manifest는 전달 ZIP의 파일 목록 해시와 다른 계약이다.
+
+- `source_format=onbid-export-v1`, `complete_scope=local_import`: `complete=true`는 전달받은 파일의 로컬 검증·복사가 끝났다는 뜻이다. 원 수집 전체의 완전성을 증명하지 않는다.
+- `request_count=0`은 이번 가져오기에 API 호출이 없었다는 뜻이다. 원 수집 호출 횟수는 `original_request_count=null`, 원 수집 검증은 `upstream_collection_verified=false`다.
+- API 원문 형식도 계속 지원한다. 두 형식은 동일한 `normalize_record()`와 중복·제외·보고서 코드를 사용한다.
+- 기존 `schema_version=onbid-normalized-v2` CSV 열 계약을 유지하며, 정제 정책 변경은 `normalizer_version=onbid-normalized-v3`로 기록한다.
+- 원본은 접근 제한된 비공개 자료다. CLI의 새 파일은 0600으로 생성한다. 차량번호·전화·이메일·주민번호 패턴 또는 스프레드시트 수식처럼 보이는 차량 속성을 가리고 해당 행은 학습 입력에서 제외한다. 이 패턴 검사는 완전한 비식별화가 아니며 정제본에도 사건·물건 식별자가 남는다. 원본과 정제본을 공개 Git이나 외부 임베딩 API에 올리지 않는다.
+- 차령이 0~80년을 벗어난 행은 학습 로더와 일치하도록 제외한다. 연식을 임의로 수정하지 않는다. 1~12년 밖 경고와 가격 극단값 경고는 별도로 보존한다.
+
+실제 2020~2026년 파일 7개를 처리한 결과는 다음과 같다. 원 수집 메타데이터의 수집시각은 2026-11-04 16:11 KST이며, 개찰일 범위는 2020-01-02~2026-11-03이다. 2026년은 연간 전체 자료가 아니다.
+
+| 단계 | 행수 |
+| --- | ---: |
+| 입력 원본 | 54,815 |
+| 낙찰 상태 전체 차종 | 35,000 |
+| 승용차/SUV/경차 범주 전체 상태 | 22,288 |
+| 매각·낙찰·필수 필드·단위·개인정보 패턴 검사를 통과한 정제본 | 14,867 |
+| 제외본 | 39,948 |
+
+동일 사건 중복·값 충돌은 각각 0건이다. 정제본은 물건 그룹 13,260개이며 1,343개 그룹이 반복된다. 민감하거나 안전하지 않은 차량 속성으로 격리한 원본은 124행이며 다른 제외 사유와 중복될 수 있다. 정제본의 알려진 개인정보 패턴은 0건이었고, 기존 `onbid_model.load_data()`로 14,867행을 읽는 계약 검사를 통과했다. 차령 범위는 0~38년이다.
+
+기존 2,197행의 사건은 새 원본에 모두 존재한다. 그중 2,187행은 새 정제본과 비교 필드가 같으며, 10행은 새 민감 속성 검사에 의해 제외했다. 기존 정제본을 다시 붙이지 않았고 새 정제본의 나머지 12,680행은 기준본에 없던 사건이다. `processed/baseline_overlap.json`은 기준본 해시·겹침·비교 결과만 기록하며 개별 식별자를 보고서에 나열하지 않는다. 이는 이전 정제 통과본과의 비교일 뿐 이전 원본 전체를 재검증한 결과는 아니다.
+
+최종 실행 폴더는 `backend/data/onbid/run-20261104-import-2020-2026-v3-validated/`다. `processed/`에는 기존 세 CSV, 품질 보고서 JSON/Markdown, 기준본 비교 보고서가 있다. 원본 파일의 해시는 가져온 뒤에도 동일함을 확인했다. 정제 CSV SHA-256은 `57c4960619fd9df6486c4d5341f232cca47e04e25154b0cb7eaadc8f2fda20e6`이다.
+
+기존 모델의 시험 자료가 새 데이터에 포함되므로 기존 341건 평가를 새 모델의 독립 평가로 재사용하지 않는다. 새 데이터 버전의 시간·그룹 분리, 전체/조건부 오차·제공률·최근 구간 성능을 다시 확인해야 하며 이 전처리 자체가 서비스 모델을 교체하지 않는다. 자유문구나 사후 낙찰가율·입찰자 수는 모델 특징에 추가하지 않는다.
+
+```bash
+python -m unittest discover -s backend/scripts -p 'test_onbid_data.py' -v
+python -m unittest discover -s backend/scripts -p 'test_onbid_import.py' -v
+```
+
+기존 정제 8개와 export 7개, 총 15개 오프라인 회귀 검사를 통과했다. 원본 변조·입력 형식·개인정보 패턴·상태코드·차령 경계·파일 간 중복/충돌·기준본 비교를 합성 데이터로 검사하며 실제 원본을 테스트 fixture에 포함하지 않는다.

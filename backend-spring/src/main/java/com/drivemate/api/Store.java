@@ -116,6 +116,25 @@ public class Store {
 
     public void logout(String token) { jdbc.update("DELETE FROM sessions WHERE token_hash=?", digest(token)); }
 
+    public record SessionIdentity(String userId, String tokenHash, long expiresAt) { }
+
+    public SessionIdentity authenticateSession(String token) {
+        String hash = digest(token);
+        List<SessionIdentity> rows = jdbc.query(
+                "SELECT user_id,expires_at FROM sessions WHERE token_hash=? AND expires_at>?",
+                (row, index) -> new SessionIdentity(row.getString("user_id"), hash, row.getLong("expires_at")),
+                hash, System.currentTimeMillis());
+        if (rows.isEmpty()) throw new ApiException("unauthorized", "로그인이 필요하거나 세션이 만료됐어요.", 401);
+        return rows.get(0);
+    }
+
+    public boolean sessionActive(SessionIdentity session) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM sessions WHERE token_hash=? AND user_id=? AND expires_at>?",
+                Integer.class, session.tokenHash(), session.userId(), System.currentTimeMillis());
+        return count != null && count == 1;
+    }
+
     public void deleteAccount(String userId) { jdbc.update("DELETE FROM accounts WHERE id=?", userId); }
 
     public Map<String, Object> state(String userId) {

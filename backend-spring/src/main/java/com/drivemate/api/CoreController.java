@@ -24,15 +24,18 @@ public class CoreController {
     private final AppSettings settings;
     private final SnapshotValidator snapshots;
     private final List<AccountDisconnect> disconnectors;
+    private final List<SessionDisconnect> sessionDisconnectors;
     private final RegistrationPolicy registrationPolicy;
 
     public CoreController(Store store, Auth auth, AppSettings settings, SnapshotValidator snapshots,
-            List<AccountDisconnect> disconnectors, RegistrationPolicy registrationPolicy) {
+            List<AccountDisconnect> disconnectors, RegistrationPolicy registrationPolicy,
+            List<SessionDisconnect> sessionDisconnectors) {
         this.store = store;
         this.auth = auth;
         this.settings = settings;
         this.snapshots = snapshots;
         this.disconnectors = disconnectors;
+        this.sessionDisconnectors = sessionDisconnectors;
         this.registrationPolicy = registrationPolicy;
     }
 
@@ -64,7 +67,9 @@ public class CoreController {
 
     @PostMapping("/auth/logout")
     public Map<String, Boolean> logout(HttpServletRequest request) {
-        store.logout(auth.token(request));
+        String token = auth.token(request);
+        store.logout(token);
+        for (SessionDisconnect disconnector : sessionDisconnectors) disconnector.disconnectSession(Store.digest(token));
         return Map.of("ok", true);
     }
 
@@ -73,6 +78,7 @@ public class CoreController {
         String userId = (String) auth.require(request).get("id");
         for (AccountDisconnect disconnector : disconnectors) disconnector.disconnectAccount(userId);
         store.deleteAccount(userId);
+        for (SessionDisconnect disconnector : sessionDisconnectors) disconnector.disconnectAccountSessions(userId);
         return Map.of("ok", true);
     }
 

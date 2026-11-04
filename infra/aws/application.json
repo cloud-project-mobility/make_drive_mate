@@ -280,7 +280,7 @@
       "Type": "AWS::RDS::DBInstance",
       "Metadata": {
         "com.aws.cloudformation.Context": {
-          "why": "Persistent accounts and pgvector documents; user-selected Free plan requires micro, Single-AZ and one-day backup; no automatic standby failover",
+          "why": "Persistent accounts and pgvector documents; user-selected Free plan requires micro, Single-AZ and one-day backup; no automatic standby failover; v2 identifier preserves prior database log history",
           "must": [
             "encrypted",
             "private",
@@ -337,7 +337,7 @@
           }
         ],
         "DBInstanceIdentifier": {
-          "Fn::Sub": "${AWS::StackName}-postgres"
+          "Fn::Sub": "${AWS::StackName}-postgres-v2"
         },
         "KmsKeyId": {
           "Fn::GetAtt": [
@@ -423,7 +423,7 @@
               "Condition": {
                 "ArnLike": {
                   "kms:EncryptionContext:aws:logs:arn": {
-                    "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/rds/instance/${AWS::StackName}-postgres/*"
+                    "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/rds/instance/${AWS::StackName}-postgres-v2/*"
                   }
                 }
               }
@@ -446,7 +446,7 @@
       },
       "Properties": {
         "LogGroupName": {
-          "Fn::Sub": "/aws/rds/instance/${AWS::StackName}-postgres/postgresql"
+          "Fn::Sub": "/aws/rds/instance/${AWS::StackName}-postgres-v2/postgresql"
         },
         "RetentionInDays": 14,
         "KmsKeyId": {

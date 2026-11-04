@@ -20,7 +20,10 @@ export interface OnbidAnalytics {
     date_start: string;
     date_end: string;
     api_calls_this_run: number;
-    original_collection_calls: number;
+    original_collection_calls: number | null;
+    source_format?: 'onbid-api-v1' | 'onbid-export-v1';
+    complete_scope?: 'api_collection' | 'local_import';
+    upstream_collection_verified?: boolean;
   };
   quality: {
     raw_rows: number;
@@ -99,7 +102,13 @@ export function isOnbidAnalytics(value: unknown): value is OnbidAnalytics {
     !day(source.date_end) ||
     source.date_start > source.date_end ||
     !count(source.api_calls_this_run) ||
-    !count(source.original_collection_calls) ||
+    !(source.original_collection_calls === null || count(source.original_collection_calls)) ||
+    (source.source_format !== undefined &&
+      !['onbid-api-v1', 'onbid-export-v1'].includes(String(source.source_format))) ||
+    (source.complete_scope !== undefined &&
+      !['api_collection', 'local_import'].includes(String(source.complete_scope))) ||
+    (source.upstream_collection_verified !== undefined &&
+      typeof source.upstream_collection_verified !== 'boolean') ||
     !count(quality.raw_rows) ||
     !count(quality.passenger_rows) ||
     !count(quality.clean_rows) ||

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   Button,
@@ -127,6 +127,14 @@ export default function TripsScreen() {
           </View>
         </View>
       </Card>
+      {Platform.OS === 'web' && (
+        <Button
+          title="내 기기 위치 보기"
+          icon="map-pin"
+          variant="secondary"
+          onPress={() => router.push('/route')}
+        />
+      )}
       <View style={s.stats}>
         <View style={s.stat}>
           <Text style={s.statLabel}>저장한 이동 계획</Text>

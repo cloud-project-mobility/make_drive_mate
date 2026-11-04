@@ -52,7 +52,8 @@ Spring의 인증된 `GET /api/v1/analytics/latest`는 서버가 지정한 `DRIVE
 
 ```text
 schema_version, run_id, status, generated_at, price_kind, production_promoted
-source: mode, date_start, date_end, api_calls_this_run, original_collection_calls
+source: mode, date_start, date_end, api_calls_this_run, original_collection_calls,
+        source_format, complete_scope, upstream_collection_verified
 quality: raw_rows, passenger_rows, clean_rows, excluded_rows,
          usable_percent_of_passenger, missing_rates, exclusion_reason_counts,
          exact_duplicate_rows, repeated_vehicle_groups
@@ -65,6 +66,8 @@ review_required
 ```
 
 차트 행은 `{label, count}`이며 `model_comparison`만 `{label, mae_manwon}`이다. `reports`는 저장 루트 기준 상대 경로다. API가 원본 파일이나 모델 파일을 임의 경로로 읽도록 허용하는 경로가 아니다.
+
+`onbid-export-v1` 파일을 가져온 실행은 `complete_scope=local_import`, `upstream_collection_verified=false`를 유지한다. 이번 파일 가져오기·재분석의 API 호출은 0회지만 원수집 호출 횟수는 미확인이므로 `original_collection_calls=null`로 표시한다. 이를 숫자 0으로 대체하지 않는다. 기존 직접 수집 자료의 알려진 호출 횟수는 숫자로 유지하며, 화면과 HTML 보고서 모두 최초 수집의 완전성 미검증 상태를 구분한다.
 
 ## 운영 모델 승격
 

@@ -27,6 +27,14 @@ PASSENGER_CATEGORIES = {"승용차", "SUV", "경차"}
 KST = timezone(timedelta(hours=9))
 ROOT = Path(__file__).resolve().parents[2] if len(Path(__file__).resolve().parents) > 2 else Path.cwd()
 SCHEMA_VERSION = "onbid-normalized-v2"
+EXPORT_FORMAT = "onbid-export-v1"
+NORMALIZER_VERSION = "onbid-normalized-v3"
+PRIVATE_PATTERNS = (
+    re.compile(r"(?<!\d)\d{2,3}\s*[가-힣]\s*\d{4}(?!\d)"),
+    re.compile(r"(?<!\d)0\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4}(?!\d)"),
+    re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"),
+    re.compile(r"(?<!\d)\d{6}\s*[-]\s*[1-8]\d{6}(?!\d)"),
+)
 
 
 class DataError(RuntimeError):
@@ -93,6 +101,118 @@ def parse_response(payload: object) -> tuple[list[dict], int, int]:
     if total < 0 or page_size <= 0:
         raise DataError("API pagination metadata is out of range.")
     return rows, total, page_size
+
+
+def reject_credentials(value: object) -> None:
+    """Do not copy exports containing credentials into a new raw collection."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            name = re.sub(r"[^a-z]", "", str(key).lower())
+            if name in {"servicekey", "apikey", "authorization", "password", "accesstoken", "secretkey"} and item:
+                raise DataError("Export contains a credential field; remove it from a separate source export.")
+            reject_credentials(item)
+    elif isinstance(value, list):
+        for item in value:
+            reject_credentials(item)
+    elif isinstance(value, str) and re.search(r"sk-(?:proj-)?[A-Za-z0-9_-]{30,}|(?:serviceKey|api_key)\s*[=:]\s*\S+", value, re.I):
+        raise DataError("Export contains a credential pattern; do not import this file.")
+
+
+def parse_export(payload: object) -> tuple[list[dict], dict]:
+    if not isinstance(payload, dict) or set(payload) != {"meta", "items"}:
+        raise DataError("Export must contain exactly meta and items.")
+    reject_credentials(payload)
+    metadata, rows = payload["meta"], payload["items"]
+    if not isinstance(metadata, dict) or not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
+        raise DataError("Export metadata/items have an unsupported structure.")
+    if metadata.get("endpoint") != ENDPOINT:
+        raise DataError("Export endpoint does not match the approved Onbid list service.")
+    for field in ("count", "totalCount"):
+        if type(metadata.get(field)) is not int or metadata[field] != len(rows):
+            raise DataError("Export counts do not match its records; partial exports require review.")
+    params = metadata.get("params")
+    if not isinstance(params, dict):
+        raise DataError("Export query parameters are missing.")
+    dates = []
+    for field in ("opbdDtStart", "opbdDtEnd"):
+        value = params.get(field)
+        if not isinstance(value, str) or not re.fullmatch(r"\d{8}", value):
+            raise DataError("Export query dates must use YYYYMMDD.")
+        try:
+            dates.append(datetime.strptime(value, "%Y%m%d").date().isoformat())
+        except ValueError:
+            raise DataError("Export query dates are invalid.") from None
+    if dates[0] > dates[1]:
+        raise DataError("Export query dates are reversed.")
+    collected = metadata.get("collected_at")
+    try:
+        if isinstance(collected, str) and collected.endswith(" KST"):
+            observed = datetime.strptime(collected, "%Y-%m-%d %H:%M KST").replace(tzinfo=KST)
+        else:
+            observed = datetime.fromisoformat(collected)
+            if observed.utcoffset() is None:
+                raise ValueError
+    except (TypeError, ValueError):
+        raise DataError("Export collected_at must include an explicit timezone.") from None
+    return rows, {"date_start": dates[0], "date_end": dates[1], "observed_at": observed.isoformat(),
+                  "reported_total_count": metadata["totalCount"], "query_parameters": params}
+
+
+def decode_export(raw: bytes) -> object:
+    def unique_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise DataError("Export JSON contains a duplicate object key.")
+            result[key] = value
+        return result
+
+    def reject_constant(_):
+        raise DataError("Export JSON contains a non-finite number.")
+
+    try:
+        return json.loads(raw.decode("utf-8-sig"), object_pairs_hook=unique_pairs, parse_constant=reject_constant)
+    except (UnicodeError, json.JSONDecodeError):
+        raise DataError("Export is not valid UTF-8 JSON.") from None
+
+
+def import_exports(paths: list[Path], output: Path) -> Path:
+    """Preserve original exports; complete refers only to this local verified import."""
+    if not paths:
+        raise DataError("Provide at least one export file.")
+    if output.exists():
+        raise DataError("Import output already exists; choose a new run directory.")
+    checked, seen = [], set()
+    for path in paths:
+        raw = path.read_bytes()
+        digest = hashlib.sha256(raw).hexdigest()
+        if digest in seen:
+            raise DataError("The same export file was supplied more than once.")
+        seen.add(digest)
+        rows, metadata = parse_export(decode_export(raw))
+        checked.append((raw, digest, len(rows), metadata, path.name))
+    output.mkdir(parents=True, exist_ok=False)
+    (output / "raw").mkdir()
+    now = datetime.now(KST).isoformat()
+    manifest = {"schema_version": SCHEMA_VERSION, "normalizer_version": NORMALIZER_VERSION,
+                "source": "onbid", "source_format": EXPORT_FORMAT, "catalog_url": CATALOG,
+                "endpoint": ENDPOINT, "price_kind": "mixed_auction_results",
+                "started_at": now, "complete": False, "complete_scope": "local_import",
+                "upstream_collection_verified": False, "request_count": 0,
+                "original_request_count": None, "row_count": sum(item[2] for item in checked),
+                "date_start": min(item[3]["date_start"] for item in checked),
+                "date_end": max(item[3]["date_end"] for item in checked),
+                "transform_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                "pages": []}
+    save_json(output / "manifest.json", manifest)
+    for number, (raw, digest, count, metadata, source_name) in enumerate(checked, 1):
+        name = f"raw/export-{number:03d}.json"
+        (output / name).write_bytes(raw)
+        manifest["pages"].append({"path": name, "sha256": digest, "source_format": EXPORT_FORMAT,
+                                  "source_file_name": source_name, "returned_rows": count, **metadata})
+    manifest.update(complete=True, completed_at=datetime.now(KST).isoformat())
+    save_json(output / "manifest.json", manifest)
+    return output
 
 
 def collect(start: date, end: date, output: Path, env_path: Path, max_calls: int = 100) -> Path:
@@ -253,21 +373,35 @@ def disposition_reasons(value: object) -> list[str]:
     return reasons
 
 
+def safe_attribute(value: object) -> tuple[str | None, bool]:
+    text = clean_text(value)
+    if text is None:
+        return None, False
+    suspicious = isinstance(value, (dict, list, bool)) or text.startswith(("=", "+", "-", "@"))
+    for pattern in PRIVATE_PATTERNS:
+        if pattern.search(text):
+            suspicious = True
+            text = pattern.sub("[REDACTED]", text)
+    return ("[REDACTED]" if suspicious and "[REDACTED]" not in text else text), suspicious
+
+
 def normalize_record(item: dict, observed_at: str, period_start: str, period_end: str) -> dict:
-    category = clean_text(item.get("cltrUsgSclsCtgrNm"))
+    category, category_private = safe_attribute(item.get("cltrUsgSclsCtgrNm"))
     event_at = auction_date(item.get("cltrOpbdDt"))
     year = integer(item.get("yrmdl"))
     km = integer(item.get("drvDstc"))
     price = integer(item.get("scfbAmt"))
     displacement = integer(item.get("dsvlm"))
-    model = clean_text(item.get("carMdlNm"))
-    make = clean_text(item.get("cltrMkrNm"))
-    fuel = clean_text(item.get("fuelCont"))
+    model, model_private = safe_attribute(item.get("carMdlNm"))
+    make, make_private = safe_attribute(item.get("cltrMkrNm"))
+    fuel, fuel_private = safe_attribute(item.get("fuelCont"))
     vehicle_id = clean_text(item.get("cltrMngNo"))
     condition_id = clean_text(item.get("pbctCdtnNo"))
     event_year = int(event_at[:4]) if event_at else None
     reasons = disposition_reasons(item.get("onbidCltrNm"))
     flags = []
+    if any((category_private, model_private, make_private, fuel_private)):
+        reasons.append("sensitive_or_unsafe_vehicle_attribute")
     if category not in PASSENGER_CATEGORIES:
         reasons.append("non_passenger_category")
     if clean_text(item.get("pbctStatCd")) != "0010":
@@ -297,6 +431,8 @@ def normalize_record(item: dict, observed_at: str, period_start: str, period_end
     if price is not None and (price < 100000 or price > 300000000):
         flags.append("price_extreme_requires_review")
     age = event_year - year if event_year is not None and year is not None else None
+    if age is not None and not 0 <= age <= 80:
+        reasons.append("age_outside_model_contract")
     if age is not None and not 1 <= age <= 12:
         flags.append("outside_planned_age_1_to_12")
     if displacement is not None and displacement < 0:
@@ -325,17 +461,68 @@ def write_csv(path: Path, rows: list[dict], fieldnames: list[str]) -> None:
         writer.writerows(rows)
 
 
-def preprocess(run: Path) -> dict:
+def compare_baseline(path: Path, records: list[dict], clean: list[dict]) -> dict:
+    raw = path.read_bytes()
+    rows = list(csv.DictReader(raw.decode("utf-8-sig").splitlines()))
+    required = {"source_record_id", "vehicle_group_id", "price_krw", "model", "model_year", "odometer_km"}
+    if not rows or not required.issubset(rows[0]):
+        raise DataError("Baseline CSV is missing the normalized-data contract.")
+    baseline = {row["source_record_id"]: row for row in rows}
+    if len(baseline) != len(rows) or any(not key or not row["vehicle_group_id"] for key, row in baseline.items()):
+        raise DataError("Baseline CSV has missing or duplicate event IDs.")
+    source_events = {row["source_record_id"] for row in records}
+    clean_events = {row["source_record_id"]: row for row in clean}
+    overlap = baseline.keys() & clean_events.keys()
+    compare_fields = ("vehicle_category", "make", "model", "model_year", "odometer_km", "fuel",
+                      "displacement_cc", "price_krw")
+    changes, changed_events = Counter(), 0
+    for event in overlap:
+        changed = [field for field in compare_fields
+                   if clean_text(baseline[event].get(field)) != clean_text(clean_events[event].get(field))]
+        changes.update(changed)
+        changed_events += bool(changed)
+    return {"baseline_sha256": hashlib.sha256(raw).hexdigest(), "baseline_rows": len(rows),
+            "scope": "prior_clean_rows_only_not_the_prior_raw_collection",
+            "raw_event_overlap": len(baseline.keys() & source_events), "clean_event_overlap": len(overlap),
+            "baseline_events_absent_from_raw": len(baseline.keys() - source_events),
+            "baseline_events_absent_from_clean": len(baseline.keys() - clean_events.keys()),
+            "identical_clean_overlap": len(overlap) - changed_events,
+            "changed_clean_overlap": changed_events, "changed_field_counts": dict(changes),
+            "clean_group_overlap": len({row["vehicle_group_id"] for row in rows}
+                                       & {row["vehicle_group_id"] for row in clean}),
+            "new_clean_events": len(clean_events.keys() - baseline.keys()),
+            "baseline_rows_appended": False,
+            "evaluation_note": "Prior model/test exposure is not erased; define a new dataset and evaluation protocol."}
+
+
+def preprocess(run: Path, baseline: Path | None = None) -> dict:
     manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
     if not manifest.get("complete"):
         raise DataError("Collection is incomplete; complete collection before preprocessing.")
     records = []
+    raw_statuses, raw_dispositions = Counter(), Counter()
     for page in manifest["pages"]:
-        raw = (run / page["path"]).read_bytes()
+        raw_path = (run / page["path"]).resolve()
+        if run.resolve() not in raw_path.parents or not raw_path.is_file():
+            raise DataError("A raw page is missing or outside its run directory.")
+        raw = raw_path.read_bytes()
         if hashlib.sha256(raw).hexdigest() != page["sha256"]:
             raise DataError("A raw response checksum does not match the collection manifest.")
-        rows, _, _ = parse_response(json.loads(raw))
+        source_format = page.get("source_format", manifest.get("source_format", "onbid-api-v1"))
+        if source_format == EXPORT_FORMAT:
+            rows, metadata = parse_export(decode_export(raw))
+            if any(metadata[field] != page[field] for field in ("observed_at", "date_start", "date_end")):
+                raise DataError("Export dates differ from the import manifest.")
+        elif source_format == "onbid-api-v1":
+            rows, _, _ = parse_response(json.loads(raw))
+        else:
+            raise DataError("Unsupported raw source format.")
+        if "returned_rows" in page and len(rows) != page["returned_rows"]:
+            raise DataError("Raw page count differs from its manifest.")
         for item in rows:
+            for counter, key in ((raw_statuses, "pbctStatCd"), (raw_dispositions, "dspsMthodCd")):
+                code = clean_text(item.get(key))
+                counter[code if code and re.fullmatch(r"\d{4}", code) else "unknown"] += 1
             row = normalize_record(item, page["observed_at"], page["date_start"], page["date_end"])
             row["raw_page"] = page["path"]
             records.append(row)
@@ -386,7 +573,13 @@ def preprocess(run: Path) -> dict:
     groups = Counter(row["vehicle_group_id"] for row in clean)
     report = {
         "schema_version": SCHEMA_VERSION, "price_kind": "auction_award",
-        "generated_at": datetime.now(KST).isoformat(), "collection_complete": True,
+        "normalizer_version": NORMALIZER_VERSION,
+        "generated_at": datetime.now(KST).isoformat(),
+        "collection_complete": manifest.get("source_format") != EXPORT_FORMAT,
+        "local_import_complete": manifest.get("source_format") == EXPORT_FORMAT,
+        "source_format": manifest.get("source_format", "onbid-api-v1"),
+        "upstream_collection_verified": manifest.get("upstream_collection_verified", True),
+        "original_request_count": manifest.get("original_request_count", manifest["request_count"]),
         "requested_range": [manifest["date_start"], manifest["date_end"]],
         "raw_rows": len(records), "normalized_rows": len(normalized),
         "exact_duplicate_rows": len(duplicate_rows), "conflicting_duplicate_events": len(conflict_ids),
@@ -403,6 +596,11 @@ def preprocess(run: Path) -> dict:
         "top_models": models.most_common(25),
         "clean_month_counts": dict(sorted(Counter(row["event_date"][:7] for row in clean).items())),
         "request_count": manifest["request_count"],
+        "raw_status_counts": dict(raw_statuses), "raw_disposition_counts": dict(raw_dispositions),
+        "privacy": {"raw_contains_unredacted_source": True, "raw_must_remain_private": True,
+                    "feature_attribute_patterns": ["vehicle_plate", "phone", "email", "resident_number"],
+                    "sensitive_feature_rows_excluded": reason_counts["sensitive_or_unsafe_vehicle_attribute"],
+                    "pattern_scan_is_not_complete_deidentification": True},
         "notes": [
             "The target is an auction award, not a retail/dealer-offer/completed-transaction price.",
             "Only explicit source passenger categories are selected; model names are not used to guess a category.",
@@ -416,6 +614,9 @@ def preprocess(run: Path) -> dict:
             "Spelling variants are not automatically merged into an unverified model generation.",
         ],
     }
+    if baseline is not None:
+        report["baseline_overlap"] = compare_baseline(baseline, records, clean)
+        save_json(processed / "baseline_overlap.json", report["baseline_overlap"])
     save_json(processed / "quality_report.json", report)
     lines = ["# 온비드 수집·전처리 결과", "", f"- 요청 기간: {manifest['date_start']} ~ {manifest['date_end']}",
              f"- 원본: {len(records):,}행 / API 요청: {manifest['request_count']}회",
@@ -426,6 +627,8 @@ def preprocess(run: Path) -> dict:
              "가격은 공매 낙찰가이며 소비자 시세가 아닙니다. 원본 제목의 폐차·고철·다대 차량·외 N건·점검용 기록과 주행거리 검토대기를 제외했습니다.",
              "가격이 크거나 작다는 이유만으로 제외하지 않으며, 남아 있는 `review_flags`도 확인해야 합니다.",
              "", "## 승용차 결측률", "", "| 필드 | 결측 건수 | 비율 |", "|---|---:|---:|"]
+    if manifest.get("source_format") == EXPORT_FORMAT:
+        lines[4:4] = ["- API 요청 0회는 이번 오프라인 가져오기 기준입니다. 원 수집 호출 횟수·전체 수집 완전성은 검증하지 않았습니다."]
     lines += [f"| {field} | {value['count']} | {value['percent']}% |" for field, value in missing.items()]
     lines += ["", "## 제외 사유 (한 행에 복수 사유 가능)", ""]
     lines += [f"- {reason}: {count:,}행" for reason, count in reason_counts.items()]
@@ -433,6 +636,7 @@ def preprocess(run: Path) -> dict:
               "- 결측 대체·범주 사전·이상값 기준은 훈련 데이터에만 맞춥니다.",
               "- 차량번호/주소/물건명·입찰자 수/낙찰가율/감정가는 정제 CSV에 포함하지 않았습니다.",
               "- 동일 차량의 미래 감가 경로는 이번 횡단면 자료만으로 검증되지 않습니다."]
+    lines += ["- 원본은 비공개이며 정제본도 물건 식별자를 포함합니다. 패턴 가림은 완전한 비식별화를 보장하지 않습니다."]
     (processed / "quality_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return report
 
@@ -448,6 +652,11 @@ def main() -> int:
     fetch.add_argument("--max-calls", type=int, default=100)
     clean = commands.add_parser("preprocess")
     clean.add_argument("--run", type=Path, required=True)
+    clean.add_argument("--baseline", type=Path)
+    imported = commands.add_parser("import-export")
+    imported.add_argument("--files", type=Path, nargs="+", required=True)
+    imported.add_argument("--output", type=Path, required=True)
+    imported.add_argument("--baseline", type=Path)
     args = parser.parse_args()
     os.umask(0o077)
     try:
@@ -455,7 +664,8 @@ def main() -> int:
             run = collect(args.start, args.end, args.output, args.env, args.max_calls)
             print(f"COLLECTION_COMPLETE={run}")
         else:
-            report = preprocess(args.run)
+            run = import_exports(args.files, args.output) if args.command == "import-export" else args.run
+            report = preprocess(run, args.baseline)
             print(json.dumps({key: report[key] for key in ["raw_rows", "clean_passenger_rows", "excluded_rows", "request_count"]}))
     except DataError as error:
         print(f"ERROR: {error}", file=sys.stderr)

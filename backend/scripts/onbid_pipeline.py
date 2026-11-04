@@ -79,6 +79,23 @@ def histogram(values, upper_bounds, labels):
     return [{"label": label, "count": count} for label, count in zip(labels, counts, strict=True)]
 
 
+def collection_provenance(mode, collection):
+    """Keep calls made here separate from unverified upstream collection history."""
+    source_format = collection.get("source_format", "onbid-api-v1")
+    imported = source_format == "onbid-export-v1"
+    original_calls = collection.get("original_request_count",
+                                    None if imported else collection["request_count"])
+    return {
+        "mode": mode, "date_start": collection["date_start"], "date_end": collection["date_end"],
+        "api_calls_this_run": 0 if mode == "reuse" else collection["request_count"],
+        "original_collection_calls": original_calls,
+        "source_format": source_format,
+        "complete_scope": collection.get("complete_scope", "local_import" if imported else "api_collection"),
+        "upstream_collection_verified": collection.get(
+            "upstream_collection_verified", False if imported else collection.get("complete") is True),
+    }
+
+
 def aggregate_summary(run_id, run_dir, mode, quality, metrics, collection):
     with (run_dir / "data/processed/passenger_clean.csv").open(encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.DictReader(handle))
@@ -115,11 +132,7 @@ def aggregate_summary(run_id, run_dir, mode, quality, metrics, collection):
         "generated_at": timestamp(),
         "price_kind": "auction_award",
         "production_promoted": False,
-        "source": {
-            "mode": mode, "date_start": collection["date_start"], "date_end": collection["date_end"],
-            "api_calls_this_run": 0 if mode == "reuse" else collection["request_count"],
-            "original_collection_calls": collection["request_count"],
-        },
+        "source": collection_provenance(mode, collection),
         "quality": {
             "raw_rows": quality["raw_rows"], "passenger_rows": quality["passenger_category_rows"],
             "clean_rows": quality["clean_passenger_rows"], "excluded_rows": quality["excluded_rows"],
@@ -202,11 +215,18 @@ def render_reports(summary, run_dir):
     conditional = audit["supported_test_metrics"]
     conditional_mae = f"{conditional['mae_manwon']:,.2f}만원" if conditional else "제공 대상 없음"
     source = summary["source"]
+    original_calls = source["original_collection_calls"]
+    original_calls_label = "미확인" if original_calls is None else f"{original_calls:,}회"
+    upstream_note = (
+        "파일 가져오기 결과입니다. 파일의 해시·건수·기간을 검사했지만 최초 API 수집의 완전성은 검증하지 않았습니다."
+        if source.get("upstream_collection_verified") is False else ""
+    )
     page = f'''<!doctype html><html lang="ko"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>DriveMate 데이터 사이클</title>
 <style>body{{margin:0;background:#edf3f6;color:#122b3c;font:15px/1.6 system-ui,sans-serif}}main{{max-width:1280px;margin:auto;padding:36px 24px}}h1{{font-size:32px;margin:8px 0}}.eyebrow{{color:#17838b;font-weight:700;letter-spacing:.08em}}.cards,.grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}}.cards{{grid-template-columns:repeat(4,minmax(0,1fr));margin:26px 0}}.card,.note,.panel{{background:white;border:1px solid #dae5eb;border-radius:16px;padding:18px}}.number{{font-size:26px;font-weight:750}}.label{{color:#526678;font-size:13px}}.note{{margin-bottom:20px;border-left:5px solid #d99523}}.panel{{padding:7px}}svg{{width:100%;height:auto;font-family:system-ui,sans-serif}}footer{{margin:24px 0;color:#526678;font-size:13px}}@media(max-width:750px){{.cards,.grid{{grid-template-columns:1fr}}main{{padding:20px 12px}}}}</style>
 <main><div class="eyebrow">DRIVEMATE · DATA CYCLE</div><h1>수집부터 설명 가능한 평가까지</h1>
 <p>{source['date_start']} ~ {source['date_end']} · {html.escape(summary['run_id'])} · {html.escape(source['mode'])} 실행</p>
+<p>이번 실행 API 호출 {source['api_calls_this_run']:,}회 · 원수집 API 호출 {original_calls_label}. {upstream_note}</p>
 <div class="cards"><div class="card"><div class="label">수집 원본</div><div class="number">{summary['quality']['raw_rows']:,}행</div></div>
 <div class="card"><div class="label">단일 차량 정제</div><div class="number">{summary['quality']['clean_rows']:,}행</div></div>
 <div class="card"><div class="label">전체 시험 MAE</div><div class="number">{model['test_metrics']['mae_manwon']:,.2f}만원</div></div>

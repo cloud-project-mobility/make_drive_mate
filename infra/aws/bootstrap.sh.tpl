@@ -416,6 +416,20 @@ server {
     access_log /var/log/nginx/drivemate-access.log drivemate_safe;
     error_log /var/log/nginx/drivemate-error.log warn;
 
+    location = /api/v1/location/stream {
+        proxy_pass http://127.0.0.1:18085;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 75s;
+        proxy_send_timeout 75s;
+        proxy_buffering off;
+    }
     location /api/v1/ {
         proxy_pass http://127.0.0.1:18085;
         proxy_http_version 1.1;

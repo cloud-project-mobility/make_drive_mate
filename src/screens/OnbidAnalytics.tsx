@@ -134,10 +134,28 @@ function AnalyticsContent() {
               {data.source.date_start} ~ {data.source.date_end}
             </Text>
           </View>
+          {!data.production_promoted && (
+            <Notice
+              title="후보 평가 · 서비스 모델 자동 교체 없음"
+              body="이 분석 실행은 서비스 모델을 교체하지 않았어요. 아래 수치는 이번 후보 평가 결과이며, 현재 차량 분석에 적용된 모델의 성능과 다를 수 있어요."
+            />
+          )}
           <Text style={s.detail}>
             결과 생성: {new Date(data.generated_at).toLocaleString('ko-KR')} ·{' '}
             {data.source.mode === 'reuse' ? '저장된 원본으로 재분석' : 'API에서 새로 수집'}
           </Text>
+          <Text style={s.detail}>
+            이번 실행 API 호출 {format(data.source.api_calls_this_run)}회 · 원수집 API 호출{' '}
+            {data.source.original_collection_calls === null
+              ? '미확인'
+              : `${format(data.source.original_collection_calls)}회`}
+          </Text>
+          {data.source.upstream_collection_verified === false && (
+            <Notice
+              title="최초 API 수집 내역은 검증하지 않았어요"
+              body="가져온 파일의 해시·건수·기간은 검사했지만, 처음 API에서 수집할 때 빠진 자료가 없는지는 확인하지 못했어요."
+            />
+          )}
           <View style={s.metrics}>
             <Metric
               label="수집된 원본"
@@ -165,7 +183,7 @@ function AnalyticsContent() {
             body="폐차·고철·점검용, 여러 대 묶음 또는 가격 단위가 불명확한 물건은 모델 입력에서 제외해요. 제조사·연료 등 모르는 값은 임의로 채우지 않아요."
           />
           <Card style={shared.stack}>
-            <SectionTitle title="모델이 설명할 수 있는 범위" />
+            <SectionTitle title="이번 분석에서 평가한 모델" />
             <Text style={shared.text}>
               검증 자료로 선택한 모델: {nameModel(data.model.selected_model)}
             </Text>

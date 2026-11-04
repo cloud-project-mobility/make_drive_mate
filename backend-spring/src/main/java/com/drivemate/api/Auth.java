@@ -23,6 +23,10 @@ public class Auth {
         return store.authenticate(token(request));
     }
 
+    public Store.SessionIdentity requireSession(HttpServletRequest request) {
+        return store.authenticateSession(token(request));
+    }
+
     public Map<String, Object> requireProvider(HttpServletRequest request) {
         Map<String, Object> user = require(request);
         store.rateLimit("provider:" + user.get("id"), 120, 60);

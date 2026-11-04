@@ -135,6 +135,40 @@ test('analytics shows whole-test and supported-subset errors together and clears
   await expect(page.getByTestId('load-onbid-analytics')).toBeDisabled();
 });
 
+test('imported analytics distinguishes zero local calls from unknown upstream collection', async ({
+  page,
+}) => {
+  await page.route('**/api/v1/analytics/latest', (route) =>
+    route.fulfill({
+      json: {
+        ...analytics,
+        source: {
+          ...analytics.source,
+          original_collection_calls: null,
+          source_format: 'onbid-export-v1',
+          complete_scope: 'local_import',
+          upstream_collection_verified: false,
+        },
+      },
+    }),
+  );
+  await login(page);
+  await page.getByTestId('load-onbid-analytics').click();
+  await expect(page.getByText('모델별 검증 오차', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('이번 실행 API 호출 0회 · 원수집 API 호출 미확인', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('최초 API 수집 내역은 검증하지 않았어요', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('후보 평가 · 서비스 모델 자동 교체 없음', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByTestId('onbid-analytics')).toContainText(
+    '현재 차량 분석에 적용된 모델의 성능과 다를 수 있어요.',
+  );
+});
+
 test('auction analysis preserves won units and explicitly avoids paid LLM calls', async ({
   page,
 }) => {

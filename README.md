@@ -4,7 +4,7 @@
 
 내 차를 **얼마나 더 탈지** 판단하도록, 가치 변화·추가 보유비용·개인 조건을 함께 비교하는 Expo 앱입니다. **API 키와 서버 없이 합성 예시를 시연할 수 있습니다.** 서버 로그인 후에는 온비드 실측 자료로 학습한 공매 낙찰가 모델과 데이터 품질·평가 결과를 별도로 조회합니다.
 
-공개 코드 대상은 [cloud-project-mobility/make_drive_mate](https://github.com/cloud-project-mobility/make_drive_mate)입니다. 실제 모델·GPT·문서 검색의 로컬 실행과 담당별 디버깅 순서는 [팀 인수 안내](docs/TEAM-HANDOFF.md), 최신 검증 범위는 [인수 메모](docs/DELIVERY-NOTES.md)를 따릅니다. 현재 AWS 공개 서비스는 배포되어 있지 않습니다. 데이터·모델·원본 문서·검색 인덱스·키는 이 공개 저장소에 포함하지 않습니다.
+공개 소스 312개 파일을 [cloud-project-mobility/make_drive_mate](https://github.com/cloud-project-mobility/make_drive_mate)의 main에 업로드했습니다. 원격 CI 워크플로 등록과 실제 실행 시작을 확인했으며 최종 상태는 [Actions 기록](https://github.com/cloud-project-mobility/make_drive_mate/actions)을 따릅니다. CD는 비활성 상태입니다. 실제 모델·GPT·문서 검색의 로컬 실행과 담당별 디버깅 순서는 [팀 인수 안내](docs/TEAM-HANDOFF.md), 최신 검증 범위는 [인수 메모](docs/DELIVERY-NOTES.md)를 따릅니다. 현재 AWS 공개 서비스는 배포되어 있지 않습니다. 데이터·모델·원본 문서·검색 인덱스·키는 이 공개 저장소에 포함하지 않습니다.
 
 ## 새 목업 실행
 

@@ -55,6 +55,7 @@ jobs:
     timeout-minutes: 25
     env:
       EXPO_NO_TELEMETRY: '1'
+      EXPO_NO_DOTENV: '1'
       CI: '1'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -76,8 +77,11 @@ jobs:
       - run: npm run check
       - run: npx expo install --check
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:integrated -- tests/e2e/valuation.spec.ts tests/e2e/onbid.spec.ts tests/e2e/backend.spec.ts
       - run: npm run export:web
+      - name: Verify the exported web artifact with the isolated Spring API
+        env:
+          DRIVEMATE_WEB_STATIC: '1'
+        run: npm run test:integrated -- tests/e2e/valuation.spec.ts tests/e2e/onbid.spec.ts tests/e2e/backend.spec.ts
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: web-dist

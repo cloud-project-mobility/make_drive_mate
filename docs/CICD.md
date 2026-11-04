@@ -1,6 +1,6 @@
 # 자동 검사와 수동 배포
 
-`.github/workflows/ci.yml`은 main push와 pull request를 자동 검사한다. `.github/workflows/deploy.yml`은 성공한 main CI 실행 번호를 입력하고 버튼을 눌렀을 때만 배포한다. 현재 공개 반영 대상은 사용자가 지정한 [cloud-project-mobility/make_drive_mate](https://github.com/cloud-project-mobility/make_drive_mate)이며 쓰기·관리 권한을 확인했다. 코드 업로드와 실제 CI 실행 검증은 진행 중이다. **AWS 실행 대상이 없어 CD는 활성화하지 않는다.** 파일 작성, 원격 CI 성공, 실제 AWS 배포를 구분한다.
+`.github/workflows/ci.yml`은 main push와 pull request를 자동 검사한다. `.github/workflows/deploy.yml`은 성공한 main CI 실행 번호를 입력하고 버튼을 눌렀을 때만 배포한다. 사용자가 지정한 공개 저장소 [cloud-project-mobility/make_drive_mate](https://github.com/cloud-project-mobility/make_drive_mate)의 main에 소스 312개 파일을 업로드했고 최초 통합 커밋 `8b8eea7484ebe8cf8f2dde10ab0f6737a1d5aa21`의 로컬·원격 일치를 확인했다. 원격 CI 워크플로 등록과 실제 실행 시작을 확인했다. 최종 상태는 [Actions 기록](https://github.com/cloud-project-mobility/make_drive_mate/actions)을 따른다. **AWS 실행 대상이 없어 CD는 활성화하지 않는다.** 파일 업로드, 원격 CI 성공, 실제 AWS 배포를 구분한다.
 
 ## 검사와 산출물
 

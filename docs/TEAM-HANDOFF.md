@@ -9,7 +9,7 @@
 - 로컬 계정 저장소는 H2다. 로컬 문서 검색은 저장된 임베딩의 코사인 검색과 BM25를 결합한다. 운영 기본 설정은 PostgreSQL/pgvector이며 실제 RDS 검증은 남아 있다.
 - 제조사·지도·캘린더 외부 연동은 로컬 mock 모드다. 실제 제공자 계정으로 연결된 것처럼 시연하지 않는다.
 - AWS 공개 배포는 미완료다. 실패 자원은 정리했고, 최종 DB 백업·암호화 키·비공개 S3·비밀정보 보관은 유지했다. 현재 DriveMate EC2·RDS 실행 서버는 없다.
-- 공개 코드 대상은 `cloud-project-mobility/make_drive_mate`다. 쓰기·관리 권한을 확인했고 검토한 소스 업로드와 원격 CI 검증을 진행 중이다. AWS 대상 서버가 없어 CD는 활성화하지 않는다.
+- 공개 코드 대상은 `cloud-project-mobility/make_drive_mate`다. 검토한 소스 312개 파일을 main에 업로드했고 원격 커밋 일치를 확인했다. 원격 CI 워크플로 등록과 실제 실행 시작을 확인했다. 최종 상태는 [Actions 기록](https://github.com/cloud-project-mobility/make_drive_mate/actions)을 따른다. AWS 대상 서버가 없어 CD는 활성화하지 않는다.
 
 ## 1. 담당 A — 디버깅·검증
 
@@ -21,6 +21,7 @@
 | 주요 사용자 흐름 회귀 | `tests/e2e/`, `backend-spring/src/test/`, `src/domain/*.test.ts` | 로그인→차량 등록→현재/6/12개월 비교→로그아웃·다른 계정 전환. 요청·응답과 화면 일치, 계정 간 기록 혼합 없음 |
 | 실패 상황 검사 | 401/403/422/429, 서버 중단, 미학습 차종, 긴 GPT 응답 | 사용자에게 원인이 표시되고 합성 값을 실제 분석처럼 대신 보여주지 않음. 비밀값이 로그·화면에 없음 |
 | 데이터·모델 결과 재현 | `backend/scripts/test_onbid*.py`, `ONBID-DATA.md`, `ONBID-MODEL.md` | 전체 시험과 제공 대상 조건부 결과를 함께 기록. 잘못된 단위·학습 누수·중복 그룹이 없다는 근거 첨부 |
+| 추가 온비드 자료 검증 | [추가 자료 검토](RAG-SOURCE-REVIEW.md) | 목록 54,815건→낙찰 35,000건→승용/SUV 15,455건(정제 전)의 단계별 건수, 반복 그룹 8,861개의 학습·평가 분리, CSV 가격 충돌 13건을 검증 |
 | 버그 인수표 관리 | 새 버그 기록 | 증상·재현 순서·기대/실제 결과·담당·수정 파일·재검증 결과. 원인 확인 후 B/C에게 배정 |
 
 먼저 `npm run check`, `npm run check:backend`, Python 단위 검사를 실행한다. 통과한 검사를 반복하기보다 새 변경과 발견된 오류에 맞는 검사를 추가한다. 계정 비밀번호·API 키·토큰은 버그 첨부물에서 제외한다.
@@ -34,8 +35,11 @@
 | Spring API 계약 정리 | `backend-spring/`, `src/services/`와 협의 | 로그인·차량·가격·분석·문서 경로, JSON 필드, 원 단위, 오류 코드를 문서화. 계약 변경은 C와 합의 |
 | 실제 DB·문서 권한 검증 | H2→PostgreSQL, pgvector, 허용 계정 | 실제 PostgreSQL에서 계정/차량 CRUD·6문서83청크 적재·검색·비허용 계정403. 초기 관리자 토큰 제거와 재가입 차단 확인 |
 | 반복 분석 운영 검증 | `onbid_pipeline.py`, `infra/aws/cycle_worker.py` | 수집→원본 보관→정제→평가→차트→최신 성공 집계. 실패하면 직전 성공 결과 유지, API가 갱신 파일 읽기 가능, 후보 모델 자동 교체 없음 |
+| 추가 온비드 자료 연결 | [추가 자료 검토](RAG-SOURCE-REVIEW.md) | `{meta, items}` 가져오기 어댑터·원본 해시·manifest 작성, 기존 2,197건과 사건 중복 검사, 비식별 후 학습 후보 작성. RAG 규정 설명과 정확한 수치의 SQL 조회를 분리 |
 | 유료 호출·외부 연동 운영 설정 | OpenAI, 온비드, 제공자 설정 | 키는 서버 설정으로 전달. 요청 한도·타임아웃·실패 동작 확인. 제조사/지도/캘린더 mock과 실제 연동 상태 구분 |
-| AWS·CI/CD 잔여 작업 | `infra/aws/DEPLOYMENT-STATUS.md`, `docs/CICD.md` | 공개 소스 반영 후 원격 자동 검사 결과 확인. 향후 AWS를 재개할 때 최신 파일 재패키징·실제 HTTPS/RDS/SQS/로그·복구 검증 후 수동 배포 연결. 현재 CD는 미활성 |
+| AWS·CI/CD 잔여 작업 | `infra/aws/DEPLOYMENT-STATUS.md`, `docs/CICD.md` | 공개 소스 main의 원격 자동 검사 결과 확인. 향후 AWS를 재개할 때 최신 파일 재패키징·실제 HTTPS/RDS/SQS/로그·복구 검증 후 수동 배포 연결. 현재 CD는 미활성 |
+
+추가 자료 원본은 공개 저장소에 포함하지 않았다. 위 항목은 후속 작업이며 현재 학습 모델과 문서 검색 83개 청크는 변경하지 않았다.
 
 실서비스가 없는 상태에서 “AWS 배포 완료”, “다중화”, “무중단 배포”로 보고하지 않는다. 무료 플랜 목표 설정은 EC2 4GB와 RDS micro 단일 서버·1일 백업이며, 새 배포 전 비용과 허용 자원을 재확인한다.
 
@@ -73,9 +77,9 @@ DRIVEMATE_LOCAL_API_TARGET=http://127.0.0.1:18085 node scripts/serve-web-test.cj
 
 ## GitHub 인수
 
-대상은 [cloud-project-mobility/make_drive_mate](https://github.com/cloud-project-mobility/make_drive_mate) 공개 저장소다. 기존 `FE-test`는 로컬 작업본의 기반이며 최종 반영 대상이 아니다. 업로드와 CI 검증이 진행 중이므로 팀원은 전달된 main 커밋과 실행 결과를 확인한 뒤 기준 코드를 받는다.
+대상은 [cloud-project-mobility/make_drive_mate](https://github.com/cloud-project-mobility/make_drive_mate) 공개 저장소다. 기존 `FE-test`는 로컬 작업본의 기반이며 최종 반영 대상이 아니다. 공개 소스 업로드와 원격 커밋 일치를 확인했다. 원격 CI 워크플로 등록과 실제 실행 시작을 확인했다. 최종 상태는 [Actions 기록](https://github.com/cloud-project-mobility/make_drive_mate/actions)을 따른다. 팀원은 전달된 main 커밋을 기준으로 작업하고 실제 CI 결과를 확인한다.
 
-1. 사용자가 승인한 새 공개 저장소의 쓰기·관리 권한은 확인했다. 검증한 소스·테스트·개인정보 없는 기술 문서·코드 전용 노트북만 선별해 반영한다.
+1. 검증한 소스·테스트·개인정보 없는 기술 문서·코드 전용 노트북만 선별해 main에 반영했다. 최초 통합 업로드 커밋은 `8b8eea7484ebe8cf8f2dde10ab0f6737a1d5aa21`이며 로컬과 원격의 일치를 확인했다.
 2. 통합 변경의 main 커밋과 실제 CI 결과를 확인한 뒤 팀원이 최신 기준을 받는다. CI 통과와 실제 AWS 배포는 별도이며 현재 CD는 활성화하지 않는다.
 3. 분담 브랜치는 `codex/debug`, `codex/backend`, `codex/frontend`처럼 나누고 PR로 합친다. 이 문서는 제안이며 해당 브랜치를 실제로 생성하지 않았다.
 4. 소스는 기존 폴더, 지침은 `docs/`에 둔다. 원본 Word·PPT와 수정본은 팀의 비공개 Drive/OneDrive 폴더에 전달하며 현재 공개 반영 대상에서 `docs/deliverables/` 원본을 제외한다. 키·계정 설정/DB·원시/정제 데이터·학습 모델·RAG 본문/색인·데이터 내장 노트북은 Git에 올리지 않는다.

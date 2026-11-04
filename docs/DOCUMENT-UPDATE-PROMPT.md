@@ -97,7 +97,7 @@ RAG 결과는 다음과 같이 제한해서 보고해 줘.
 
 현재는 loopback 웹 → Spring/H2 → Python ML·local RAG로 실행한다. 향후 배포 목표는 CloudFront HTTPS, EC2 Nginx/Spring, PostgreSQL RDS/pgvector, 비공개 S3, SQS/EventBridge다. 검증한 목표 유형은 c7i-flex.large(4 GiB)와 PostgreSQL 18.6 db.t4g.micro·Single-AZ·백업 보존 1일이다. 실패 배포에서 만든 RDS는 최종 암호화 백업 후 삭제했고 실패 스택·VPC·빈 작업 큐도 정리했다. 현재 공개 서비스는 없다. 별도 foundation의 비공개 S3·secret과 최종 백업·복원용 키는 남아 있다. Single-AZ를 Multi-AZ 또는 장애 무중단 구조로 그리지 마.
 
-GitHub Actions CI/CD는 로컬 파일 준비와 어댑터 검사를 완료했다. 사용자가 지정한 새 공개 반영 대상은 `cloud-project-mobility/make_drive_mate`이며 쓰기·관리 권한을 확인했다. 코드 업로드와 원격 CI 검증은 진행 중이므로 실제 실행 기록이 확인되기 전에 성공을 만들어 쓰지 마. 기존 `FE-test`는 로컬 작업본의 기반이다. OIDC 신뢰 조건은 새 대상의 불변 저장소 식별자를 포함한 main 브랜치 subject로 맞췄다. 공개 저장소에는 원본 Office 문서·데이터·모델·RAG 본문/색인·키·계정 설정을 제외한다. 현재 AWS 실행 대상이 없어 CD는 활성화하지 않으며 CI 통과를 운영 배포 완료로 쓰지 마.
+GitHub Actions CI/CD는 로컬 파일 준비와 어댑터 검사를 완료했다. 사용자가 지정한 공개 저장소 `cloud-project-mobility/make_drive_mate`의 main에 소스 312개 파일을 업로드했고 최초 통합 커밋 `8b8eea7484ebe8cf8f2dde10ab0f6737a1d5aa21`의 로컬·원격 일치를 확인했다. 원격 CI 워크플로 등록과 실제 실행 시작을 확인했다. 성공 여부는 [Actions 기록](https://github.com/cloud-project-mobility/make_drive_mate/actions)을 기준으로 하며 통과 기록이 확인되기 전에 성공했다고 쓰지 마. 기존 `FE-test`는 로컬 작업본의 기반이다. OIDC 신뢰 조건은 새 대상의 불변 저장소 식별자를 포함한 main 브랜치 subject로 맞췄다. 공개 저장소에는 원본 Office 문서·데이터·모델·RAG 본문/색인·키·계정 설정을 제외했다. 현재 AWS 실행 대상이 없어 CD는 활성화하지 않으며 CI 통과를 운영 배포 완료로 쓰지 마.
 
 검증된 main 산출물을 선택해 배포하는 과정과 운영 모델 승격은 별개의 절차다. 월 20만원은 사용자 예산이며 실제 과금·무료 혜택·알림을 확인하기 전에는 고정 월 비용이나 무조건 무료라고 약속하지 마.
 

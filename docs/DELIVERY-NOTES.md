@@ -55,14 +55,14 @@
 | 모델 요청 | 로그인→차량 입력→공매 결과/유보→근거 설명 | **로컬 실제 ML+GPT 200 / 공개 운영 요청 미실행** |
 | 문서 권한 | 사전 승인 계정만 검색. 허용 이메일의 공개 가입 및 삭제 후 일반 재가입 차단 | **로컬 검증 완료** — 초기 토큰 제거·재시작 및 공개 가입 403 확인. AWS에서는 미실행 |
 | 주간 사이클 | 향후 EventBridge → SQS → 단일 worker → 비공개 S3 집계 게시 | **AWS 규칙·큐 정리 완료, 운영 사이클 미실행**. 로컬 분석과 worker 코드는 준비됨 |
-| CI/CD | GitHub Actions 검사·산출물 생성 및 검토된 버전의 수동 배포 파일. OIDC는 새 공개 대상의 불변 저장소 식별자를 포함한 main 브랜치 subject로 제한 | **코드 업로드·원격 CI 검증 진행 중 / CD 미활성** — `make_drive_mate`의 쓰기·관리 권한 확인. AWS 대상 호스트 없음 |
+| CI/CD | GitHub Actions 검사·산출물 생성 및 검토된 버전의 수동 배포 파일. OIDC는 새 공개 대상의 불변 저장소 식별자를 포함한 main 브랜치 subject로 제한 | **공개 소스 업로드 완료 / 원격 CI 실행 시작 확인 / CD 미활성** — main 커밋의 로컬·원격 일치 확인. AWS 대상 호스트 없음 |
 | 비용 | 사용자 월 20만원 예산 | **실행 중인 EC2·RDS 없음**. 보존한 백업·키·비밀정보·비공개 객체의 저장 비용은 남을 수 있음 |
 
 실패 스택·해당 VPC·빈 작업 큐의 삭제를 확인했다. 최종 백업과 복원용 암호화 키, 별도 foundation의 비공개 S3·애플리케이션 secret은 유지했다. 다음 AWS 배포 때는 최신 소스를 다시 빌드·패키징해야 한다. 자세한 상태는 [AWS 실행 기록](../infra/aws/DEPLOYMENT-STATUS.md)을 따른다.
 
 유료 기능은 **UTC 날짜 기준 서버 전체 요청 20회/일** 한도를 공유한다. 문서 검색 1회는 임베딩 호출을 포함하고 GPT 옵션은 추가 호출을 할 수 있으므로 “OpenAI HTTP 호출이 정확히 20회 이내”와 같은 뜻이 아니다. 실패·미설정 요청도 슬롯을 소비할 수 있다. 이 요청 한도와 예산 알림은 AWS 월 지출의 자동 차단 보장이 아니다.
 
-최종 공개 반영 대상은 사용자가 지정한 [cloud-project-mobility/make_drive_mate](https://github.com/cloud-project-mobility/make_drive_mate)다. 쓰기·관리 권한을 확인했고 코드 업로드와 원격 CI 검증을 진행 중이다. 기존 `FE-test`는 로컬 작업본의 기반으로만 구분한다. 공개 대상에는 소스·테스트·개인정보 없는 기술 문서와 코드 전용 노트북만 반영하고 원본 Office 문서·데이터·모델·RAG 본문/색인·키·계정 설정은 제외한다. 실제 원격 실행 결과가 확인된 뒤 CI 성공으로 기록하며, 현재 AWS 대상이 없어 CD는 활성화하지 않는다.
+사용자가 지정한 [cloud-project-mobility/make_drive_mate](https://github.com/cloud-project-mobility/make_drive_mate)에 공개 소스 312개 파일을 업로드했다. 최초 통합 업로드 커밋은 [`8b8eea7484ebe8cf8f2dde10ab0f6737a1d5aa21`](https://github.com/cloud-project-mobility/make_drive_mate/commit/8b8eea7484ebe8cf8f2dde10ab0f6737a1d5aa21)이며 main의 로컬·원격 일치를 확인했다. 원격 CI 워크플로 등록과 실제 실행 시작을 확인했다. 최종 상태는 [Actions 기록](https://github.com/cloud-project-mobility/make_drive_mate/actions)을 따른다. 기존 `FE-test`는 로컬 작업본의 기반으로만 구분한다. 소스·테스트·개인정보 없는 기술 문서와 코드 전용 노트북만 반영했으며 원본 Office 문서·데이터·모델·RAG 본문/색인·키·계정 설정은 제외했다. 실제 원격 실행 결과가 확인된 뒤 CI 성공으로 기록하며, 현재 AWS 대상이 없어 CD는 활성화하지 않는다.
 
 ## 검증·보존 사항
 

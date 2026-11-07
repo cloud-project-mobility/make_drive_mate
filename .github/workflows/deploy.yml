@@ -119,6 +119,8 @@ jobs:
       - name: Deploy the API task and verify the expected revision
         env:
           SOURCE_REVISION: ${{ steps.verified.outputs.revision }}
+          DRIVEMATE_HYUNDAI_SAMPLE_ENABLED: ${{ vars.DRIVEMATE_HYUNDAI_SAMPLE_ENABLED }}
+          HYUNDAI_SAMPLE_SECRET_ARN: ${{ vars.HYUNDAI_SAMPLE_SECRET_ARN }}
         run: python infra/aws/deploy_ecs.py deploy --image-file release-artifacts/image.json --revision "$SOURCE_REVISION" --report release-artifacts/ecs-deployment.json
       - name: Save bounded deployment evidence
         if: always()
@@ -130,3 +132,4 @@ jobs:
             release-artifacts/ecs-deployment.json
           if-no-files-found: ignore
           retention-days: 30
+

@@ -14,6 +14,7 @@ import deploy_release
 IMAGE = "123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/drivemate@sha256:" + "a" * 64
 OLD = "arn:aws:ecs:ap-northeast-2:123456789012:task-definition/drivemate-api:1"
 NEW = OLD[:-1] + "2"
+SAMPLE_SECRET = "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:drivemate-hyundai-AbCdEf"
 
 
 def task_definition():
@@ -37,6 +38,61 @@ def service(arn=OLD):
 
 
 class EcsDeployTests(unittest.TestCase):
+    def test_sample_configuration_requires_explicit_complete_settings(self):
+        self.assertIsNone(deploy.hyundai_sample_configuration("", ""))
+        self.assertEqual(deploy.hyundai_sample_configuration("false", ""), {"enabled": False})
+        for enabled, arn in [("true", ""), ("", SAMPLE_SECRET), ("false", SAMPLE_SECRET),
+                             ("yes", SAMPLE_SECRET), ("true", "synthetic-token"),
+                             ("true", SAMPLE_SECRET + ":key::"), ("true", SAMPLE_SECRET + "\n")]:
+            with self.subTest(enabled=enabled, arn=arn), self.assertRaises(ValueError):
+                deploy.hyundai_sample_configuration(enabled, arn)
+
+    def test_sample_secrets_are_only_references_in_api_and_preserve_other_settings(self):
+        original = task_definition()
+        original["containerDefinitions"][0]["environment"].extend([
+            {"name": "DRIVEMATE_PROVIDER_MODE", "value": "live"},
+            {"name": "HYUNDAI_SAMPLE_TOKEN", "value": "synthetic-stale-plaintext"}])
+        config = deploy.hyundai_sample_configuration("true", SAMPLE_SECRET)
+        cloned = deploy.clone_task(original, IMAGE, "drivemate-api", config)
+        api, nginx = cloned["containerDefinitions"]
+        self.assertNotIn("synthetic-stale-plaintext", json.dumps(cloned))
+        self.assertIn({"name": "DRIVEMATE_PROVIDER_MODE", "value": "live"}, api["environment"])
+        self.assertIn({"name": "DRIVEMATE_HYUNDAI_SAMPLE_ENABLED", "value": "true"}, api["environment"])
+        for name in ("HYUNDAI_SAMPLE_TOKEN", "HYUNDAI_SAMPLE_CAR_ID"):
+            self.assertIn({"name": name, "valueFrom": SAMPLE_SECRET + ":" + name + "::"}, api["secrets"])
+        expected_nginx = copy.deepcopy(original["containerDefinitions"][1])
+        expected_nginx["image"] = IMAGE
+        self.assertEqual(nginx, expected_nginx)
+        self.assertEqual(deploy.clone_task({**cloned, "status": "ACTIVE"}, IMAGE, "drivemate-api", config), cloned)
+        disabled = deploy.clone_task({**cloned, "status": "ACTIVE"}, IMAGE, "drivemate-api", {"enabled": False})
+        self.assertFalse(any(item["name"].startswith("HYUNDAI_SAMPLE_") for item in disabled["containerDefinitions"][0]["secrets"]))
+
+    def test_same_image_still_rolls_out_changed_sample_configuration(self):
+        client = self.client()
+        for item in client.describe_task_definition.return_value["taskDefinition"]["containerDefinitions"]:
+            item["image"] = IMAGE
+        client.describe_services.side_effect = [{"services": [service(arn)]} for arn in [OLD, OLD, NEW]]
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "report.json"
+            result = deploy.deploy_service(client, "drivemate", "api", "drivemate-api", IMAGE, "d" * 40, report,
+                                           deploy.hyundai_sample_configuration("true", SAMPLE_SECRET))
+            self.assertEqual(result["status"], "healthy")
+            self.assertNotIn(SAMPLE_SECRET, report.read_text())
+        client.register_task_definition.assert_called_once()
+        client.update_service.assert_called_once()
+
+    def test_identical_image_and_sample_configuration_skip_rollout(self):
+        client = self.client()
+        config = deploy.hyundai_sample_configuration("true", SAMPLE_SECRET)
+        task = deploy.clone_task(task_definition(), IMAGE, "drivemate-api", config)
+        client.describe_task_definition.return_value = {"taskDefinition": {**task, "status": "ACTIVE"}}
+        with tempfile.TemporaryDirectory() as directory:
+            result = deploy.deploy_service(client, "drivemate", "api", "drivemate-api", IMAGE, "d" * 40,
+                                           Path(directory) / "report.json", config)
+            self.assertEqual(result["status"], "already_deployed")
+        client.register_task_definition.assert_not_called()
+        client.update_service.assert_not_called()
+
     def client(self):
         client = Mock()
         client.describe_services.return_value = {"services": [service()]}
@@ -194,3 +250,4 @@ class EcsDeployTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

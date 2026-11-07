@@ -9,6 +9,7 @@ import { listRegisteredVehicles } from '../services/vehicleCatalog';
 import { useMounted } from '../services/useMounted';
 import { useApp } from '../state/AppProvider';
 import { useBackend } from '../state/BackendProvider';
+import HyundaiSampleVehicle from './HyundaiSampleVehicle';
 
 interface VehicleListResult {
   client: BackendClient;
@@ -20,7 +21,7 @@ interface VehicleListResult {
 
 const powertrainLabels = { ICE: '내연기관', HYB: '하이브리드', EV: '전기차' };
 
-export default function ServerVehicles() {
+function AccountVehicles() {
   const { client, session, isCurrentClient } = useBackend();
   const { state, dispatch, ready } = useApp();
   const isMounted = useMounted();
@@ -129,3 +130,13 @@ export default function ServerVehicles() {
     </Card>
   );
 }
+
+export default function ServerVehicles() {
+  return (
+    <>
+      <HyundaiSampleVehicle />
+      <AccountVehicles />
+    </>
+  );
+}
+

@@ -1,6 +1,7 @@
 package com.drivemate.api.providers;
 
 import static com.drivemate.api.providers.ProviderSupport.map;
+import com.drivemate.api.HyundaiSampleController;
 import java.util.Map;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -8,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice(assignableTypes = ProviderController.class)
+@RestControllerAdvice(assignableTypes = {ProviderController.class, HyundaiSampleController.class})
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class ProviderErrors {
     @ExceptionHandler(ProviderException.class)
@@ -18,3 +19,4 @@ public class ProviderErrors {
         return ResponseEntity.status(error.status()).header("Cache-Control", "no-store").body(map("error", detail));
     }
 }
+

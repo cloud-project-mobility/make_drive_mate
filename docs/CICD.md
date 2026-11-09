@@ -69,3 +69,8 @@ cfn-lint --format json --regions ap-northeast-2 -t infra/aws/cicd-ecs.json
 기존 cicd.json 및 deploy_release.py publish/apply는 EC2/SSM 경로로 보존하며 현재 deploy.yml은 호출하지 않는다. deploy_release.py의 ZIP 생성·검사는 계속 사용한다. quality.yml은 FastAPI 시절 수동 검사다.
 
 공식 근거: [서비스 갱신](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_UpdateService.html), [회로 차단기와 rollback](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/deployment-circuit-breaker.html), [task 등록](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RegisterTaskDefinition.html), [ECS 권한 범위](https://docs.aws.amazon.com/service-authorization/latest/reference/list_ecs.html), [ECR 업로드 권한](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-push-iam.html), [GitHub AWS OIDC](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws).
+
+
+## Expo compatibility prerequisite · 2026-11-09
+
+Calendar verification found that the existing SDK 57 dependency set failed Expo's online compatibility check before browser tests could run. Update only the five reported patches: Expo 57.0.32, constants/location 57.0.23, notifications 57.0.25, and router 57.0.30, together with the lockfile. Keep `npx expo install --check` enabled in CI. This is a patch compatibility prerequisite, not an SDK upgrade or deployment. See the [Expo CLI installation guidance](https://docs.expo.dev/more/expo-cli/#install).

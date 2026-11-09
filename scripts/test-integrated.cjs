@@ -33,13 +33,9 @@ async function stop(child) {
   if (!child?.pid || child.exitCode !== null || child.signalCode !== null) return;
   signal(child, 'SIGTERM');
   for (let i = 0; i < 50; i++) {
-    try {
-      if (child.exitCode !== null || child.signalCode !== null) return;
-      if (process.platform !== 'win32') process.kill(-child.pid, 0);
-    } catch (error) {
-      if (error.code === 'ESRCH') return;
-      throw error;
-    }
+    // Node owns the child lifecycle. Probing a disappearing process group can
+    // report EPERM on macOS even after the child completed graceful shutdown.
+    if (child.exitCode !== null || child.signalCode !== null) return;
     await delay(100);
   }
   signal(child, 'SIGKILL');

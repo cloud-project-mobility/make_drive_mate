@@ -19,7 +19,8 @@ async function requireFreePort() {
 }
 
 function signal(child, name) {
-  if (!child?.pid) return;
+  // A reaped process group can disappear or be reused; never signal it again.
+  if (!child?.pid || child.exitCode !== null || child.signalCode !== null) return;
   try {
     if (process.platform === 'win32') child.kill(name);
     else process.kill(-child.pid, name);
@@ -29,13 +30,12 @@ function signal(child, name) {
 }
 
 async function stop(child) {
-  if (!child?.pid) return;
+  if (!child?.pid || child.exitCode !== null || child.signalCode !== null) return;
   signal(child, 'SIGTERM');
   for (let i = 0; i < 50; i++) {
     try {
-      if (process.platform === 'win32') {
-        if (child.exitCode !== null || child.signalCode !== null) return;
-      } else process.kill(-child.pid, 0);
+      if (child.exitCode !== null || child.signalCode !== null) return;
+      if (process.platform !== 'win32') process.kill(-child.pid, 0);
     } catch (error) {
       if (error.code === 'ESRCH') return;
       throw error;

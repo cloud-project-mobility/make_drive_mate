@@ -13,3 +13,5 @@
 - Calendar changes must run `GoogleCalendarApiTest` and `tests/e2e/google-calendar.spec.ts` plus the existing backend browser regression suite. Synthetic Google tests do not establish real-account consent. Local browser verification uses reserved TCP 18086 (disposable API) and 18087 (web); local real-provider verification uses TCP 18085. Never fall back to another port.
 
 - Keep Expo SDK patch dependencies and `package-lock.json` aligned with `npx expo install --check`. Fix compatibility failures with SDK-matched patch updates; do not bypass the CI check or exclude mismatched packages.
+
+- The integrated-test runner must not signal reaped child processes or their process groups. After local verification, confirm task-owned API/web listeners have stopped.

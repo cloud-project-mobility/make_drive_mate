@@ -212,20 +212,31 @@ test('mobile and desktop retain reachable controls without horizontal overflow',
   for (const width of [360, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await expect(page.getByRole('button', { name: '정비·소모품 기록', exact: true })).toBeVisible();
-    const overflow = await page.evaluate(
-      () =>
-        Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) -
-        window.innerWidth,
-    );
-    expect(overflow, `Garage horizontal overflow at ${width}px`).toBeLessThanOrEqual(1);
+    // React Native dimensions update asynchronously after the browser viewport changes.
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () =>
+              Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) -
+              window.innerWidth,
+          ),
+        { message: `Garage horizontal overflow at ${width}px` },
+      )
+      .toBeLessThanOrEqual(1);
     await page.getByRole('button', { name: '이 차량으로 이동 계획', exact: true }).click();
     await expect(page.getByRole('textbox', { name: '출발지', exact: true })).toBeVisible();
-    const planOverflow = await page.evaluate(
-      () =>
-        Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) -
-        window.innerWidth,
-    );
-    expect(planOverflow, `Plan horizontal overflow at ${width}px`).toBeLessThanOrEqual(1);
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () =>
+              Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) -
+              window.innerWidth,
+          ),
+        { message: `Plan horizontal overflow at ${width}px` },
+      )
+      .toBeLessThanOrEqual(1);
     const save = page.getByRole('button', { name: '계획 저장하고 확인', exact: true });
     await expect(save).toBeVisible();
     const bounds = await save.boundingBox();

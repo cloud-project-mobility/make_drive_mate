@@ -115,7 +115,7 @@ async function main() {
       ],
       {
         cwd: project,
-        env: { ...env, DRIVEMATE_BACKEND_URL: url },
+        env: { ...env, DRIVEMATE_BACKEND_URL: url, DRIVEMATE_CATALOG_BACKEND_URL: url },
         stdio: 'inherit',
         detached: process.platform !== 'win32',
       },

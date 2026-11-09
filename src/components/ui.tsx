@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useId } from 'react';
 import {
   ActivityIndicator,
   ColorValue,
@@ -61,6 +61,7 @@ export function Screen({
   children,
   footer,
   scroll = true,
+  scrollRef,
 }: {
   title?: string;
   eyebrow?: string;
@@ -70,6 +71,7 @@ export function Screen({
   children: ReactNode;
   footer?: ReactNode;
   scroll?: boolean;
+  scrollRef?: React.Ref<ScrollView>;
 }) {
   const insets = useSafeAreaInsets();
   const tabHeader = ['/', '/ai', '/trips', '/garage', '/settings'].includes(usePathname());
@@ -109,6 +111,7 @@ export function Screen({
     >
       {scroll ? (
         <ScrollView
+          ref={scrollRef}
           style={{ flex: 1 }}
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
@@ -138,6 +141,7 @@ export function Button({
   icon,
   loading,
   testID,
+  buttonRef,
 }: {
   title: string;
   onPress: () => void;
@@ -146,10 +150,12 @@ export function Button({
   icon?: IconName;
   loading?: boolean;
   testID?: string;
+  buttonRef?: React.Ref<View>;
 }) {
   const dark = variant === 'primary' || variant === 'danger';
   return (
     <Pressable
+      ref={buttonRef}
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
@@ -179,24 +185,61 @@ export function Field({
   error,
   hint,
   style,
+  inputRef,
+  accessibilityHint,
+  'aria-describedby': describedBy,
+  'aria-invalid': invalid,
   ...props
-}: TextInputProps & { label: string; error?: string; hint?: string }) {
+}: TextInputProps &
+  Pick<React.AriaAttributes, 'aria-describedby' | 'aria-invalid'> & {
+    label: string;
+    error?: string;
+    hint?: string;
+    inputRef?: React.Ref<TextInput>;
+  }) {
+  const fieldId = useId();
+  const labelId = `${fieldId}-label`;
+  const descriptionId = `${fieldId}-description`;
+  const description = error || hint;
+  const descriptionIds =
+    [describedBy, description ? descriptionId : undefined].filter(Boolean).join(' ') || undefined;
+  const spokenHint = [accessibilityHint, description].filter(Boolean).join(' ') || undefined;
+  const webAccessibility =
+    Platform.OS === 'web'
+      ? { 'aria-describedby': descriptionIds, 'aria-invalid': error ? true : invalid }
+      : {};
   return (
     <View style={s.field}>
-      <Text style={s.label}>{label}</Text>
+      <Text nativeID={labelId} style={s.label}>
+        {label}
+      </Text>
       <TextInput
         accessibilityLabel={label}
         placeholderTextColor="#8A9B98"
         autoCapitalize="none"
         {...props}
+        ref={inputRef}
+        nativeID={props.nativeID ?? `${fieldId}-input`}
+        accessibilityLabelledBy={
+          props.accessibilityLabelledBy ??
+          (!props.accessibilityLabel && !props['aria-label'] ? labelId : undefined)
+        }
+        accessibilityHint={spokenHint}
+        {...webAccessibility}
         style={[s.input, !!error && { borderColor: C.red }, style]}
       />
       {error ? (
-        <Text accessibilityLiveRegion="polite" style={[s.hint, { color: C.red }]}>
+        <Text
+          nativeID={descriptionId}
+          accessibilityLiveRegion="polite"
+          style={[s.hint, { color: C.red }]}
+        >
           {error}
         </Text>
       ) : hint ? (
-        <Text style={s.hint}>{hint}</Text>
+        <Text nativeID={descriptionId} style={s.hint}>
+          {hint}
+        </Text>
       ) : null}
     </View>
   );
@@ -223,6 +266,7 @@ export function Chip({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected }}
+      aria-pressed={selected}
       onPress={onPress}
       style={[s.chip, selected && s.chipSelected]}
     >
@@ -264,14 +308,24 @@ export function Notice({
   title,
   body,
   tone = 'info',
+  noticeRef,
+  testID,
 }: {
   title: string;
   body?: string;
   tone?: 'info' | 'warning' | 'error';
+  noticeRef?: React.Ref<View>;
+  testID?: string;
 }) {
   const color = tone === 'info' ? C.primary : tone === 'warning' ? C.amber : C.red;
   return (
     <View
+      ref={noticeRef}
+      testID={testID}
+      tabIndex={noticeRef ? -1 : undefined}
+      accessible={noticeRef ? true : undefined}
+      accessibilityRole={noticeRef ? 'summary' : undefined}
+      accessibilityLabel={noticeRef ? [title, body].filter(Boolean).join('. ') : undefined}
       accessibilityLiveRegion="polite"
       style={[
         s.notice,
@@ -362,6 +416,7 @@ const s = StyleSheet.create({
   },
   hint: { fontSize: 12, lineHeight: 19, color: C.muted },
   chip: {
+    maxWidth: '100%',
     minHeight: 44,
     borderWidth: 1,
     borderColor: C.line,
@@ -385,7 +440,7 @@ const s = StyleSheet.create({
     backgroundColor: '#F0F4F3',
   },
   chipSelected: { backgroundColor: C.mint, borderColor: C.primary },
-  chipText: { fontSize: 12, color: C.muted },
+  chipText: { fontSize: 12, lineHeight: 19, color: C.muted, flexShrink: 1 },
   section: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
   sectionTitle: { fontSize: 18, letterSpacing: -0.4, fontWeight: '700', color: C.ink },
   textAction: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 3 },

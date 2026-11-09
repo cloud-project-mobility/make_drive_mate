@@ -52,6 +52,7 @@ export function VehiclePicker() {
               key={item.id}
               accessibilityRole="button"
               accessibilityLabel={item.name}
+              accessibilityState={{ selected: item.id === vehicle.id }}
               aria-pressed={item.id === vehicle.id}
               onPress={() => {
                 const result = dispatch({ type: 'SELECT_VEHICLE', vehicleId: item.id });
@@ -81,6 +82,7 @@ const s = StyleSheet.create({
   art: { width: '32%', maxWidth: 210, height: 100 },
   options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   option: {
+    maxWidth: '100%',
     minHeight: 44,
     padding: 12,
     borderRadius: 9,
@@ -91,5 +93,5 @@ const s = StyleSheet.create({
     gap: 8,
   },
   selected: { borderColor: C.primary, backgroundColor: C.mint },
-  optionText: { color: C.ink, fontSize: 14 },
+  optionText: { color: C.ink, fontSize: 14, lineHeight: 22, flexShrink: 1 },
 });

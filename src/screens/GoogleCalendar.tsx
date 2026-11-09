@@ -19,7 +19,7 @@ function CalendarContent({ onSelect }: Props) {
   const [status, setStatus] = useState<CalendarStatus | null>(null);
   const [events, setEvents] = useState<Events | null>(null);
   const [authorizationUrl, setAuthorizationUrl] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(!!session);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
@@ -54,7 +54,20 @@ function CalendarContent({ onSelect }: Props) {
 
   useEffect(() => {
     mounted.current = true;
-    void refresh();
+    const id = ++request.current;
+    if (session) {
+      void client
+        .integrations()
+        .then((result) => {
+          if (current(id)) setStatus(result.providers.google_calendar);
+        })
+        .catch((cause) => {
+          if (current(id)) setError(backendMessage(cause));
+        })
+        .finally(() => {
+          if (current(id)) setBusy(false);
+        });
+    }
     const subscription = AppState.addEventListener('change', (next) => {
       if (next === 'active') void refresh();
     });
@@ -64,11 +77,10 @@ function CalendarContent({ onSelect }: Props) {
     if (Platform.OS === 'web') window.addEventListener('focus', returned);
     return () => {
       mounted.current = false;
-      request.current++;
       subscription.remove();
       if (Platform.OS === 'web') window.removeEventListener('focus', returned);
     };
-  }, [refresh]);
+  }, [refresh, session, client, current]);
 
   async function authorize() {
     const id = ++request.current;

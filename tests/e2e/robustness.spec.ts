@@ -81,7 +81,7 @@ test('an imported calendar instant in the second DST hour survives saving and re
   });
   await page.getByRole('tab', { name: '이동 계획', exact: true }).click();
   await page.getByRole('button', { name: '일정으로 계획', exact: true }).click();
-  await page.getByRole('button', { name: '서버 캘린더 일정 불러오기', exact: true }).click();
+  await page.getByRole('button', { name: '예시 캘린더 일정 불러오기', exact: true }).click();
   await page.getByRole('button', { name: '[예시] 시차 일정 일정 선택', exact: true }).click();
   await expect(page.getByRole('textbox', { name: '도착 시간 · 24시간', exact: true })).toHaveValue(
     '01:30',

@@ -212,7 +212,12 @@ test('HTTPS service account registration preserves session and logout behavior w
   await expect(page.getByText('서버 설정 준비됨 · 계정 연결 전', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '로그아웃', exact: true }).click();
   await expect(page.getByRole('button', { name: '로그인', exact: true })).toBeVisible();
-  expect(calls).toEqual(['/api/v1/auth/register', '/api/v1/integrations', '/api/v1/auth/logout']);
+  expect(calls).toEqual([
+    '/api/v1/auth/register',
+    '/api/v1/integrations', // Calendar checks its own connection when the panel opens.
+    '/api/v1/integrations', // Explicit general-provider readiness refresh.
+    '/api/v1/auth/logout',
+  ]);
 });
 
 test('HTTPS service account password change validates confirmation and returns to login after success', async ({
@@ -270,7 +275,7 @@ test('real local account stores a revisioned backup, restores after confirmation
   await page.getByRole('button', { name: '외부 서비스 연결', exact: true }).click();
   await page.getByRole('button', { name: '외부 연동 준비 상태 확인', exact: true }).click();
   await expect(page.getByText('예시 데이터 · 실제 계정 연결 안 됨', { exact: true })).toHaveCount(
-    3,
+    2,
   );
   await expect(
     page.getByRole('button', { name: 'Google 캘린더 연결 준비', exact: true }),
@@ -335,7 +340,7 @@ test('real mock providers import timed and all-day events, calculate selected co
   await expect(vehicleSummary.getByTestId('vehicle-odometer')).toHaveText('48,250');
   await page.getByRole('tab', { name: '이동 계획', exact: true }).click();
   await page.getByRole('button', { name: '일정으로 계획', exact: true }).click();
-  await page.getByRole('button', { name: '서버 캘린더 일정 불러오기', exact: true }).click();
+  await page.getByRole('button', { name: '예시 캘린더 일정 불러오기', exact: true }).click();
   await expect(page.getByText('서버 예시 일정 · Google 연결 안 됨', { exact: true })).toBeVisible();
   await page
     .getByRole('button', { name: '[예시] 프로젝트 자료 정리 일정 선택', exact: true })
@@ -435,7 +440,7 @@ test('real backend rejects stale snapshot upload without replacing either copy',
   await page.getByRole('button', { name: '외부 서비스 연결', exact: true }).click();
   await page.getByRole('button', { name: '외부 연동 준비 상태 확인', exact: true }).click();
   await expect(page.getByText('예시 데이터 · 실제 계정 연결 안 됨', { exact: true })).toHaveCount(
-    3,
+    2,
   );
   await expect(
     page.getByRole('button', { name: 'Google 캘린더 연결 준비', exact: true }),
@@ -529,7 +534,7 @@ for (const delayed of [false, true]) {
       },
       { times: 1 },
     );
-    await page.getByRole('button', { name: '서버 캘린더 일정 불러오기', exact: true }).click();
+    await page.getByRole('button', { name: '예시 캘린더 일정 불러오기', exact: true }).click();
     if (delayed) await ready;
     else
       await expect(
@@ -555,7 +560,10 @@ for (const delayed of [false, true]) {
       page.getByRole('button', { name: '[예시] 이전 계정의 일정 일정 선택', exact: true }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole('button', { name: '서버 캘린더 일정 불러오기', exact: true }),
-    ).toBeDisabled();
+      page.getByRole('button', { name: '예시 캘린더 일정 불러오기', exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: '로그인 설정으로 이동', exact: true }),
+    ).toBeVisible();
   });
 }

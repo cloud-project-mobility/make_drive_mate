@@ -4,7 +4,12 @@ import { router } from 'expo-router';
 import { Button, Chip, Notice, shared } from '../components/ui';
 import { useBackend } from '../state/BackendProvider';
 import GoogleCalendar from './GoogleCalendar';
-import { backendMessage, type Place, type RouteEstimate } from '../services/backend';
+import {
+  backendMessage,
+  type Place,
+  type ProviderSource,
+  type RouteEstimate,
+} from '../services/backend';
 
 function BackendRouteSearchContent({
   origin,

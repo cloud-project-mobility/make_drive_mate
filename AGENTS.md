@@ -11,3 +11,5 @@
 - Google Calendar is account-scoped, read-only event import. Keep OAuth credentials and tokens server-side; callback pages must never echo callback parameters or raw provider errors. Use the exact `/api/v1/integrations/google/callback` redirect path. Follow `docs/implementations/google-calendar/README.md` for the integration contract.
 - Reuse `src/screens/GoogleCalendar.tsx` for Calendar connection controls. Preserve account/server remounting, stale-response guards, foreground status refresh, and explicit user selection before importing an event.
 - Calendar changes must run `GoogleCalendarApiTest` and `tests/e2e/google-calendar.spec.ts` plus the existing backend browser regression suite. Synthetic Google tests do not establish real-account consent. Local browser verification uses reserved TCP 18086 (disposable API) and 18087 (web); local real-provider verification uses TCP 18085. Never fall back to another port.
+
+- Keep Expo SDK patch dependencies and `package-lock.json` aligned with `npx expo install --check`. Fix compatibility failures with SDK-matched patch updates; do not bypass the CI check or exclude mismatched packages.

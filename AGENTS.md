@@ -9,3 +9,4 @@
 - Run `npm run check`, relevant Playwright cases, and Expo export after material changes. Do not claim native device verification from browser tests or bundle export alone.
 - Preserve source provenance and evidence in `docs/`. Do not commit generated bundles, credentials, local data, or test traces with private user input.
 - Google Calendar is account-scoped, read-only event import. Keep OAuth credentials and tokens server-side; callback pages must never echo callback parameters or raw provider errors. Use the exact `/api/v1/integrations/google/callback` redirect path. Follow `docs/implementations/google-calendar/README.md` for the integration contract.
+- Reuse `src/screens/GoogleCalendar.tsx` for Calendar connection controls. Preserve account/server remounting, stale-response guards, foreground status refresh, and explicit user selection before importing an event.

@@ -9,3 +9,5 @@ The callback renders a Korean success or recovery page with a meaningful HTTP st
 Calendar retrieval follows pagination even when a page has no `items`, distinguishes malformed explicit collections from omitted empty collections, preserves all-day dates and timed-event instants, and excludes cancelled events. Google event locations remain free text until the user selects a route destination.
 
 Reference: [Google web-server authorization](https://developers.google.com/identity/protocols/oauth2/web-server), [Calendar event listing](https://developers.google.com/workspace/calendar/api/v3/reference/events/list).
+
+The settings and Calendar planning screens share `GoogleCalendar.tsx`. It distinguishes logged-out, disabled, mock, unconfigured, disconnected, connected and event-query outcomes. Returning to the foreground checks connection status; explicit refresh remains available. User-selected import preserves timed instants and all-day dates, while missing location/time requires manual input. Lists and authorization URLs are cleared on account/server changes, disconnect, refresh and new requests; obsolete responses cannot update the active view.

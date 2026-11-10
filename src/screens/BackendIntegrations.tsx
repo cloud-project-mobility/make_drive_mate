@@ -1,71 +1,24 @@
 import { useState } from 'react';
-import { Linking, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Button, Chip, Notice, SectionTitle, shared } from '../components/ui';
 import { useBackend } from '../state/BackendProvider';
+import GoogleCalendar from './GoogleCalendar';
 import { backendMessage, type IntegrationStatus } from '../services/backend';
 
 export default function BackendIntegrations() {
   const { client } = useBackend();
   const [status, setStatus] = useState<IntegrationStatus | null>(null);
-  const [authorizationUrl, setAuthorizationUrl] = useState('');
-  const [disconnect, setDisconnect] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
   async function refresh() {
     setBusy(true);
     setError('');
-    setMessage('');
-    setAuthorizationUrl('');
-    setDisconnect(false);
     try {
       setStatus(await client.integrations());
     } catch (cause) {
       setError(backendMessage(cause));
     } finally {
       setBusy(false);
-    }
-  }
-  async function authorize() {
-    setBusy(true);
-    setError('');
-    setMessage('');
-    try {
-      const result = await client.authorizeGoogle();
-      setAuthorizationUrl(result.authorization_url);
-    } catch (cause) {
-      setError(backendMessage(cause));
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function openAuthorization() {
-    setError('');
-    try {
-      await Linking.openURL(authorizationUrl);
-      setAuthorizationUrl('');
-      setMessage('Google 인증을 마치면 앱으로 돌아와 연결 상태를 다시 확인해 주세요.');
-    } catch {
-      setError('인증 화면을 열지 못했어요. 브라우저 설정을 확인해 주세요.');
-    }
-  }
-  async function remove() {
-    setBusy(true);
-    setError('');
-    setMessage('');
-    try {
-      const result = await client.disconnectGoogle();
-      setStatus(await client.integrations());
-      setMessage(
-        result.provider_revoked === false
-          ? '이 서버에서 연결을 해제했어요. Google의 권한 철회는 확인하지 못했으니 Google 계정에서도 확인해 주세요.'
-          : '이 서버의 Google 캘린더 연결을 해제했어요.',
-      );
-    } catch (cause) {
-      setError(backendMessage(cause));
-    } finally {
-      setBusy(false);
-      setDisconnect(false);
     }
   }
   return (
@@ -78,14 +31,12 @@ export default function BackendIntegrations() {
         variant="secondary"
       />
       {error ? <Notice title={error} tone="error" /> : null}
-      {message ? <Notice title={message} /> : null}
       {status && (
         <>
-          {(['kakao', 'google_calendar', 'hyundai'] as const).map((name) => {
+          {(['kakao', 'hyundai'] as const).map((name) => {
             const provider = status.providers[name];
             const title = {
               kakao: 'Kakao 경로',
-              google_calendar: 'Google 캘린더',
               hyundai: '현대 차량',
             }[name];
             return (
@@ -117,22 +68,29 @@ export default function BackendIntegrations() {
                     <Text style={shared.muted}>
                       서비스에서 카카오를 연결해요. 개인 카카오 계정 로그인은 필요하지 않아요.
                     </Text>
-                    {provider.capabilities && (['places', 'routes'] as const).map((capability) => {
-                      const item = provider.capabilities![capability];
-                      return (
-                        <Text key={capability} style={shared.muted}>
-                          {capability === 'places' ? '장소 검색' : '길찾기'}:{' '}
-                          {!item.configured ? '설정 필요' : item.live_verified ? '실제 조회 확인됨' : '준비됨 · 실제 조회 확인 전'}
-                          {item.live_verified && item.last_verified_at
-                            ? ` · ${new Date(item.last_verified_at).toLocaleString('ko-KR')}` : ''}
-                        </Text>
-                      );
-                    })}
+                    {provider.capabilities &&
+                      (['places', 'routes'] as const).map((capability) => {
+                        const item = provider.capabilities![capability];
+                        return (
+                          <Text key={capability} style={shared.muted}>
+                            {capability === 'places' ? '장소 검색' : '길찾기'}:{' '}
+                            {!item.configured
+                              ? '설정 필요'
+                              : item.live_verified
+                                ? '실제 조회 확인됨'
+                                : '준비됨 · 실제 조회 확인 전'}
+                            {item.live_verified && item.last_verified_at
+                              ? ` · ${new Date(item.last_verified_at).toLocaleString('ko-KR')}`
+                              : ''}
+                          </Text>
+                        );
+                      })}
                   </>
                 )}
                 {name === 'hyundai' && provider.reason === 'implementation_pending' && (
                   <Text style={shared.muted}>
-                    현재는 실제 차량 인증과 상태 조회를 지원하지 않아요. API 설정만으로 차량이 연결되지는 않아요.
+                    현재는 실제 차량 인증과 상태 조회를 지원하지 않아요. API 설정만으로 차량이
+                    연결되지는 않아요.
                   </Text>
                 )}
               </View>
@@ -142,56 +100,9 @@ export default function BackendIntegrations() {
             API 키와 OAuth 비밀값은 서버에서만 설정해요. 예시 응답은 실제 서비스 연결 검증을 뜻하지
             않아요.
           </Text>
-          {status.providers.google_calendar.mode === 'live' &&
-            status.providers.google_calendar.configured &&
-            !status.providers.google_calendar.connected && (
-              <>
-                <Button
-                  title="Google 캘린더 연결 준비"
-                  onPress={authorize}
-                  disabled={busy}
-                  variant="secondary"
-                />
-                {authorizationUrl ? (
-                  <Button title="Google 인증 화면 열기" onPress={openAuthorization} />
-                ) : null}
-              </>
-            )}
-          {status.providers.google_calendar.connected &&
-            status.providers.google_calendar.mode !== 'mock' && (
-              <>
-                {disconnect ? (
-                  <>
-                    <Notice
-                      title="Google 캘린더 연결을 해제할까요?"
-                      body="서버에 저장한 Google 토큰을 지워요. 기기에 저장한 이동 계획은 유지해요."
-                      tone="warning"
-                    />
-                    <Button
-                      title="Google 연결 해제 확정"
-                      onPress={remove}
-                      disabled={busy}
-                      variant="danger"
-                    />
-                    <Button
-                      title="Google 연결 해제 취소"
-                      onPress={() => setDisconnect(false)}
-                      disabled={busy}
-                      variant="ghost"
-                    />
-                  </>
-                ) : (
-                  <Button
-                    title="Google 캘린더 연결 해제"
-                    onPress={() => setDisconnect(true)}
-                    disabled={busy}
-                    variant="ghost"
-                  />
-                )}
-              </>
-            )}
         </>
       )}
+      <GoogleCalendar />
     </View>
   );
 }

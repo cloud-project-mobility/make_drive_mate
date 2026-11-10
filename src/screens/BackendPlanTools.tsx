@@ -3,86 +3,13 @@ import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Button, Chip, Notice, shared } from '../components/ui';
 import { useBackend } from '../state/BackendProvider';
+import GoogleCalendar from './GoogleCalendar';
 import {
   backendMessage,
-  type CalendarEvent,
   type Place,
   type ProviderSource,
   type RouteEstimate,
 } from '../services/backend';
-
-function CalendarImportContent({
-  onSelect,
-}: {
-  onSelect: (event: CalendarEvent, source: ProviderSource) => void;
-}) {
-  const { session, client } = useBackend();
-  const [events, setEvents] = useState<{ source: ProviderSource; events: CalendarEvent[] } | null>(
-    null,
-  );
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  async function load() {
-    setBusy(true);
-    setError('');
-    setEvents(null);
-    try {
-      setEvents(await client.calendar());
-    } catch (cause) {
-      setError(backendMessage(cause));
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <View style={shared.stack}>
-      <Button
-        title="서버 캘린더 일정 불러오기"
-        onPress={load}
-        disabled={!session}
-        loading={busy}
-        variant="secondary"
-        icon="calendar"
-      />
-      {!session && (
-        <Text style={shared.muted}>
-          설정에서 로컬 서버에 로그인하면 API 키 없이 캘린더 예시를 가져올 수 있어요.
-        </Text>
-      )}
-      {error ? <Notice title={error} tone="error" /> : null}
-      {events && (
-        <>
-          <Chip
-            label={
-              events.source === 'mock' ? '서버 예시 일정 · Google 연결 안 됨' : '연결된 캘린더 일정'
-            }
-          />
-          {!events.events.length && <Text style={shared.muted}>가져올 일정이 없어요.</Text>}
-          {events.events.map((event) => (
-            <View key={event.id} style={shared.stack}>
-              <Text style={shared.text}>
-                {event.title} ·{' '}
-                {event.all_day
-                  ? `${event.start_date} 종일`
-                  : event.start_at
-                    ? new Date(event.start_at).toLocaleString('ko-KR')
-                    : '시간 미정'}
-              </Text>
-              <Text style={shared.muted}>
-                {event.location || '장소 없음 · 도착지를 직접 입력해 주세요.'}
-              </Text>
-              <Button
-                title={`${event.title} 일정 선택`}
-                onPress={() => onSelect(event, events.source)}
-                variant="secondary"
-              />
-            </View>
-          ))}
-        </>
-      )}
-    </View>
-  );
-}
 
 function BackendRouteSearchContent({
   origin,
@@ -292,14 +219,8 @@ function BackendRouteSearchContent({
 }
 
 /** Account-scoped result lists and pending requests cannot survive logout or server changes. */
-export function CalendarImport(props: React.ComponentProps<typeof CalendarImportContent>) {
-  const { url, session } = useBackend();
-  return (
-    <CalendarImportContent
-      key={`${url}:${session?.user.id ?? 'anonymous'}:${session?.expires_at ?? ''}`}
-      {...props}
-    />
-  );
+export function CalendarImport(props: React.ComponentProps<typeof GoogleCalendar>) {
+  return <GoogleCalendar {...props} />;
 }
 export function BackendRouteSearch(props: React.ComponentProps<typeof BackendRouteSearchContent>) {
   const { url, session } = useBackend();

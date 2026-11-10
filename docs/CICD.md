@@ -74,3 +74,5 @@ cfn-lint --format json --regions ap-northeast-2 -t infra/aws/cicd-ecs.json
 ## Expo compatibility prerequisite · 2026-11-09
 
 Calendar verification found that the existing SDK 57 dependency set failed Expo's online compatibility check before browser tests could run. Update only the five reported patches: Expo 57.0.32, constants/location 57.0.23, notifications 57.0.25, and router 57.0.30, together with the lockfile. Keep `npx expo install --check` enabled in CI. This is a patch compatibility prerequisite, not an SDK upgrade or deployment. See the [Expo CLI installation guidance](https://docs.expo.dev/more/expo-cli/#install).
+
+The local integrated runner skips signals for children already reported as exited by Node. This avoids signalling a stale/reused process group (observed as intermittent macOS `EPERM` after all browser assertions passed). Wait for Node's child-exit state after signalling; do not probe a disappearing process group with signal 0, which can also report macOS `EPERM` during normal shutdown. Active test children still receive shutdown signals; verify reserved test ports are free after a run.

@@ -139,4 +139,35 @@ class ProviderTests {
         assertEquals(16.09344, result.get("odometer_km")); assertNull(result.get("provider_timezone"));
         assertThrows(ProviderException.class, () -> HyundaiProvider.normalizeOdometer(mapper.valueToTree(map("msgId", "sample", "odometers", List.of(map("date", "20260230", "timestamp", "20260230090000", "value", -1, "unit", 1)))), Instant.now()));
     }
+    @Test void calendarFollowsOmittedEmptyPagesAndRejectsMalformedCollections() {
+        AtomicInteger pages = new AtomicInteger();
+        GoogleCalendarProvider calendar = new GoogleCalendarProvider(new ProviderHttp(mapper, request -> {
+            int page = pages.incrementAndGet();
+            if (page == 1) return new ProviderHttp.Reply(200, mapper.writeValueAsBytes(map("timeZone", "Asia/Seoul", "nextPageToken", "second")), null);
+            assertTrue(request.uri().getQuery().contains("pageToken=second"));
+            return new ProviderHttp.Reply(200, mapper.writeValueAsBytes(map("timeZone", "Asia/Seoul")), null);
+        }), mapper);
+        Map<String, Object> result = calendar.listEvents("live", "synthetic-access", OffsetDateTime.parse("2026-11-09T00:00:00Z"), OffsetDateTime.parse("2026-11-10T00:00:00Z"));
+        assertEquals(List.of(), result.get("events")); assertEquals(2, result.get("pages_fetched")); assertEquals(true, result.get("complete"));
+        for (Object items : Arrays.asList(null, "invalid", Map.of())) {
+            GoogleCalendarProvider broken = new GoogleCalendarProvider(fixture(map("timeZone", "Asia/Seoul", "items", items)), mapper);
+            assertThrows(ProviderException.class, () -> broken.listEvents("live", "synthetic-access", OffsetDateTime.parse("2026-11-09T00:00:00Z"), OffsetDateTime.parse("2026-11-10T00:00:00Z")));
+        }
+    }
+    @Test void googleCallbackConfigurationUsesTheActualEndpointAndSafeOrigin() {
+        for (String redirect : List.of("https://app.example.test/api/v1/integrations/google/callback", "http://localhost:18086/api/v1/integrations/google/callback")) {
+            assertTrue(oauthWithRedirect(redirect).configured());
+        }
+        for (String redirect : List.of("https://app.example.test/elsewhere", "https://app.example.test/api/v1/integrations/google/callback?next=https://evil.test", "https://app.example.test/api/v1/integrations/google/callback#fragment", "http://public.example.test/api/v1/integrations/google/callback", "https://user:pass@app.example.test/api/v1/integrations/google/callback")) {
+            assertFalse(oauthWithRedirect(redirect).configured());
+        }
+    }
+    private GoogleOAuthClient oauthWithRedirect(String redirect) {
+        ProviderSettings value = new ProviderSettings(new AppSettings("live", 12, "http://localhost"), new MockEnvironment()
+            .withProperty("DRIVEMATE_GOOGLE_CLIENT_ID", "synthetic-client")
+            .withProperty("DRIVEMATE_GOOGLE_CLIENT_SECRET", "synthetic-secret")
+            .withProperty("DRIVEMATE_GOOGLE_REDIRECT_URI", redirect));
+        return new GoogleOAuthClient(value, new ProviderHttp(mapper, request -> { throw new AssertionError("Configuration must not contact Google"); }));
+    }
+
 }

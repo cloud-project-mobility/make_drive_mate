@@ -8,5 +8,6 @@
 - Keep decorative icons hidden from accessibility. Provide text labels and at least 44px interactive targets. Verify 360px and desktop layouts.
 - Run `npm run check`, relevant Playwright cases, and Expo export after material changes. Do not claim native device verification from browser tests or bundle export alone.
 - Preserve source provenance and evidence in `docs/`. Do not commit generated bundles, credentials, local data, or test traces with private user input.
+- Google Calendar is account-scoped, read-only event import. Keep OAuth credentials and tokens server-side; callback pages must never echo callback parameters or raw provider errors. Use the exact `/api/v1/integrations/google/callback` redirect path. Follow `docs/implementations/google-calendar/README.md` for the integration contract.
 
 - Keep Expo SDK patch dependencies and `package-lock.json` aligned with `npx expo install --check`. Fix compatibility failures with SDK-matched patch updates; do not bypass the CI check or exclude mismatched packages.

@@ -21,7 +21,8 @@ public class GoogleOAuthClient {
         try {
             secret(settings.googleClientId(), 1024); secret(settings.googleClientSecret(), 4096);
             String raw = secret(settings.googleRedirectUri(), 2048); URI uri = URI.create(raw);
-            if (raw.contains("\\") || uri.getHost() == null || uri.getUserInfo() != null || uri.getFragment() != null
+            if (raw.contains("\\") || uri.getHost() == null || uri.getUserInfo() != null || uri.getFragment() != null || uri.getQuery() != null
+                    || !"/api/v1/integrations/google/callback".equals(uri.getPath())
                     || uri.getPort() > 65535 || uri.getPort() == 0
                     || !(uri.getScheme().equals("https") || uri.getScheme().equals("http") && Set.of("localhost", "127.0.0.1", "::1", "[::1]").contains(uri.getHost()))) throw new IllegalArgumentException();
         } catch (IllegalArgumentException | NullPointerException error) {

@@ -38,12 +38,30 @@ public class ProviderController {
         return google.disconnect((String) auth.require(request).get("id"));
     }
     @GetMapping(value = "/integrations/google/callback", produces = "text/html;charset=UTF-8")
-    public ResponseEntity<String> callback(@RequestParam(name = "state") String state,
+    public ResponseEntity<String> callback(@RequestParam(name = "state", required = false) String state,
             @RequestParam(name = "code", required = false) String code, @RequestParam(name = "error", required = false) String error) {
-        if (state.length() > 256 || code != null && code.length() > 4096 || error != null && error.length() > 256) throw invalid();
-        google.callback(state, code, error);
-        return ResponseEntity.ok().header("Referrer-Policy", "no-referrer").header("Content-Security-Policy", "default-src 'none'")
-            .header("Cache-Control", "no-store").body("<!doctype html><html lang=\"ko\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>DriveMate Google 연결</title><body><h1>Calendar 연결 완료</h1><p>DriveMate로 돌아가 일정을 다시 조회해 주세요. 이 창은 닫아도 됩니다.</p></body></html>");
+        try {
+            if (state != null && state.length() > 256 || code != null && code.length() > 4096 || error != null && error.length() > 256) throw invalid();
+            google.callback(state, code, error);
+            return callbackPage(200, "Google 캘린더 연결 완료", "DriveMate로 돌아가 연결 상태를 확인하고 일정을 불러와 주세요.");
+        } catch (ApiException failure) {
+            return callbackPage(failure.status(), "Google 캘린더를 연결하지 못했어요", failure.getMessage());
+        } catch (ProviderException failure) {
+            return callbackPage(failure.status(), "Google 캘린더를 연결하지 못했어요", failure.getMessage());
+        }
+    }
+    // Never echo callback parameters, tokens, or provider response bodies into the browser.
+    private static ResponseEntity<String> callbackPage(int status, String title, String message) {
+        return ResponseEntity.status(status).header("Referrer-Policy", "no-referrer")
+            .header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
+            .header("X-Content-Type-Options", "nosniff").header("Cache-Control", "no-store")
+            .body("<!doctype html><html lang=\"ko\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+                + "<title>DriveMate Google 연결</title><body><main><h1>" + html(title) + "</h1><p>" + html(message)
+                + "</p><p>이 창을 닫고 기존 DriveMate 화면으로 돌아가 주세요. 연결을 취소했거나 만료된 경우 다시 연결할 수 있어요.</p>"
+                + "<p>Google 캘린더 연결은 일정 읽기 전용이며 DriveMate 로그인과는 별개예요.</p></main></body></html>");
+    }
+    private static String html(String value) {
+        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
     }
     @GetMapping("/places") public Map<String, Object> places(@RequestParam(name = "q") String query, HttpServletRequest request) {
         auth.requireProvider(request);

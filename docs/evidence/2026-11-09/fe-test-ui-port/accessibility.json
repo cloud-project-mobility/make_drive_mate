@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-11-09T11:35:45.577Z",
+  "scope": "offline-valuation only",
+  "viewport": "360x800",
+  "results": [
+    {
+      "state": "applied",
+      "violations": []
+    },
+    {
+      "state": "invalid",
+      "violations": []
+    }
+  ]
+}

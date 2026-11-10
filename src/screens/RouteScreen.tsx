@@ -28,6 +28,7 @@ export default function RouteScreen() {
   const now = useNow();
   const recorder = useTripRecorder();
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [finishError, setFinishError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<'finish' | 'cancel' | null>(null);
   const [completed, setCompleted] = useState(false);
   const [savedTrip, setSavedTrip] = useState<ActiveTrip | null>(null);
@@ -85,12 +86,15 @@ export default function RouteScreen() {
     if (!result.ok) setFeedback(result.error);
   }
   function finish() {
+    setFeedback(null);
+    setFinishError(null);
     const snapshot = active
       ? { ...active, distanceKm: recorder.distanceKm, durationSeconds: recorder.durationSeconds }
       : null;
     const result = recorder.finish();
     if (!result.ok) {
       setFeedback(result.error);
+      setFinishError(result.error);
       return;
     }
     setConfirm(null);
@@ -127,7 +131,10 @@ export default function RouteScreen() {
         <Button
           title="종료하고 저장"
           icon="square"
-          onPress={() => setConfirm('finish')}
+          onPress={() => {
+            setFinishError(null);
+            setConfirm('finish');
+          }}
           disabled={requesting}
           testID="finish-trip"
         />
@@ -214,7 +221,7 @@ export default function RouteScreen() {
         animationType="fade"
         onRequestClose={() => setConfirm(null)}
       >
-        <View style={s.modalBackdrop}>
+        <View style={s.modalBackdrop} testID="trip-confirmation">
           <Card style={s.modalCard}>
             {confirm === 'finish' ? (
               <>
@@ -226,13 +233,20 @@ export default function RouteScreen() {
                   {durationLabel(recorder.durationSeconds)}을 저장해요. 이 거리가 누적 주행거리에
                   더해져요.
                 </Text>
+                {finishError && (
+                  <Notice title="주행 기록을 저장하지 못했어요" body={finishError} tone="error" />
+                )}
                 <Button
                   title="주행 종료 · 기록 저장"
                   icon="check"
                   onPress={finish}
                   testID="confirm-save-trip"
                 />
-                <Button title="계속 기록하기" variant="ghost" onPress={() => setConfirm(null)} />
+                <Button
+                  title={finishError ? '일시 정지 화면으로 돌아가기' : '계속 기록하기'}
+                  variant="ghost"
+                  onPress={() => setConfirm(null)}
+                />
               </>
             ) : (
               <>

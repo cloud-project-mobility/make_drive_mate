@@ -85,7 +85,7 @@ jobs:
       - name: Verify the exported web artifact with the isolated Spring API
         env:
           DRIVEMATE_WEB_STATIC: '1'
-        run: npm run test:integrated -- tests/e2e/valuation.spec.ts tests/e2e/onbid.spec.ts tests/e2e/backend.spec.ts tests/e2e/live-location.spec.ts
+        run: npm run test:integrated -- tests/e2e/valuation.spec.ts tests/e2e/valuation-flow.spec.ts tests/e2e/field-accessibility.spec.ts tests/e2e/recorder-errors.spec.ts tests/e2e/onbid.spec.ts tests/e2e/backend.spec.ts tests/e2e/live-location.spec.ts tests/e2e/onboarding.spec.ts tests/e2e/ai-consultation.spec.ts
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: web-dist

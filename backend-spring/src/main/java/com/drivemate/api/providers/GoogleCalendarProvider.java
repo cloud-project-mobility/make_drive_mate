@@ -27,8 +27,10 @@ public class GoogleCalendarProvider {
                 JsonNode page = mode.equals("mock") ? mockPage(minimum) : http.get("https://www.googleapis.com/calendar/v3/calendars/primary/events", params, "Bearer " + token);
                 String zone = zone(page.get("timeZone"));
                 if (calendarZone != null && !calendarZone.equals(zone)) throw new IllegalArgumentException("Timezone changed");
-                calendarZone = zone; JsonNode items = page.get("items");
-                if (items == null || !items.isArray() || items.size() > 2500) throw new IllegalArgumentException("Invalid events list");
+                calendarZone = zone;
+                // Google may omit an empty collection. Still follow nextPageToken on that page.
+                JsonNode items = page.has("items") ? page.get("items") : mapper.createArrayNode();
+                if (!items.isArray() || items.size() > 2500) throw new IllegalArgumentException("Invalid events list");
                 for (JsonNode item : items) {
                     if (!item.isObject()) throw new IllegalArgumentException();
                     String status = item.has("status") ? text(item.get("status"), 30, false) : "confirmed";

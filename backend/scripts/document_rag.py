@@ -302,7 +302,7 @@ def api_json(endpoint, body, api_key, timeout=45):
         raise RuntimeError("OpenAI request failed; request details omitted.") from None
 
 
-def embed(texts: list[str], api_key: str) -> tuple[list[list[float]], dict]:
+def embed(texts: list[str], api_key: str, timeout=45) -> tuple[list[list[float]], dict]:
     vectors, total_tokens = [], 0
     for start in range(0, len(texts), 32):
         batch = texts[start:start + 32]
@@ -310,7 +310,7 @@ def embed(texts: list[str], api_key: str) -> tuple[list[list[float]], dict]:
             raise ValueError("Embedding input is empty or too large.")
         payload = api_json("https://api.openai.com/v1/embeddings", {
             "model": EMBEDDING_MODEL, "input": batch, "dimensions": DIMENSIONS,
-            "encoding_format": "float"}, api_key)
+            "encoding_format": "float"}, api_key, timeout=timeout)
         rows = payload.get("data", [])
         if len(rows) != len(batch) or sorted(row.get("index", -1) for row in rows) != list(range(len(batch))):
             raise RuntimeError("Embedding result count/index mismatch.")

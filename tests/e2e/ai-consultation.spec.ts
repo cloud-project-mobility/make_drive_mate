@@ -3,6 +3,42 @@ import { createInitialState } from '../../src/domain/state';
 
 // Entire provider boundary is synthetic. No real login, price inference or GPT call.
 const api = 'https://assistant-fixture.example.test';
+const vehicleRag = {
+  scope: 'public_vehicle',
+  status: 'matched',
+  method: 'bm25+pgvector-cosine-rrf',
+  sources: [
+    {
+      source_id: 'synthetic_manual_1',
+      source_kind: 'official_manual_summary',
+      document_title: '합성 K5 공식 자료 검증',
+      source_uri: 'https://ownersmanual.kia.com/synthetic-manual.html',
+      section: '합성 정비 조건',
+      page: 12,
+      excerpt: '합성 발췌입니다. 실제 정비 지침이나 권장 주기가 아닙니다.',
+      applicability: {
+        scope: 'model_specific',
+        make: '기아',
+        model: 'K5',
+        year_from: 2023,
+        year_to: 2026,
+        fuel_types: ['휘발유'],
+      },
+    },
+  ],
+  answer_source_ids: ['synthetic_manual_1'],
+};
+const assistantResponse = {
+  ok: true,
+  api_version: 'assistant-v1',
+  status: 'answered',
+  answer: '공식 자료의 적용 조건을 확인하세요.',
+  facts: [],
+  valuation: null,
+  provider: { returned_model: 'synthetic-provider', status: 'completed' },
+  price_generation_by_llm: false,
+  vehicle_rag: vehicleRag,
+};
 const auction = {
   ok: true,
   evidence: {
@@ -51,8 +87,9 @@ async function setup(
     {
       id: 'synthetic-car',
       name: 'private-nickname',
-      model: 'K5 2020',
-      powertrain: 'ICE',
+      model: 'K5 2024',
+      catalogId: 'k5-dl3-pe',
+      powertrain: 'HYB',
       odometerKm: 12000,
       createdAt: '2026-01-01T00:00:00Z',
     },
@@ -132,6 +169,7 @@ test('freeform consultation transmits allowlisted records, renders a real answer
       valuation: null,
       provider: { returned_model: 'synthetic-provider', status: 'completed' },
       price_generation_by_llm: false,
+      vehicle_rag: vehicleRag,
     };
   });
   expect(calls).toHaveLength(0);
@@ -149,8 +187,21 @@ test('freeform consultation transmits allowlisted records, renders a real answer
   expect(calls).toHaveLength(1);
   expect(JSON.stringify(calls[0])).not.toContain('private-');
   expect(calls[0]).not.toHaveProperty('analysis');
+  expect(calls[0].vehicle_identity).toEqual({
+    make: '기아',
+    model: 'K5',
+    model_year: 2024,
+    fuel: null,
+  });
+  await expect(page.getByText(vehicleRag.sources[0].excerpt, { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: '차량 자료 근거 보기', exact: true }).click();
+  await expect(page.getByText(vehicleRag.sources[0].document_title, { exact: true })).toBeVisible();
+  await expect(page.getByText('합성 정비 조건 · PDF 12쪽', { exact: true })).toBeVisible();
+  await expect(page.getByText(vehicleRag.sources[0].excerpt, { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '공식 원문 열기', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: /전송 정보·이용 안내 보기/ }).click();
   await expect(page.getByText(/주소·좌표·메모·일정 제목은 자동 전송하지/)).toBeVisible();
+  await expect(page.getByText(/질문 임베딩 비용도 발생할 수 있어요/)).toBeVisible();
   for (const width of [360, 390, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
     await expect
@@ -172,6 +223,9 @@ test('freeform consultation transmits allowlisted records, renders a real answer
   ).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'AI에게 보내기', exact: true })).toBeDisabled();
   await expect(page.getByLabel('AI 상담 질문', { exact: true })).toHaveValue('');
+  await expect(page.getByText(vehicleRag.sources[0].document_title, { exact: true })).toHaveCount(
+    0,
+  );
 });
 
 test('URL question initially fills the composer without sending or logging in', async ({
@@ -263,4 +317,85 @@ test('confirmed inputs produce numeric model cards and actual comparable counts;
   await page.getByRole('button', { name: '로그아웃', exact: true }).click();
   await page.getByRole('tab', { name: '홈', exact: true }).click();
   await expect(page.getByTestId('home-auction-summary')).toContainText('아직 분석한 가격이 없어요');
+});
+
+test('missing, unsupported and unused vehicle material never claims a cited manual', async ({
+  page,
+}) => {
+  const statuses = ['no_match', 'needs_vehicle_details', 'unavailable', 'disabled', 'not_used'];
+  const notices = [
+    '선택한 차량에 맞는 자료가 없어요. 공식 설명서를 직접 확인해 주세요.',
+    '차종·연식을 확인해야 차량 자료를 찾을 수 있어요.',
+    '차량 자료 검색을 지금 확인할 수 없어요.',
+    '차량 자료 검색이 아직 연결되지 않았어요.',
+    '이번 답변에 인용한 제조사 문서는 없어요.',
+  ];
+  let index = 0;
+  await setup(page, (path) =>
+    path.endsWith('/assistant/query')
+      ? {
+          ...assistantResponse,
+          vehicle_rag: {
+            ...vehicleRag,
+            status: statuses[index++],
+            sources: [],
+            answer_source_ids: [],
+            method: null,
+          },
+        }
+      : null,
+  );
+  for (const notice of notices) {
+    await page
+      .getByLabel('AI 상담 질문', { exact: true })
+      .fill('차량 자료의 적용 범위를 알려 주세요.');
+    await page.getByRole('button', { name: 'AI에게 보내기', exact: true }).click();
+    await expect(page.getByText(notice, { exact: true })).toBeVisible();
+  }
+  await expect(page.getByRole('button', { name: '차량 자료 근거 보기', exact: true })).toHaveCount(
+    0,
+  );
+  await expect(page.getByRole('button', { name: '공식 원문 열기', exact: true })).toHaveCount(0);
+});
+
+test('vehicle source selection clears on vehicle change and rejects unofficial source URLs', async ({
+  page,
+}) => {
+  let calls = 0;
+  await setup(page, (path) => {
+    if (!path.endsWith('/assistant/query')) return null;
+    calls += 1;
+    return calls === 1
+      ? assistantResponse
+      : {
+          ...assistantResponse,
+          vehicle_rag: {
+            ...vehicleRag,
+            sources: [
+              {
+                ...vehicleRag.sources[0],
+                source_uri: 'https://private-project.example.test/manual.pdf',
+              },
+            ],
+          },
+        };
+  });
+  await page.getByLabel('AI 상담 질문', { exact: true }).fill('차량 자료를 확인해 주세요.');
+  await page.getByRole('button', { name: 'AI에게 보내기', exact: true }).click();
+  await page.getByRole('button', { name: '차량 자료 근거 보기', exact: true }).click();
+  await expect(page.getByText(vehicleRag.sources[0].document_title, { exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: '홈', exact: true }).click();
+  await page.getByRole('button', { name: '차량 선택', exact: true }).click();
+  await page.getByRole('button', { name: '다른 합성 차량', exact: true }).click();
+  await page.getByRole('tab', { name: 'AI 상담', exact: true }).click();
+  await expect(page.getByText(vehicleRag.sources[0].document_title, { exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByLabel('AI 상담 질문', { exact: true }).fill('다른 차량 자료를 확인해 주세요.');
+  await page.getByRole('button', { name: 'AI에게 보내기', exact: true }).click();
+  await expect(
+    page.getByText('AI 답변을 근거와 대조하지 못했어요.', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: '공식 원문 열기', exact: true })).toHaveCount(0);
+  await expect(page.getByText(assistantResponse.answer, { exact: true })).toHaveCount(0);
 });

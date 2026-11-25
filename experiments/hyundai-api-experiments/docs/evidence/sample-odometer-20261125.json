@@ -1,0 +1,41 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "hyundai-experiments",
+    "sample",
+    "odometer"
+  ],
+  "utc": "2026-11-25T04:46:28.468385+00:00",
+  "exit": 1,
+  "wall_ms": 620,
+  "result": {
+    "api": "odometer",
+    "source": "SAMPLE",
+    "status": "permission_denied",
+    "verification_outcome": "sample_failure",
+    "authentication_cause": null,
+    "started_at": "2026-11-25T04:46:28.861498+00:00",
+    "received_at": "2026-11-25T04:46:29.068511+00:00",
+    "network_attempted": true,
+    "http_status": 403,
+    "provider_error_code": null,
+    "elapsed_ms": 206.99,
+    "json_parsed": true,
+    "structure_valid": null,
+    "issues": [],
+    "response_body_saved": false
+  },
+  "request": {
+    "method": "GET",
+    "host": "dev.kr-ccapi.hyundai.com",
+    "template": "/api_sample/v1/car/status/{car_id}/odometer"
+  },
+  "console": {
+    "published_curl": true,
+    "ui_result": "error",
+    "ui_error": "no suitable claims for user ID were found",
+    "source": "authenticated console Sample Test UI"
+  }
+}

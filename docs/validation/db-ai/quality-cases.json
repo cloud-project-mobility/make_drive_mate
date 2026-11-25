@@ -1,0 +1,28 @@
+{
+  "vehicles": {
+    "avante": {"make": "현대", "model": "아반떼", "model_year": 2023, "fuel": "휘발유"},
+    "k5": {"make": "기아", "model": "K5", "model_year": 2024, "fuel": "하이브리드"},
+    "ioniq": {"make": "현대", "model": "아이오닉 5", "model_year": 2024, "fuel": "전기"},
+    "old": {"make": "현대", "model": "아반떼", "model_year": 2015, "fuel": "휘발유"},
+    "diesel": {"make": "기아", "model": "K5", "model_year": 2024, "fuel": "경유"}
+  },
+  "retrieval": [
+    ["avante", "타이어 공기압은 주행 직후에 확인해도 되나요?", "avante-2023-tires"],
+    ["avante", "출퇴근 때 정체와 잦은 정차가 반복되면 점검 주기가 달라지나요?", "avante-2023-schedule"],
+    ["avante", "차량 설명서의 선택 장비가 내 트림에도 전부 있나요?", "avante-2023-scope"],
+    ["k5", "먼지가 많은 비포장 구간을 달리면 공조 장치용 필터는 어떻게 관리하나요?", "k5-hev-2024-cabin-filter"],
+    ["k5", "오일의 양이 줄어드는 것과 정기 교환은 어떻게 다른가요?", "k5-hev-2024-oil"],
+    ["k5", "운행 전에 누유나 와이퍼의 작동도 확인해야 하나요?", "k5-hev-2024-daily"],
+    ["ioniq", "같은 충전 상태인데 외기 온도에 따라 가능한 주행거리가 달라지나요?", "ioniq5-2024-battery"],
+    ["ioniq", "점검 시작 전에 주차 브레이크와 차량 전원은 어떻게 해야 하나요?", "ioniq5-2024-precautions"]
+  ],
+  "uncovered_vehicles": ["old", "diesel", null],
+  "answers": [
+    {"id":"guide-with-source","question":"타이어 권장 공기압은 어디에서 확인하나요?","answer":"차량의 압력 라벨을 확인하세요.","sources":["avante-2023-tires"],"expected":"answered"},
+    {"id":"explicit-no-evidence","question":"내 차의 지난번 필터 교체일을 알 수 있나요?","answer":"현재 기록에서 교체일을 확인할 수 없어요.","sources":[],"expected":"answered"},
+    {"id":"unrecorded-service","question":"필터를 이미 교체했나요?","answer":"지난달에 필터 교체를 마쳤어요.","sources":[],"expected":"abstained"},
+    {"id":"unrelated-citation","question":"내 차의 필터가 새것인가요?","answer":"필터를 최근에 교체해서 새것이에요.","sources":["avante-2023-tires"],"expected":"abstained"},
+    {"id":"unsupported-number","question":"내 차 권장 공기압은 얼마인가요?","answer":"권장 공기압은 38psi입니다.","sources":["avante-2023-tires"],"expected":"abstained"},
+    {"id":"nonexistent-source","question":"이 차의 보증 기간이 지나지 않았나요?","answer":"보증이 남아 있어요.","sources":["missing-warranty"],"expected":"abstained"}
+  ]
+}

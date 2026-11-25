@@ -58,7 +58,7 @@ class AssistantTest {
     }
 
     @Test void disabledServiceAndExhaustedBudgetNeverStartProvider() throws Exception {
-        try (var service = new AssistantService(json, "python", "fixed/onbid_worker.py", "", false)) {
+        try (var service = new AssistantService(json, "python", "fixed/onbid_worker.py", "", false, false, "", "", "pgvector")) {
             assertThat(assertThrows(ApiException.class, () -> service.query(request())).code()).isEqualTo("llm_disabled");
         }
         Auth auth = mock(Auth.class);
@@ -86,9 +86,9 @@ class AssistantTest {
     }
 
     @Test void fixedWorkerAndOneStructuredRequestDoNotExposeStderr() throws Exception {
-        String output = "{\"ok\":true,\"api_version\":\"assistant-v1\",\"answer\":\"확인해 보세요\",\"facts\":[],\"price_generation_by_llm\":false}";
+        String output = "{\"ok\":true,\"api_version\":\"assistant-v1\",\"answer\":\"확인해 보세요\",\"facts\":[],\"price_generation_by_llm\":false,\"vehicle_rag\":{\"scope\":\"public_vehicle\",\"status\":\"disabled\",\"sources\":[],\"answer_source_ids\":[],\"method\":null}}";
         ByteArrayOutputStream stdin = new ByteArrayOutputStream();
-        try (var service = new AssistantService(json, "fixed-python", "fixed/onbid_worker.py", "model", true) {
+        try (var service = new AssistantService(json, "fixed-python", "fixed/onbid_worker.py", "model", true, false, "", "", "pgvector") {
             @Override Process start(List<String> command) {
                 assertThat(command).containsExactly("fixed-python", "fixed/assistant_worker.py", "--allow-llm");
                 return new Process() {

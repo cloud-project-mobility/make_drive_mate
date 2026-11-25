@@ -1,0 +1,373 @@
+{
+  "review_date": "2026-11-25",
+  "runtime": "WSL Ubuntu / Python 3.11.17 / uv 0.12.23",
+  "pytest": {
+    "passed": 149,
+    "failed": 0,
+    "exit_code": 0,
+    "duration_seconds": 0.24
+  },
+  "official_vehicle_data_attempts": [
+    {
+      "api": "odometer",
+      "source": "SAMPLE",
+      "status": "configuration_missing",
+      "verification_outcome": "not_verified",
+      "authentication_cause": null,
+      "started_at": "2026-11-25T03:22:28.734358+00:00",
+      "received_at": null,
+      "request": {
+        "method": "GET",
+        "url": "https://dev.kr-ccapi.hyundai.com/api_sample/v1/car/status/[REDACTED]/odometer",
+        "accept": "application/json"
+      },
+      "network_attempted": false,
+      "http_status": null,
+      "provider_error_code": null,
+      "elapsed_ms": null,
+      "json_parsed": null,
+      "structure_valid": null,
+      "validation_basis": "public_success_example_array; docs table says object",
+      "specification": "https://developers.hyundai.com/web/v1/hyundai/specification/data/status_odometer",
+      "issues": [
+        "HYUNDAI_SAMPLE_TOKEN:missing",
+        "HYUNDAI_SAMPLE_CAR_ID:missing"
+      ],
+      "unverified": [
+        "real_vehicle_integration",
+        "provider_timezone",
+        "sample_cache_and_storage_permission",
+        "external_ai_transfer_permission",
+        "sample_rate_limit",
+        "freshness_on_real_vehicle"
+      ],
+      "response_body_saved": false
+    }
+  ],
+  "official_vehicle_http_request_count": 0,
+  "mock_results": [
+    {
+      "api": "odometer",
+      "source": "MOCK",
+      "status": "mock_only_validated",
+      "verification_outcome": "mock_only",
+      "authentication_cause": null,
+      "started_at": "2026-11-25T03:22:28.815245+00:00",
+      "received_at": "2026-11-25T03:22:28.815652+00:00",
+      "request": {
+        "method": "GET",
+        "url": "https://mock.invalid/odometer",
+        "accept": "application/json"
+      },
+      "network_attempted": false,
+      "http_status": 200,
+      "provider_error_code": null,
+      "elapsed_ms": 0.4,
+      "json_parsed": true,
+      "structure_valid": true,
+      "validation_basis": "public_success_example_array; docs table says object",
+      "specification": "https://developers.hyundai.com/web/v1/hyundai/specification/data/status_odometer",
+      "issues": [],
+      "unverified": [
+        "real_vehicle_integration",
+        "provider_timezone",
+        "sample_cache_and_storage_permission",
+        "external_ai_transfer_permission",
+        "sample_rate_limit",
+        "freshness_on_real_vehicle"
+      ],
+      "response_body_saved": false
+    },
+    {
+      "api": "dte",
+      "source": "MOCK",
+      "status": "mock_only_validated",
+      "verification_outcome": "mock_only",
+      "authentication_cause": null,
+      "started_at": "2026-11-25T03:22:28.883773+00:00",
+      "received_at": "2026-11-25T03:22:28.884205+00:00",
+      "request": {
+        "method": "GET",
+        "url": "https://mock.invalid/dte",
+        "accept": "application/json"
+      },
+      "network_attempted": false,
+      "http_status": 200,
+      "provider_error_code": null,
+      "elapsed_ms": 0.42,
+      "json_parsed": true,
+      "structure_valid": true,
+      "validation_basis": "official_required_fields_and_documented_types",
+      "specification": "https://developers.hyundai.com/web/v1/hyundai/specification/data/status_dte",
+      "issues": [],
+      "unverified": [
+        "real_vehicle_integration",
+        "provider_timezone",
+        "sample_cache_and_storage_permission",
+        "external_ai_transfer_permission",
+        "sample_rate_limit",
+        "freshness_on_real_vehicle"
+      ],
+      "response_body_saved": false
+    },
+    {
+      "api": "engine-oil",
+      "source": "MOCK",
+      "status": "mock_only_validated",
+      "verification_outcome": "mock_only",
+      "authentication_cause": null,
+      "started_at": "2026-11-25T03:22:28.961709+00:00",
+      "received_at": "2026-11-25T03:22:28.962266+00:00",
+      "request": {
+        "method": "GET",
+        "url": "https://mock.invalid/engine-oil",
+        "accept": "application/json"
+      },
+      "network_attempted": false,
+      "http_status": 200,
+      "provider_error_code": null,
+      "elapsed_ms": 0.55,
+      "json_parsed": true,
+      "structure_valid": true,
+      "validation_basis": "official_required_fields_and_documented_types",
+      "specification": "https://developers.hyundai.com/web/v1/hyundai/specification/data/statuswarning_engineoil",
+      "issues": [],
+      "unverified": [
+        "real_vehicle_integration",
+        "provider_timezone",
+        "sample_cache_and_storage_permission",
+        "external_ai_transfer_permission",
+        "sample_rate_limit",
+        "freshness_on_real_vehicle"
+      ],
+      "response_body_saved": false
+    },
+    {
+      "api": "tire-pressure",
+      "source": "MOCK",
+      "status": "mock_only_validated",
+      "verification_outcome": "mock_only",
+      "authentication_cause": null,
+      "started_at": "2026-11-25T03:22:29.031850+00:00",
+      "received_at": "2026-11-25T03:22:29.032183+00:00",
+      "request": {
+        "method": "GET",
+        "url": "https://mock.invalid/tire-pressure",
+        "accept": "application/json"
+      },
+      "network_attempted": false,
+      "http_status": 200,
+      "provider_error_code": null,
+      "elapsed_ms": 0.32,
+      "json_parsed": true,
+      "structure_valid": true,
+      "validation_basis": "official_required_fields_and_documented_types",
+      "specification": "https://developers.hyundai.com/web/v1/hyundai/specification/data/statuswarning_tirepressurelamp",
+      "issues": [],
+      "unverified": [
+        "real_vehicle_integration",
+        "provider_timezone",
+        "sample_cache_and_storage_permission",
+        "external_ai_transfer_permission",
+        "sample_rate_limit",
+        "freshness_on_real_vehicle"
+      ],
+      "response_body_saved": false
+    },
+    {
+      "api": "brake-oil",
+      "source": "MOCK",
+      "status": "mock_only_validated",
+      "verification_outcome": "mock_only",
+      "authentication_cause": null,
+      "started_at": "2026-11-25T03:22:29.101876+00:00",
+      "received_at": "2026-11-25T03:22:29.102319+00:00",
+      "request": {
+        "method": "GET",
+        "url": "https://mock.invalid/brake-oil",
+        "accept": "application/json"
+      },
+      "network_attempted": false,
+      "http_status": 200,
+      "provider_error_code": null,
+      "elapsed_ms": 0.42,
+      "json_parsed": true,
+      "structure_valid": true,
+      "validation_basis": "official_required_fields_and_documented_types",
+      "specification": "https://developers.hyundai.com/web/v1/hyundai/specification/data/statuswarning_breakoil",
+      "issues": [],
+      "unverified": [
+        "real_vehicle_integration",
+        "provider_timezone",
+        "sample_cache_and_storage_permission",
+        "external_ai_transfer_permission",
+        "sample_rate_limit",
+        "freshness_on_real_vehicle"
+      ],
+      "response_body_saved": false
+    },
+    {
+      "api": "low-fuel",
+      "source": "MOCK",
+      "status": "mock_only_validated",
+      "verification_outcome": "mock_only",
+      "authentication_cause": null,
+      "started_at": "2026-11-25T03:22:29.188700+00:00",
+      "received_at": "2026-11-25T03:22:29.189106+00:00",
+      "request": {
+        "method": "GET",
+        "url": "https://mock.invalid/low-fuel",
+        "accept": "application/json"
+      },
+      "network_attempted": false,
+      "http_status": 200,
+      "provider_error_code": null,
+      "elapsed_ms": 0.4,
+      "json_parsed": true,
+      "structure_valid": true,
+      "validation_basis": "official_required_fields_and_documented_types",
+      "specification": "https://developers.hyundai.com/web/v1/hyundai/specification/data/statuswarning_lowfuellight",
+      "issues": [],
+      "unverified": [
+        "real_vehicle_integration",
+        "provider_timezone",
+        "sample_cache_and_storage_permission",
+        "external_ai_transfer_permission",
+        "sample_rate_limit",
+        "freshness_on_real_vehicle"
+      ],
+      "response_body_saved": false
+    },
+    {
+      "api": "washer-fluid",
+      "source": "MOCK",
+      "status": "mock_only_validated",
+      "verification_outcome": "mock_only",
+      "authentication_cause": null,
+      "started_at": "2026-11-25T03:22:29.256120+00:00",
+      "received_at": "2026-11-25T03:22:29.256438+00:00",
+      "request": {
+        "method": "GET",
+        "url": "https://mock.invalid/washer-fluid",
+        "accept": "application/json"
+      },
+      "network_attempted": false,
+      "http_status": 200,
+      "provider_error_code": null,
+      "elapsed_ms": 0.31,
+      "json_parsed": true,
+      "structure_valid": true,
+      "validation_basis": "official_required_fields_and_documented_types",
+      "specification": "https://developers.hyundai.com/web/v1/hyundai/specification/data/statuswarning_washerfluid",
+      "issues": [],
+      "unverified": [
+        "real_vehicle_integration",
+        "provider_timezone",
+        "sample_cache_and_storage_permission",
+        "external_ai_transfer_permission",
+        "sample_rate_limit",
+        "freshness_on_real_vehicle"
+      ],
+      "response_body_saved": false
+    },
+    {
+      "api": "smart-key-battery",
+      "source": "MOCK",
+      "status": "mock_only_validated",
+      "verification_outcome": "mock_only",
+      "authentication_cause": null,
+      "started_at": "2026-11-25T03:22:29.323020+00:00",
+      "received_at": "2026-11-25T03:22:29.324405+00:00",
+      "request": {
+        "method": "GET",
+        "url": "https://mock.invalid/smart-key-battery",
+        "accept": "application/json"
+      },
+      "network_attempted": false,
+      "http_status": 200,
+      "provider_error_code": null,
+      "elapsed_ms": 1.37,
+      "json_parsed": true,
+      "structure_valid": true,
+      "validation_basis": "official_required_fields_and_documented_types",
+      "specification": "https://developers.hyundai.com/web/v1/hyundai/specification/data/statuswarning_smartkeybattery",
+      "issues": [],
+      "unverified": [
+        "real_vehicle_integration",
+        "provider_timezone",
+        "sample_cache_and_storage_permission",
+        "external_ai_transfer_permission",
+        "sample_rate_limit",
+        "freshness_on_real_vehicle"
+      ],
+      "response_body_saved": false
+    },
+    {
+      "api": "ev-battery",
+      "source": "MOCK",
+      "status": "mock_only_validated",
+      "verification_outcome": "mock_only",
+      "authentication_cause": null,
+      "started_at": "2026-11-25T03:22:29.396303+00:00",
+      "received_at": "2026-11-25T03:22:29.396666+00:00",
+      "request": {
+        "method": "GET",
+        "url": "https://mock.invalid/ev-battery",
+        "accept": "application/json"
+      },
+      "network_attempted": false,
+      "http_status": 200,
+      "provider_error_code": null,
+      "elapsed_ms": 0.35,
+      "json_parsed": true,
+      "structure_valid": true,
+      "validation_basis": "official_required_fields_and_documented_types",
+      "specification": "https://developers.hyundai.com/web/v1/hyundai/specification/data/status_evbattery",
+      "issues": [],
+      "unverified": [
+        "real_vehicle_integration",
+        "provider_timezone",
+        "sample_cache_and_storage_permission",
+        "external_ai_transfer_permission",
+        "sample_rate_limit",
+        "freshness_on_real_vehicle"
+      ],
+      "response_body_saved": false
+    },
+    {
+      "api": "ev-charging",
+      "source": "MOCK",
+      "status": "mock_only_validated",
+      "verification_outcome": "mock_only",
+      "authentication_cause": null,
+      "started_at": "2026-11-25T03:22:29.468469+00:00",
+      "received_at": "2026-11-25T03:22:29.468799+00:00",
+      "request": {
+        "method": "GET",
+        "url": "https://mock.invalid/ev-charging",
+        "accept": "application/json"
+      },
+      "network_attempted": false,
+      "http_status": 200,
+      "provider_error_code": null,
+      "elapsed_ms": 0.32,
+      "json_parsed": true,
+      "structure_valid": true,
+      "validation_basis": "official_required_fields_and_documented_types",
+      "specification": "https://developers.hyundai.com/web/v1/hyundai/specification/data/status_evcharging",
+      "issues": [],
+      "unverified": [
+        "real_vehicle_integration",
+        "provider_timezone",
+        "sample_cache_and_storage_permission",
+        "external_ai_transfer_permission",
+        "sample_rate_limit",
+        "freshness_on_real_vehicle"
+      ],
+      "response_body_saved": false
+    }
+  ],
+  "sample_support_confirmed": false,
+  "approval_inventory_available": false,
+  "raw_response_bodies_saved": false
+}

@@ -15,6 +15,51 @@ export interface AuctionDraft {
   monthlyKm: string;
   upkeep: string;
 }
+export interface ConsultationVehicleIdentity {
+  make: string | null;
+  model: string | null;
+  model_year: number | null;
+  fuel: string | null;
+}
+
+/** Catalog identity only; never treat a nickname, powertrain or arbitrary record as a fuel. */
+export function consultationVehicleIdentity(
+  vehicle?: Vehicle,
+  confirmedAnalysis?: AuctionAnalysisInput | null,
+  now = new Date(),
+  catalogEntries: VehicleCatalogEntry[] = bundledCatalog,
+): ConsultationVehicleIdentity {
+  const draft = createAuctionDraft(vehicle, catalogEntries);
+  const parsedYear = Number(draft.year);
+  const modelYear =
+    draft.year &&
+    Number.isInteger(parsedYear) &&
+    parsedYear >= 1970 &&
+    parsedYear <= now.getFullYear() + 1
+      ? parsedYear
+      : null;
+  const make = draft.make || null;
+  const model = draft.model || null;
+  const analysis = confirmedAnalysis?.vehicle;
+  const normalize = (value: string | null | undefined) =>
+    (value ?? '').normalize('NFKC').trim().toLocaleLowerCase();
+  const sameVehicle =
+    make !== null &&
+    model !== null &&
+    modelYear !== null &&
+    analysis !== undefined &&
+    normalize(analysis.make) === normalize(make) &&
+    normalize(analysis.model) === normalize(model) &&
+    analysis.age_years === now.getFullYear() - modelYear;
+  const fuel = sameVehicle ? analysis?.fuel?.trim() : undefined;
+  return {
+    make,
+    model,
+    model_year: modelYear,
+    fuel: fuel && fuel.length <= 100 && !/[\u0000-\u001f\u007f]/.test(fuel) ? fuel : null,
+  };
+}
+
 export function createAuctionDraft(
   vehicle?: Vehicle,
   catalogEntries: VehicleCatalogEntry[] = bundledCatalog,

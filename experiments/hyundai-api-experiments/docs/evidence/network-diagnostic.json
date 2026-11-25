@@ -1,0 +1,19 @@
+{
+  "command": "uv run hyundai-experiments diagnose",
+  "exit_code": 0,
+  "result": {
+    "source": "NETWORK_DIAGNOSTIC",
+    "started_at": "2026-11-25T03:23:02.511824+00:00",
+    "host": "dev.kr-ccapi.hyundai.com",
+    "port": 443,
+    "sample_api_called": false,
+    "dns_ok": true,
+    "tcp_ok": true,
+    "https_attempted": true,
+    "https_status": 404,
+    "https_error": null,
+    "note": "HEAD / without credentials tests HTTPS only; it cannot prove API success.",
+    "https_elapsed_ms": 116.78,
+    "completed_at": "2026-11-25T03:23:02.692023+00:00"
+  }
+}

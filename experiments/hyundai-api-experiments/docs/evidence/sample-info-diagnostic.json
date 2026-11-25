@@ -1,0 +1,9 @@
+{
+  "command": "uv run python scripts/import_official_sample.py",
+  "exit_code": 1,
+  "result": {
+    "status": "sample_info_import_failed",
+    "error_category": "tls_error",
+    "details_redacted": true
+  }
+}

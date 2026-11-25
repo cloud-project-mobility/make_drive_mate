@@ -13,6 +13,8 @@ import {
   shared,
 } from '../components/ui';
 import { useApp } from '../state/AppProvider';
+import { useBackend } from '../state/BackendProvider';
+import { useRoutePolling } from '../services/useRoutePolling';
 import { departureAt } from '../domain/helpers';
 import { GPS_MAX_ACCURACY_METERS } from '../domain/gps';
 import type { ActiveTrip } from '../domain/types';
@@ -25,6 +27,7 @@ import LiveLocationCard from '../components/LiveLocationCard';
 export default function RouteScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { state } = useApp();
+  const { session, client } = useBackend();
   const now = useNow();
   const recorder = useTripRecorder();
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -62,7 +65,39 @@ export default function RouteScreen() {
         })
       : null;
   const hasMapDirections = mapLink?.startsWith('https://map.kakao.com/link/by/car/') ?? false;
-  const departure = plan ? departureAt(plan) : null;
+  const canRefresh = !!(
+    session &&
+    !completed &&
+    plan?.route &&
+    plan.originPoint &&
+    plan.destinationPoint &&
+    plan.eventAt
+  );
+  const routeKey = JSON.stringify([
+    canRefresh,
+    plan?.id,
+    plan?.originPoint,
+    plan?.destinationPoint,
+    plan?.eventAt,
+    plan?.walkMinutes,
+    plan?.bufferMinutes,
+  ]);
+  const polling = useRoutePolling(client, routeKey, {
+    request(signal) {
+      if (!canRefresh || !plan?.originPoint || !plan.destinationPoint || !plan.eventAt)
+        throw new Error('저장한 출발지·도착지와 도착 시간을 확인해 주세요.');
+      return client.route(
+        plan.originPoint,
+        plan.destinationPoint,
+        plan.eventAt,
+        plan.walkMinutes,
+        plan.bufferMinutes,
+        signal,
+      );
+    },
+  });
+  const latest = canRefresh ? polling.value : null;
+  const departure = latest ? new Date(latest.departure_at) : plan ? departureAt(plan) : null;
   const recording = recorder.status === 'recording';
   const requesting = recorder.status === 'requesting';
   async function start() {
@@ -352,7 +387,7 @@ export default function RouteScreen() {
                 {plan.source === 'sample' && <Chip label="예시 일정 또는 경로" />}
               </View>
               <TimeBreakdown
-                drive={plan.driveMinutes}
+                drive={latest ? Math.ceil(latest.duration_s / 60) : plan.driveMinutes}
                 walk={plan.walkMinutes}
                 buffer={plan.bufferMinutes}
               />
@@ -383,14 +418,26 @@ export default function RouteScreen() {
                 />
               )}
               <Text style={shared.muted}>
-                {plan.route
-                  ? `${plan.route.source === 'mock' ? '예시 경로' : '서버 경로'}를 ${new Date(plan.route.computedAt).toLocaleString('ko-KR')}에 계산해 저장했어요. 자동으로 갱신되지 않아요.`
-                  : '입력한 예상 시간으로 계산했어요. 실시간 교통이나 자동 경로 갱신은 제공하지 않아요.'}
+                {latest
+                  ? `${latest.source === 'mock' ? '예시 경로' : '서버 경로'} · 마지막 계산 ${new Date(latest.computed_at).toLocaleTimeString('ko-KR')}${polling.error ? '' : ' · 이 화면에서 5분 간격으로 갱신해요.'} 출발 알림은 저장한 계획을 따라요.`
+                  : plan.route
+                    ? `${plan.route.source === 'mock' ? '예시 경로' : '서버 경로'}를 ${new Date(plan.route.computedAt).toLocaleString('ko-KR')}에 계산해 저장했어요.`
+                    : '직접 입력한 예상 운전 시간으로 계산한 계획이에요.'}
               </Text>
-              {plan.route && now >= Date.parse(plan.route.expiresAt) && (
+              {canRefresh && (
+                <Button
+                  title="경로 시간 갱신"
+                  onPress={polling.request}
+                  loading={polling.loading}
+                  disabled={polling.loading}
+                  variant="secondary"
+                />
+              )}
+              {polling.error && <Notice title={polling.error} tone="warning" />}
+              {plan.route && now >= Date.parse(latest?.expires_at ?? plan.route.expiresAt) && (
                 <Notice
                   title="저장한 경로의 유효 시간이 지났어요"
-                  body="현재 교통 상황을 반영한 시간이 아니에요. 지도 앱에서 다시 확인하거나 새 이동 계획에서 경로를 계산해 주세요."
+                  body="마지막으로 계산한 값이에요. 최신 경로를 확인해 주세요."
                   tone="warning"
                 />
               )}

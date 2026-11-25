@@ -35,9 +35,12 @@ public class VehicleRegistrationService {
         String catalogId = body.has("catalogId") ? body.get("catalogId").textValue() : null;
         return transactions.execute(status -> {
             lockOwner(userId);
-            List<Map<String, Object>> existing = jdbc.query(
-                    "SELECT * FROM registered_vehicles WHERE user_id=? AND vehicle_id=?", this::vehicle, userId, id);
-            if (existing.isEmpty()) {
+            // The identity and original registration timestamp are immutable on updates.
+            int updated = jdbc.update("UPDATE registered_vehicles SET catalog_id=?,name=?,model=?,powertrain=?,odometer_km=?,updated_at=?"
+                            + " WHERE user_id=? AND vehicle_id=?", catalogId, body.get("name").textValue().strip(),
+                    body.get("model").textValue().strip(), body.get("powertrain").textValue(), body.get("odometerKm").doubleValue(),
+                    Instant.now().toString(), userId, id);
+            if (updated == 0) {
                 Long count = jdbc.queryForObject("SELECT COUNT(*) FROM registered_vehicles WHERE user_id=?", Long.class, userId);
                 if (count != null && count >= 3) {
                     throw new ApiException("vehicle_limit", "차량은 계정당 최대 3대까지 등록할 수 있어요.", 409);
@@ -46,12 +49,6 @@ public class VehicleRegistrationService {
                                 + " VALUES (?,?,?,?,?,?,?,?,?)", userId, id, catalogId, body.get("name").textValue().strip(),
                         body.get("model").textValue().strip(), body.get("powertrain").textValue(), body.get("odometerKm").doubleValue(),
                         body.get("createdAt").textValue(), Instant.now().toString());
-            } else {
-                // The identity and original registration timestamp are immutable on updates.
-                jdbc.update("UPDATE registered_vehicles SET catalog_id=?,name=?,model=?,powertrain=?,odometer_km=?,updated_at=?"
-                                + " WHERE user_id=? AND vehicle_id=?", catalogId, body.get("name").textValue().strip(),
-                        body.get("model").textValue().strip(), body.get("powertrain").textValue(), body.get("odometerKm").doubleValue(),
-                        Instant.now().toString(), userId, id);
             }
             return jdbc.queryForObject("SELECT * FROM registered_vehicles WHERE user_id=? AND vehicle_id=?", this::vehicle, userId, id);
         });

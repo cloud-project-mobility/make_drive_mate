@@ -1,0 +1,29 @@
+name: Hyundai sample offline tests
+on:
+  push:
+    paths:
+      - 'experiments/hyundai-api-experiments/**'
+      - '.github/workflows/hyundai-experiments.yml'
+  pull_request:
+    paths:
+      - 'experiments/hyundai-api-experiments/**'
+      - '.github/workflows/hyundai-experiments.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: experiments/hyundai-api-experiments
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: '0.12.23'
+          enable-cache: false
+      - run: uv python install 3.11
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run pytest
+      - run: uv run python scripts/check_secrets.py

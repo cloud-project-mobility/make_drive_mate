@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Button, Chip, Notice, shared } from '../components/ui';
 import { useBackend } from '../state/BackendProvider';
+import { useRoutePolling } from '../services/useRoutePolling';
 import {
   backendMessage,
   type CalendarEvent,
@@ -122,8 +123,8 @@ function BackendRouteSearchContent({
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [estimate, setEstimate] = useState<RouteEstimate | null>(null);
-  const currentInputs = useRef('');
+  const previouslyCalculated = useRef(false);
+  const recalculateSelection = useRef(false);
   const inputKey = JSON.stringify([
     origin,
     destination,
@@ -138,16 +139,54 @@ function BackendRouteSearchContent({
       destinationPlace.latitude,
     ],
   ]);
-  useEffect(() => {
-    currentInputs.current = inputKey;
-    return () => {
-      currentInputs.current = '';
-    };
-  }, [inputKey]);
   const selectedOrigin = originPlace?.name === origin ? originPlace : null;
   const selectedDestination = destinationPlace?.name === destination ? destinationPlace : null;
-  const [estimatedInputs, setEstimatedInputs] = useState('');
-  const freshEstimate = estimatedInputs === inputKey ? estimate : null;
+  const polling = useRoutePolling(client, inputKey, {
+    request(signal) {
+      if (
+        !selectedOrigin ||
+        !selectedDestination ||
+        !arrivalAt ||
+        walkMinutes === null ||
+        bufferMinutes === null
+      )
+        throw new Error('장소 검색 결과에서 출발지·도착지를 선택하고 도착 시간을 입력해 주세요.');
+      return client.route(
+        selectedOrigin,
+        selectedDestination,
+        arrivalAt,
+        walkMinutes,
+        bufferMinutes,
+        signal,
+      );
+    },
+    apply(next) {
+      if (selectedOrigin && selectedDestination)
+        onEstimate(next, selectedOrigin, selectedDestination);
+    },
+  });
+  const freshEstimate = polling.value;
+  const request = polling.request;
+  useEffect(() => {
+    if (!recalculateSelection.current) return;
+    recalculateSelection.current = false;
+    if (
+      selectedOrigin &&
+      selectedDestination &&
+      arrivalAt &&
+      walkMinutes !== null &&
+      bufferMinutes !== null
+    )
+      request();
+  }, [
+    inputKey,
+    selectedOrigin,
+    selectedDestination,
+    arrivalAt,
+    walkMinutes,
+    bufferMinutes,
+    request,
+  ]);
   async function search(kind: 'origin' | 'destination') {
     const query = kind === 'origin' ? origin : destination;
     if (query.trim().length < 2) {
@@ -166,7 +205,7 @@ function BackendRouteSearchContent({
       setBusy(false);
     }
   }
-  async function calculate() {
+  function calculate() {
     if (
       !selectedOrigin ||
       !selectedDestination ||
@@ -177,38 +216,9 @@ function BackendRouteSearchContent({
       setError('장소 검색 결과에서 출발지·도착지를 선택하고 도착 시간을 입력해 주세요.');
       return;
     }
-    setBusy(true);
     setError('');
-    setEstimate(null);
-    const startedInputs = inputKey;
-    try {
-      const next = await client.route(
-        selectedOrigin,
-        selectedDestination,
-        arrivalAt,
-        walkMinutes,
-        bufferMinutes,
-      );
-      if (currentInputs.current !== startedInputs)
-        throw new Error('검색 중 계획이 변경됐어요. 현재 정보로 다시 계산해 주세요.');
-      if (
-        !Number.isFinite(next.duration_s) ||
-        next.duration_s <= 0 ||
-        next.duration_s > 86400 ||
-        !Number.isFinite(next.distance_m) ||
-        next.distance_m < 0 ||
-        next.distance_m > 10_000_000 ||
-        !['mock', 'live'].includes(next.source)
-      )
-        throw new Error('경로 응답의 거리와 시간을 확인할 수 없어요.');
-      setEstimate(next);
-      setEstimatedInputs(startedInputs);
-      onEstimate(next, selectedOrigin, selectedDestination);
-    } catch (cause) {
-      setError(backendMessage(cause));
-    } finally {
-      setBusy(false);
-    }
+    previouslyCalculated.current = true;
+    request();
   }
   return (
     <View style={shared.stack}>
@@ -258,7 +268,12 @@ function BackendRouteSearchContent({
                       }
                       onSelectionChanged(results.kind, place, results.source);
                       setResults(null);
-                      setEstimate(null);
+                      recalculateSelection.current =
+                        previouslyCalculated.current &&
+                        results.kind === 'destination' &&
+                        (destinationPlace?.id !== place.id ||
+                          destinationPlace.longitude !== place.longitude ||
+                          destinationPlace.latitude !== place.latitude);
                     }}
                     variant="secondary"
                   />
@@ -273,18 +288,18 @@ function BackendRouteSearchContent({
           <Button
             title="서버 경로 시간 적용"
             onPress={calculate}
-            loading={busy}
-            disabled={!selectedOrigin || !selectedDestination || busy}
+            loading={polling.loading}
+            disabled={!selectedOrigin || !selectedDestination || busy || polling.loading}
             icon="map"
             variant="secondary"
           />
         </>
       )}
-      {error ? <Notice title={error} tone="error" /> : null}
+      {error || polling.error ? <Notice title={error || polling.error} tone="error" /> : null}
       {freshEstimate && (
         <Notice
           title={`${freshEstimate.source === 'mock' ? '예시 경로' : '경로 조회'} · ${(freshEstimate.distance_m / 1000).toFixed(1)} km · ${Math.ceil(freshEstimate.duration_s / 60)}분`}
-          body={`운전 시간에 적용했어요. ${new Date(freshEstimate.computed_at).toLocaleTimeString('ko-KR')} 계산 · 갱신이 필요하면 다시 계산해 주세요.`}
+          body={`마지막 계산 ${new Date(freshEstimate.computed_at).toLocaleTimeString('ko-KR')}${polling.error ? '' : ' · 이 화면에서 5분 간격으로 갱신해요.'}`}
         />
       )}
     </View>

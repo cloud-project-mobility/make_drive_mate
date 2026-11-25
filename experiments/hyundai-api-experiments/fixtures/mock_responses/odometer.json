@@ -1,0 +1,11 @@
+{
+  "msgId": "synthetic-mock-message",
+  "odometers": [
+    {
+      "date": "20261012",
+      "timestamp": "20261012153000",
+      "value": 45678,
+      "unit": 1
+    }
+  ]
+}

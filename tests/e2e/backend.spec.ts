@@ -31,6 +31,203 @@ async function register(page: Page) {
   return { email, password, token: session.access_token as string };
 }
 
+async function openSelectedRoute(page: Page) {
+  if ((page.viewportSize()?.width ?? 1440) < 600)
+    await page.setViewportSize({ width: 360, height: 820 });
+  await register(page);
+  await page.getByRole('tab', { name: '이동 계획', exact: true }).click();
+  await page.getByRole('button', { name: '일정으로 계획', exact: true }).click();
+  for (const [label, place] of [
+    ['출발지', '서울역'],
+    ['도착지', '서울시청'],
+  ]) {
+    await page.getByRole('textbox', { name: label, exact: true }).fill(place);
+    await page.getByRole('button', { name: label + ' 검색', exact: true }).click();
+    await page.getByRole('button', { name: label + '로 ' + place + ' 선택', exact: true }).click();
+  }
+}
+
+test('foreground route polling coalesces clicks, refreshes in five minutes and pauses on quota', async ({
+  page,
+}) => {
+  await openSelectedRoute(page);
+  let attempts = 0;
+  await page.route('**/api/v1/routes', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    attempts++;
+    if (attempts === 3) {
+      await route.fulfill({
+        status: 429,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        json: { error: { code: 'quota', message: '호출 한도에 도달했어요.' } },
+      });
+      return;
+    }
+    await route.continue();
+  });
+  const start = new Date();
+  await page.clock.install({ time: start });
+  await page.clock.pauseAt(new Date(start.getTime() + 2000));
+  const calculate = page.getByRole('button', { name: '서버 경로 시간 적용', exact: true });
+  await calculate.click();
+  const reading = page.getByText(/예시 경로 · .* km · .*분/);
+  await expect(reading).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+    true,
+  );
+  await calculate.click();
+  await page.clock.fastForward(299_999);
+  expect(attempts).toBe(1);
+  await page.clock.fastForward(1);
+  await expect.poll(() => attempts).toBe(2);
+  await expect(calculate).toBeEnabled();
+  await page.clock.fastForward(300_000);
+  await expect(
+    page.getByText(/호출 한도에 도달했어요.*자동 갱신을 멈췄어요/).first(),
+  ).toBeVisible();
+  await expect(reading).toBeVisible();
+  await page.clock.fastForward(600_000);
+  expect(attempts).toBe(3);
+});
+
+test('changing a confirmed destination ignores the old reply and leaving a route stops further calls', async ({
+  page,
+}) => {
+  await openSelectedRoute(page);
+  await page.clock.install();
+  let release!: () => void;
+  const firstMayReturn = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let oldHandled!: () => void;
+  const oldFinished = new Promise<void>((resolve) => {
+    oldHandled = resolve;
+  });
+  let attempts = 0;
+  await page.route('**/api/v1/routes', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    if (++attempts === 1) {
+      const response = await route.fetch();
+      await firstMayReturn;
+      try {
+        await route.fulfill({ response });
+      } catch {
+        /* The old request was cancelled. */
+      } finally {
+        oldHandled();
+      }
+      return;
+    }
+    await route.continue();
+  });
+  try {
+    await page.getByRole('button', { name: '서버 경로 시간 적용', exact: true }).click();
+    await expect.poll(() => attempts).toBe(1);
+    await page.getByRole('textbox', { name: '도착지', exact: true }).fill('강남역');
+    await page.getByRole('button', { name: '도착지 검색', exact: true }).click();
+    await page.getByRole('button', { name: '도착지로 강남역 선택', exact: true }).click();
+    await expect.poll(() => attempts).toBe(2);
+    const reading = page.getByText(/예시 경로 · .* km · .*분/);
+    await expect(reading).toBeVisible();
+    const newReading = await reading.innerText();
+    release();
+    await oldFinished;
+    await expect(reading).toHaveText(newReading);
+    await page.getByRole('button', { name: '뒤로', exact: true }).first().click();
+    await expect(
+      page.getByRole('button', { name: '서버 경로 시간 적용', exact: true }),
+    ).toHaveCount(0);
+    await page.clock.fastForward(610_000);
+    expect(attempts).toBe(2);
+  } finally {
+    release();
+  }
+});
+
+test('saved route polling ignores GPS observations and stops after navigation', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['geolocation']);
+  await openSelectedRoute(page);
+  let attempts = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/v1/routes' && request.method() === 'POST')
+      attempts++;
+  });
+  await page.getByRole('button', { name: '서버 경로 시간 적용', exact: true }).click();
+  await expect(page.getByText(/예시 경로 · .* km · .*분/)).toBeVisible();
+  await page.getByRole('button', { name: '계획 저장하고 확인', exact: true }).click();
+  const refresh = page.getByRole('button', { name: '경로 시간 갱신', exact: true });
+  await expect(refresh).toBeVisible();
+  expect(attempts).toBe(1);
+  await page.clock.install();
+  await refresh.click();
+  await expect(page.getByText(/예시 경로 · 마지막 계산/)).toBeVisible();
+  expect(attempts).toBe(2);
+  // Deliver successful browser GPS fixes to the real recorder without a device or a route API call.
+  await page.evaluate(() => {
+    const listeners = new EventTarget();
+    const callbacks = new Map<number, EventListener>();
+    let next = 0;
+    Object.defineProperties(navigator.geolocation, {
+      watchPosition: {
+        configurable: true,
+        value: (success: PositionCallback) => {
+          const id = ++next;
+          const listener: EventListener = (event) => {
+            const accuracy = (event as CustomEvent<number>).detail;
+            success({
+              timestamp: Date.now(),
+              coords: {
+                latitude: 37.566,
+                longitude: 126.978,
+                accuracy,
+                altitude: null,
+                altitudeAccuracy: null,
+                heading: null,
+                speed: null,
+              },
+            } as GeolocationPosition);
+          };
+          callbacks.set(id, listener);
+          listeners.addEventListener('fix', listener);
+          return id;
+        },
+      },
+      clearWatch: {
+        configurable: true,
+        value: (id: number) => {
+          const listener = callbacks.get(id);
+          if (listener) listeners.removeEventListener('fix', listener);
+          callbacks.delete(id);
+        },
+      },
+    });
+    window.addEventListener('test-gps-fix', (event) =>
+      listeners.dispatchEvent(
+        new CustomEvent('fix', { detail: (event as CustomEvent<number>).detail }),
+      ),
+    );
+  });
+  await page.getByRole('button', { name: /GPS 기록 시작$/ }).click();
+  await expect(page.getByText('GPS 측정 중', { exact: true })).toBeVisible();
+  for (const accuracy of [5, 7, 9]) {
+    await page.evaluate(
+      (metres) => window.dispatchEvent(new CustomEvent('test-gps-fix', { detail: metres })),
+      accuracy,
+    );
+    await expect(page.getByText(`약 ${accuracy}m`, { exact: true })).toBeVisible();
+  }
+  expect(attempts).toBe(2);
+  await page.clock.fastForward(300_000);
+  await expect.poll(() => attempts).toBe(3);
+  await page.getByRole('button', { name: '출발 알림 관리', exact: true }).click();
+  await expect(refresh).toBeHidden();
+  await page.clock.fastForward(610_000);
+  expect(attempts).toBe(3);
+});
+
 async function openServiceAccount(page: Page, baseURL: string, successfulRegistration = false) {
   const origin = 'https://drivemate-login.test';
   const calls: string[] = [];

@@ -21,17 +21,30 @@ public class AssistantService implements AutoCloseable {
     private final String worker;
     private final String model;
     private final boolean enabled;
+    private final boolean vehicleRagEnabled;
+    private final String vehicleCollection;
+    private final String vehicleCollectionSha256;
+    private final String vehicleRagBackend;
 
     public AssistantService(ObjectMapper json,
             @Value("${DRIVEMATE_PYTHON:python3}") String python,
             @Value("${DRIVEMATE_ML_WORKER:../backend/scripts/onbid_worker.py}") String modelWorker,
             @Value("${DRIVEMATE_MODEL_BUNDLE:}") String model,
-            @Value("${DRIVEMATE_ALLOW_LLM:false}") boolean enabled) {
+            @Value("${DRIVEMATE_ALLOW_LLM:false}") boolean enabled,
+            @Value("${DRIVEMATE_VEHICLE_RAG_ENABLED:false}") boolean vehicleRagEnabled,
+            @Value("${DRIVEMATE_VEHICLE_RAG_COLLECTION:}") String vehicleCollection,
+            @Value("${DRIVEMATE_VEHICLE_RAG_COLLECTION_SHA256:}") String vehicleCollectionSha256,
+            @Value("${DRIVEMATE_VEHICLE_RAG_BACKEND:pgvector}") String vehicleRagBackend) {
+        if (!Set.of("pgvector", "local").contains(vehicleRagBackend)) throw new IllegalArgumentException("Unsupported vehicle RAG backend");
         this.runner = new JsonWorkerProcess(json);
         this.python = python;
         this.worker = Path.of(modelWorker).resolveSibling("assistant_worker.py").toString();
         this.model = model;
         this.enabled = enabled;
+        this.vehicleRagEnabled = vehicleRagEnabled;
+        this.vehicleCollection = vehicleCollection;
+        this.vehicleCollectionSha256 = vehicleCollectionSha256;
+        this.vehicleRagBackend = vehicleRagBackend;
     }
 
     void requireEnabled() {
@@ -46,7 +59,9 @@ public class AssistantService implements AutoCloseable {
             if (model.isBlank()) throw new ApiException("model_unavailable", "검증된 가격 모델이 아직 연결되지 않았어요.", 503);
             command.addAll(List.of("--model-bundle", model));
         }
-        JsonWorkerProcess.Result output = runner.run(command, request, 120, this::start, "assistant");
+        if (vehicleRagEnabled) command.addAll(List.of("--vehicle-rag-enabled", "--vehicle-collection", vehicleCollection,
+                "--vehicle-collection-sha256", vehicleCollectionSha256, "--vehicle-rag-backend", vehicleRagBackend));
+        JsonWorkerProcess.Result output = runner.run(command, request, 115, this::start, "assistant");
         JsonNode result = output.body();
         if (output.exitCode() != 0 || !result.path("ok").asBoolean(false)) {
             String code = result.path("error").path("code").asText();
@@ -60,20 +75,24 @@ public class AssistantService implements AutoCloseable {
                 || result.path("price_generation_by_llm").booleanValue()) {
             throw new ApiException("assistant_failed", "AI 응답의 근거를 확인하지 못했어요.", 502);
         }
+        VehicleRagContract.response(result.path("vehicle_rag"));
         return result;
     }
 
     Process start(List<String> command) throws IOException {
         ProcessBuilder builder = new ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.DISCARD);
         builder.environment().keySet().retainAll(Set.of("PATH", "HOME", "LANG", "LC_ALL", "LD_LIBRARY_PATH",
-                "SYSTEMROOT", "TMPDIR", "TMP", "TEMP", "OPENAI_API_KEY", "OPENAI_MODEL", "DRIVEMATE_MODEL_SHA256"));
+                "SYSTEMROOT", "TMPDIR", "TMP", "TEMP", "OPENAI_API_KEY", "OPENAI_MODEL", "DRIVEMATE_MODEL_SHA256",
+                "DRIVEMATE_PG_HOST", "DRIVEMATE_PG_PORT", "DRIVEMATE_PG_DATABASE", "DRIVEMATE_PG_USER",
+                "DRIVEMATE_PG_PASSWORD", "DRIVEMATE_PG_SSLROOTCERT"));
         builder.environment().put("PYTHONUTF8", "1");
         for (String key : List.of("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS")) builder.environment().put(key, "2");
         return builder.start();
     }
 
     static void validate(JsonNode request) {
-        SnapshotValidator.fields(request, Set.of("question", "context"), Set.of("previous_question", "analysis"));
+        SnapshotValidator.fields(request, Set.of("question", "context"), Set.of("previous_question", "analysis", "vehicle_identity"));
+        VehicleRagContract.identity(request.get("vehicle_identity"));
         if (request.toString().getBytes(StandardCharsets.UTF_8).length > 32768) throw ApiException.invalid();
         SnapshotValidator.text(request, "question", 1000);
         if (request.has("previous_question")) SnapshotValidator.text(request, "previous_question", 1000);

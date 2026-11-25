@@ -1,0 +1,57 @@
+# 생성·수정 파일 목록
+
+독립 Python 실험의 Git 검토 대상 53개 파일이다. WSL의 프로젝트 전용 가상환경, 로컬 설정, 원본·진단 출력은 Git 제외 대상이다.
+
+- `.env.example`
+- `.github/workflows/test.yml`
+- `.gitignore`
+- `.python-version`
+- `README.md`
+- `docs/API_MATRIX.md`
+- `docs/CONTRACT_AND_SECURITY.md`
+- `docs/DRIVEMATE_REPORT.md`
+- `docs/FILES.md`
+- `docs/MODELS.md`
+- `docs/PROVENANCE.md`
+- `docs/RUN_REPORT.md`
+- `docs/evidence/document-audit.json`
+- `docs/evidence/network-diagnostic.json`
+- `docs/evidence/run-summary.json`
+- `docs/evidence/sample-info-diagnostic.json`
+- `docs/evidence/sample-odometer-20261125.json`
+- `docs/evidence/sample-settings-http.json`
+- `docs/evidence/secret-scan.json`
+- `fixtures/mock_responses/README.md`
+- `fixtures/mock_responses/odometer.json`
+- `fixtures/mock_responses/status.json`
+- `fixtures/sample_responses/README.md`
+- `pyproject.toml`
+- `scripts/check_secrets.py`
+- `scripts/enter.ps1`
+- `scripts/enter.sh`
+- `scripts/import_official_sample.py`
+- `scripts/setup.ps1`
+- `scripts/setup.sh`
+- `scripts/verify_live.py`
+- `scripts/verify_mock.py`
+- `scripts/verify_suite.py`
+- `src/hyundai_experiments/__init__.py`
+- `src/hyundai_experiments/catalog.py`
+- `src/hyundai_experiments/cli.py`
+- `src/hyundai_experiments/client.py`
+- `src/hyundai_experiments/config.py`
+- `src/hyundai_experiments/diagnostics.py`
+- `src/hyundai_experiments/errors.py`
+- `src/hyundai_experiments/models.py`
+- `src/hyundai_experiments/redaction.py`
+- `src/hyundai_experiments/status_models.py`
+- `tests/conftest.py`
+- `tests/test_cli.py`
+- `tests/test_client.py`
+- `tests/test_config_and_security.py`
+- `tests/test_models.py`
+- `tests/test_sample_import.py`
+- `tests/test_status_models.py`
+- `tests/test_suite.py`
+- `tests/test_verification_outcomes.py`
+- `uv.lock`

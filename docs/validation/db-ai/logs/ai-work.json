@@ -1,0 +1,20 @@
+{
+  "before": {
+    "bm25_calls": 2,
+    "serialize_calls": 3,
+    "source_ids": [
+      "manual-tires"
+    ],
+    "service_history_selector_calls": 1,
+    "history_status": "answered"
+  },
+  "after": {
+    "bm25_calls": 1,
+    "serialize_calls": 1,
+    "source_ids": [
+      "manual-tires"
+    ],
+    "service_history_selector_calls": 0,
+    "history_status": "abstained"
+  }
+}

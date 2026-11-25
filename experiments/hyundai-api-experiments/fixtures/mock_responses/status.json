@@ -1,0 +1,16 @@
+{
+  "dte": {"timestamp": "20261012093000", "value": 321.5, "unit": 1, "msgId": "mock-dte"},
+  "engine-oil": {"status": false, "msgId": "mock-engine"},
+  "tire-pressure": {"status": true, "msgId": "mock-tire"},
+  "brake-oil": {"status": false, "msgId": "mock-brake"},
+  "low-fuel": {"status": false, "msgId": "mock-fuel"},
+  "washer-fluid": {"status": true, "msgId": "mock-washer"},
+  "smart-key-battery": {"status": false, "msgId": "mock-key"},
+  "ev-battery": {"soc": 64, "timestamp": "20261012093000", "msgId": "mock-battery"},
+  "ev-charging": {
+    "batteryPlugin": 2, "batteryCharge": true, "soc": 64,
+    "targetSOC": {"plugType": 1, "targetSOClevel": 90},
+    "remainTime": {"value": 42, "unit": 1},
+    "timestamp": "20261012093000", "msgId": "mock-charging"
+  }
+}

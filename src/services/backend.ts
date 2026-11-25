@@ -202,8 +202,14 @@ export class BackendClient {
   setUnauthorizedHandler(handler: (() => void) | undefined) {
     this.onUnauthorized = handler;
   }
-  async request<T>(path: string, options: { method?: string; body?: unknown; timeoutMs?: number } = {}): Promise<T> {
+  async request<T>(
+    path: string,
+    options: { method?: string; body?: unknown; timeoutMs?: number; signal?: AbortSignal } = {},
+  ): Promise<T> {
     const controller = new AbortController();
+    const cancel = () => controller.abort();
+    if (options.signal?.aborted) cancel();
+    else options.signal?.addEventListener('abort', cancel);
     const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 12_000);
     try {
       const response = await this.fetcher(`${this.url}/api/v1${path}`, {
@@ -253,12 +259,13 @@ export class BackendClient {
       );
     } finally {
       clearTimeout(timeout);
+      options.signal?.removeEventListener('abort', cancel);
     }
   }
   private async validated<T>(
     path: string,
     check: (value: unknown) => value is T,
-    options: { method?: string; body?: unknown } = {},
+    options: { method?: string; body?: unknown; signal?: AbortSignal } = {},
   ): Promise<T> {
     const value = await this.request<unknown>(path, options);
     let valid = false;
@@ -338,11 +345,12 @@ export class BackendClient {
     );
   }
   route(
-    origin: Place,
-    destination: Place,
+    origin: Pick<Place, 'longitude' | 'latitude'>,
+    destination: Pick<Place, 'longitude' | 'latitude'>,
     arrivalAt: string,
     walkMinutes: number,
     bufferMinutes: number,
+    signal?: AbortSignal,
   ) {
     return this.validated(
       '/routes',
@@ -357,6 +365,7 @@ export class BackendClient {
         instant(value.expires_at),
       {
         method: 'POST',
+        signal,
         body: {
           origin: { longitude: origin.longitude, latitude: origin.latitude },
           destination: { longitude: destination.longitude, latitude: destination.latitude },

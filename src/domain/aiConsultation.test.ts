@@ -2,7 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createInitialState } from './state';
 import type { Vehicle } from './types';
-import { auctionInputFromDraft, consultationContext, createAuctionDraft } from './aiConsultation';
+import {
+  auctionInputFromDraft,
+  consultationContext,
+  consultationVehicleIdentity,
+  createAuctionDraft,
+} from './aiConsultation';
+import { bundledCatalog } from './vehicleCatalog';
 import {
   auctionVehicleKey,
   readAuctionCache,
@@ -10,7 +16,11 @@ import {
   type AuctionCacheEntry,
 } from '../services/auctionCache';
 import { BackendClient } from '../services/backend';
-import { isAssistantResult } from '../services/aiConsultation';
+import {
+  isAssistantResult,
+  isOfficialVehicleSourceUrl,
+  isVehicleRagResult,
+} from '../services/aiConsultation';
 
 const vehicle: Vehicle = {
   id: 'synthetic',
@@ -75,6 +85,54 @@ test('safe context only contains selected vehicle summaries, never places or not
     null,
   );
 });
+test('vehicle retrieval identity uses catalog fields and matching confirmed fuel only', () => {
+  const entry = { ...bundledCatalog[0], id: 'synthetic-k5', manufacturer: '기아', model: 'K5' };
+  const selected = { ...vehicle, catalogId: entry.id };
+  const now = new Date('2026-11-05T00:00:00Z');
+  const draft = createAuctionDraft(selected, [entry]);
+  const confirmed = auctionInputFromDraft({ ...draft, fuel: '휘발유', upkeep: '0' }, now);
+  assert.deepEqual(consultationVehicleIdentity(selected, null, now, [entry]), {
+    make: '기아',
+    model: 'K5',
+    model_year: 2020,
+    fuel: null,
+  });
+  assert.equal(consultationVehicleIdentity(selected, confirmed, now, [entry]).fuel, '휘발유');
+  for (const changed of [
+    { ...confirmed, vehicle: { ...confirmed.vehicle, model: '다른 차' } },
+    { ...confirmed, vehicle: { ...confirmed.vehicle, make: '다른 제조사' } },
+    { ...confirmed, vehicle: { ...confirmed.vehicle, age_years: 5 } },
+  ])
+    assert.equal(consultationVehicleIdentity(selected, changed, now, [entry]).fuel, null);
+  assert.equal(
+    consultationVehicleIdentity({ ...selected, model: 'K5 2020 2021' }, confirmed, now, [entry])
+      .model_year,
+    null,
+  );
+  assert.equal(
+    consultationVehicleIdentity({ ...selected, model: 'K5 2028' }, confirmed, now, [entry])
+      .model_year,
+    null,
+  );
+  assert.deepEqual(consultationVehicleIdentity(vehicle, confirmed, now, []), {
+    make: null,
+    model: null,
+    model_year: 2020,
+    fuel: null,
+  });
+  assert.deepEqual(consultationVehicleIdentity(undefined, confirmed, now, [entry]), {
+    make: null,
+    model: null,
+    model_year: null,
+    fuel: null,
+  });
+  assert.equal(
+    JSON.stringify(consultationVehicleIdentity(selected, confirmed, now, [entry])).includes(
+      'private',
+    ),
+    false,
+  );
+});
 test('memory cache isolates session identity, vehicle snapshot and demo state', () => {
   const first = new BackendClient('https://example.test', 'synthetic-a');
   const second = new BackendClient('https://example.test', 'synthetic-b');
@@ -125,4 +183,128 @@ test('assistant response rejects generated prices but permits original numeric e
   ])
     assert.equal(isAssistantResult({ ...result, answer }), true);
   assert.equal(isAssistantResult({ ...result, facts: [...result.facts, ...result.facts] }), false);
+});
+
+const vehicleSource = {
+  source_id: 'vehicle_manual_1',
+  source_kind: 'official_manual_summary',
+  document_title: '합성 제조사 설명서',
+  source_uri: 'https://ownersmanual.kia.com/synthetic-manual.html',
+  section: '합성 정비 안내',
+  page: 12,
+  excerpt: '합성 검증 발췌: 실제 차량 설명서가 아닙니다.',
+  applicability: {
+    scope: 'model_specific',
+    make: '기아',
+    model: 'K5',
+    year_from: 2020,
+    year_to: 2023,
+    fuel_types: ['휘발유'],
+  },
+};
+const matchedRag = {
+  scope: 'public_vehicle',
+  status: 'matched',
+  sources: [vehicleSource],
+  answer_source_ids: [vehicleSource.source_id],
+  method: 'bm25+pgvector-cosine-rrf',
+};
+
+test('vehicle sources only accept official HTTPS manual hosts', () => {
+  for (const uri of [
+    vehicleSource.source_uri,
+    'https://ownersmanual.hyundai.com/synthetic.html#section',
+    'https://OWNERSMANUAL.KIA.COM:443/synthetic.pdf',
+  ])
+    assert.equal(isOfficialVehicleSourceUrl(uri), true);
+  for (const uri of [
+    'http://ownersmanual.kia.com/synthetic.html',
+    'https://ownersmanual.kia.com.evil.example/synthetic.html',
+    'https://evilownersmanual.kia.com/synthetic.html',
+    'https://user:pass@ownersmanual.kia.com/synthetic.html',
+    'https://ownersmanual.kia.com:444/synthetic.html',
+    'https://ownersmanual.kia.com./synthetic.html',
+    'https://example.test/private-project.pdf',
+    'file:///private-project.pdf',
+    'javascript:alert(1)',
+    'https://ownersmanual.kia.com/\nsynthetic.html',
+    'https://ownersmanual.kia.com\\@evil.example/synthetic.html',
+  ])
+    assert.equal(isOfficialVehicleSourceUrl(uri), false, uri);
+});
+
+test('vehicle RAG rejects private scope, mismatched selected citations and invented metadata', () => {
+  assert.equal(isVehicleRagResult(matchedRag), true);
+  assert.equal(isVehicleRagResult({ ...matchedRag, scope: 'private_project' }), false);
+  assert.equal(isVehicleRagResult({ ...matchedRag, answer_source_ids: ['unselected'] }), false);
+  assert.equal(isVehicleRagResult({ ...matchedRag, answer_source_ids: [] }), false);
+  assert.equal(
+    isVehicleRagResult({
+      ...matchedRag,
+      sources: [vehicleSource, vehicleSource],
+      answer_source_ids: [vehicleSource.source_id, vehicleSource.source_id],
+    }),
+    false,
+  );
+  assert.equal(isVehicleRagResult({ ...matchedRag, status: 'no_match' }), false);
+  assert.equal(isVehicleRagResult({ ...matchedRag, sources: [], answer_source_ids: [] }), false);
+  for (const source of [
+    { ...vehicleSource, source_kind: 'private_project' },
+    { ...vehicleSource, source_kind: 'verbatim_manual' },
+    { ...vehicleSource, source_uri: 'https://example.test/private-project.pdf' },
+    { ...vehicleSource, page: 0 },
+    { ...vehicleSource, page: 1.5 },
+    { ...vehicleSource, page: 10001 },
+    { ...vehicleSource, excerpt: '' },
+    { ...vehicleSource, excerpt: 'x'.repeat(1601) },
+    { ...vehicleSource, applicability: { ...vehicleSource.applicability, year_to: 2019 } },
+    { ...vehicleSource, applicability: { ...vehicleSource.applicability, scope: 'general' } },
+  ])
+    assert.equal(isVehicleRagResult({ ...matchedRag, sources: [source] }), false);
+  const general = {
+    ...vehicleSource,
+    page: null,
+    applicability: {
+      scope: 'general',
+      make: null,
+      model: null,
+      year_from: null,
+      year_to: null,
+      fuel_types: [],
+    },
+  };
+  assert.equal(isVehicleRagResult({ ...matchedRag, sources: [general] }), true);
+  for (const status of [
+    'disabled',
+    'unavailable',
+    'needs_vehicle_details',
+    'no_match',
+    'not_used',
+  ]) {
+    assert.equal(
+      isVehicleRagResult({
+        scope: 'public_vehicle',
+        status,
+        sources: [],
+        answer_source_ids: [],
+        method: null,
+      }),
+      true,
+    );
+  }
+  const result = {
+    ok: true,
+    api_version: 'assistant-v1',
+    status: 'answered',
+    answer: '공식 자료의 적용 조건을 확인하세요.',
+    facts: [],
+    valuation: null,
+    provider: {},
+    price_generation_by_llm: false,
+  };
+  assert.equal(isAssistantResult({ ...result, vehicle_rag: matchedRag }), true);
+  assert.equal(
+    isAssistantResult({ ...result, vehicle_rag: { ...matchedRag, scope: 'private_project' } }),
+    false,
+  );
 });

@@ -1,0 +1,21 @@
+{
+  "utc": "2026-11-25T04:54:02.832466+00:00",
+  "mode": "live",
+  "route_requests": 1,
+  "places": [
+    "서울역",
+    "서울시청"
+  ],
+  "app_endpoint": "POST /api/v1/routes",
+  "provider_endpoint": "GET https://apis-navi.kakaomobility.com/v1/directions",
+  "app_http_status": 200,
+  "elapsed_ms": 593.29,
+  "status": "validated",
+  "structure_valid": true,
+  "source": "live",
+  "distance_m": 1947,
+  "duration_s": 607,
+  "live_verified": true,
+  "computed_at": "2026-11-25T04:54:08.918152868Z",
+  "expires_at": "2026-11-25T04:59:08.918152868Z"
+}

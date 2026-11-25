@@ -6,13 +6,18 @@ import type { Vehicle } from '../domain/types';
 import {
   auctionInputFromDraft,
   consultationContext,
+  consultationVehicleIdentity,
   createAuctionDraft,
   type AuctionDraft,
 } from '../domain/aiConsultation';
 import { useApp } from '../state/AppProvider';
 import { useBackend } from '../state/BackendProvider';
 import { backendMessage } from '../services/backend';
-import { queryAssistant, type AssistantResult } from '../services/aiConsultation';
+import {
+  queryAssistant,
+  type AssistantResult,
+  type VehicleRagResult,
+} from '../services/aiConsultation';
 import {
   useAuctionValuation,
   type AuctionAnalysisInput,
@@ -164,6 +169,72 @@ function PriceEvidence({ entry }: { entry: AuctionCacheEntry }) {
   );
 }
 
+const vehicleDocumentStatus: Record<Exclude<VehicleRagResult['status'], 'matched'>, string> = {
+  disabled: '차량 자료 검색이 아직 연결되지 않았어요.',
+  unavailable: '차량 자료 검색을 지금 확인할 수 없어요.',
+  needs_vehicle_details: '차종·연식을 확인해야 차량 자료를 찾을 수 있어요.',
+  no_match: '선택한 차량에 맞는 자료가 없어요. 공식 설명서를 직접 확인해 주세요.',
+    not_used: '이번 답변에 인용한 제조사 문서는 없어요.',
+};
+
+function VehicleReferences({ rag }: { rag: VehicleRagResult }) {
+  const [expanded, setExpanded] = useState(false);
+  const [linkError, setLinkError] = useState('');
+  if (rag.status !== 'matched')
+    return <Text style={s.caption}>{vehicleDocumentStatus[rag.status]}</Text>;
+  return (
+    <View style={s.documentEvidence}>
+      <Pressable
+        style={s.details}
+        accessibilityRole="button"
+        accessibilityLabel={expanded ? '차량 자료 근거 접기' : '차량 자료 근거 보기'}
+        aria-expanded={expanded}
+        onPress={() => setExpanded(!expanded)}
+      >
+        <Text style={[s.link, s.flex]}>
+          차량 자료 근거 {rag.sources.length}건 · {expanded ? '접기' : '보기'}
+        </Text>
+        <Icon name={expanded ? 'chevron-up' : 'chevron-down'} color={C.primary} />
+      </Pressable>
+      {expanded && (
+        <View style={s.stack}>
+          {rag.sources.map((source) => (
+            <View key={source.source_id} style={s.case}>
+              <Text style={s.caseTitle}>{source.document_title}</Text>
+              <Text style={s.caption}>
+                {source.section}
+                {source.page === null ? ' · 쪽수 정보 없음' : ` · PDF ${source.page}쪽`}
+              </Text>
+              <Text style={s.caption}>
+                {source.applicability.scope === 'general'
+                  ? '일반 안내 · 내 차 전용 설명서가 아니에요.'
+                  : `${source.applicability.make} ${source.applicability.model} · ${source.applicability.year_from}년${source.applicability.year_to === null ? ' 이후' : `~${source.applicability.year_to}년`}${source.applicability.fuel_types.length ? ` · ${source.applicability.fuel_types.join(', ')}` : ''}`}
+              </Text>
+              <Text style={s.body}>{source.excerpt}</Text>
+              <Button
+                title="공식 원문 열기"
+                variant="ghost"
+                icon="external-link"
+                onPress={() => {
+                  setLinkError('');
+                  void Linking.openURL(source.source_uri).catch(() =>
+                    setLinkError('원문을 열지 못했어요. 잠시 뒤 다시 시도해 주세요.'),
+                  );
+                }}
+              />
+            </View>
+          ))}
+          <Text style={s.caption}>
+            답변에 사용한 공식 자료의 근거 요약이에요. 차종·연식·사양과 원문의 적용 조건을 함께
+            확인하세요.
+          </Text>
+          {!!linkError && <Text style={s.warning}>{linkError}</Text>}
+        </View>
+      )}
+    </View>
+  );
+}
+
 type Message = { question: string; result: AssistantResult };
 function Consultation({
   vehicle,
@@ -244,6 +315,7 @@ function Consultation({
         question: value,
         ...(messages.length ? { previous_question: messages.at(-1)!.question } : {}),
         context: consultationContext(state, vehicle),
+        vehicle_identity: consultationVehicleIdentity(vehicle, !showForm ? input : null),
         ...(input && !showForm ? { analysis: input } : {}),
       });
       if (current !== sequence.current || !isCurrentClient(client)) return;
@@ -383,6 +455,7 @@ function Consultation({
                   • {fact.statement}
                 </Text>
               ))}
+              {message.result.vehicle_rag && <VehicleReferences rag={message.result.vehicle_rag} />}
               <Text style={s.caption}>
                 AI 설명은 잘못될 수 있어요. 가격 숫자는 모델 계산값이며 거래를 보장하지 않아요.
               </Text>
@@ -437,7 +510,7 @@ function Consultation({
             }}
           />
         </View>
-        <Text style={s.caption}>질문·기록 요약을 OpenAI로 전송해요.</Text>
+        <Text style={s.caption}>질문·기록 요약을 OpenAI로 보내고 차량 자료를 검색해요.</Text>
         <Pressable
           style={s.privacyButton}
           accessibilityRole="button"
@@ -450,9 +523,11 @@ function Consultation({
         {showPrivacy && (
           <Text style={s.caption}>
             전송 시 질문, 직전 질문, 차량 분석 입력·계산 근거, 정비 항목 상태와 다음 일정 시각을
-            OpenAI로 보내요. 주소·좌표·메모·일정 제목은 자동 전송하지 않아요. 질문에 개인정보를 넣지
-            마세요. 전송마다 서버의 AI 이용 한도가 적용되며 운영자 API 비용이 발생해요. 상담은
-            메모리에만 남고 차량·계정 변경 시 비워져요.
+            OpenAI로 보내요. 선택 차량의 제조사·모델·연식과 확인된 연료로 공개 차량 자료를 검색하며,
+            검색한 근거 요약을 답변에 사용할 수 있어요. 프로젝트 내부 문서는 이 상담에서 검색하지
+            않아요. 주소·좌표·메모·일정 제목은 자동 전송하지 않아요. 질문에 개인정보를 넣지 마세요.
+            전송마다 서버의 AI 이용 한도가 적용되고 답변 생성 비용이 발생하며, 자료 검색 시 질문
+            임베딩 비용도 발생할 수 있어요. 상담은 메모리에만 남고 차량·계정 변경 시 비워져요.
           </Text>
         )}
       </View>
@@ -554,6 +629,7 @@ const s = StyleSheet.create({
   userText: { color: '#FFF', fontSize: 16, lineHeight: 25 },
   answer: { gap: 14 },
   answerText: { color: C.ink, fontSize: 16, lineHeight: 27, maxWidth: 780 },
+  documentEvidence: { borderTopWidth: 1, borderTopColor: C.line, paddingTop: 4, gap: 8 },
   composer: { gap: 8, marginTop: 'auto', paddingTop: 12, borderColor: C.line, borderTopWidth: 1 },
   input: {
     minHeight: 72,

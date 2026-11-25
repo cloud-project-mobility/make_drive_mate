@@ -132,7 +132,22 @@ def stable_revision(service, expected):
             and deployments[0].get("rolloutState") == "COMPLETED")
 
 
-def clone_task(task, image, family):
+def hyundai_sample_configuration(enabled, secret_arn):
+    """Optional deployment override; values stay in Secrets Manager, never CI output."""
+    if not enabled and not secret_arn:
+        return None
+    if enabled not in {"true", "false"}:
+        raise ValueError("Configure DRIVEMATE_HYUNDAI_SAMPLE_ENABLED as true or false.")
+    if enabled == "false":
+        if secret_arn:
+            raise ValueError("Clear HYUNDAI_SAMPLE_SECRET_ARN when disabling Hyundai samples.")
+        return {"enabled": False}
+    if not re.fullmatch(r"arn:aws:secretsmanager:[a-z]{2}(?:-[a-z]+)+-[0-9]:[0-9]{12}:secret:[A-Za-z0-9/_+=.@-]{1,512}", secret_arn):
+        raise ValueError("Configure HYUNDAI_SAMPLE_SECRET_ARN as the full JSON secret ARN, without a JSON key suffix.")
+    return {"enabled": True, "secret_arn": secret_arn}
+
+
+def clone_task(task, image, family, hyundai_sample=None):
     image_value(image)
     if task.get("family") != family or task.get("status") != "ACTIVE":
         raise ValueError("The active service task does not match the approved API family.")
@@ -146,6 +161,15 @@ def clone_task(task, image, family):
         if not container.get("essential", True) or not container.get("healthCheck"):
             raise ValueError("Both API containers need essential health checks before deployment.")
         container["image"] = image
+        if container["name"] == "api" and hyundai_sample is not None:
+            names = {"HYUNDAI_SAMPLE_TOKEN", "HYUNDAI_SAMPLE_CAR_ID", "DRIVEMATE_HYUNDAI_SAMPLE_ENABLED"}
+            container["environment"] = [item for item in container.get("environment", []) if item["name"] not in names]
+            container["secrets"] = [item for item in container.get("secrets", []) if item["name"] not in names]
+            container["environment"].append({"name": "DRIVEMATE_HYUNDAI_SAMPLE_ENABLED",
+                                             "value": "true" if hyundai_sample["enabled"] else "false"})
+            if hyundai_sample["enabled"]:
+                for name in ("HYUNDAI_SAMPLE_TOKEN", "HYUNDAI_SAMPLE_CAR_ID"):
+                    container["secrets"].append({"name": name, "valueFrom": hyundai_sample["secret_arn"] + ":" + name + "::"})
     return result
 
 
@@ -156,7 +180,7 @@ def wait_stable(ecs, cluster, service, expected):
         raise RuntimeError("The expected ECS task revision did not become healthy.")
 
 
-def deploy_service(ecs, cluster, service, family, image, revision, report_path):
+def deploy_service(ecs, cluster, service, family, image, revision, report_path, hyundai_sample=None):
     for value, label in ((cluster, "ECS cluster"), (service, "ECS service"), (family, "API task family")):
         name_value(value, label)
     image_value(image)
@@ -170,8 +194,8 @@ def deploy_service(ecs, cluster, service, family, image, revision, report_path):
             or config.get("deploymentCircuitBreaker") != {"enable": True, "rollback": True}):
         raise ValueError("Require a stable single-task service, 0/100 rollout and circuit-breaker rollback.")
     task = ecs.describe_task_definition(taskDefinition=old_arn)["taskDefinition"]
-    registration = clone_task(task, image, family)
-    if all(item.get("image") == image for item in task["containerDefinitions"]):
+    registration = clone_task(task, image, family, hyundai_sample)
+    if registration == {name: task[name] for name in REGISTER_FIELDS if name in task}:
         result = {"status": "already_deployed", "source_revision": revision, "image": image,
                   "previous_task_definition": old_arn, "task_definition": old_arn}
         Path(report_path).write_text(json.dumps(result, indent=2), encoding="utf-8")
@@ -236,12 +260,16 @@ def main():
                                    os.environ.get("ECR_REPOSITORY", ""), args.revision, args.context)
             Path(args.output).write_text(json.dumps(result, indent=2), encoding="utf-8")
         else:
+            hyundai_sample = hyundai_sample_configuration(
+                os.environ.get("DRIVEMATE_HYUNDAI_SAMPLE_ENABLED", ""),
+                os.environ.get("HYUNDAI_SAMPLE_SECRET_ARN", ""))
             image = json.loads(Path(args.image_file).read_text(encoding="utf-8"))
             if image.get("source_revision") != args.revision:
                 raise ValueError("Image source identity mismatch.")
             result = deploy_service(aws_client("ecs", os.environ.get("AWS_REGION", "")),
                                     os.environ.get("ECS_CLUSTER", ""), os.environ.get("ECS_SERVICE", ""),
-                                    os.environ.get("ECS_API_TASK_FAMILY", ""), image["image"], args.revision, args.report)
+                                    os.environ.get("ECS_API_TASK_FAMILY", ""), image["image"], args.revision, args.report,
+                                    hyundai_sample)
         print(json.dumps(result))
         return 0
     except (ValueError, RuntimeError) as error:
@@ -255,3 +283,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+

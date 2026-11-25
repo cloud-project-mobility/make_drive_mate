@@ -33,7 +33,7 @@ public class ProviderHttp {
     public record Reply(int status, byte[] body, String retryAfter) {}
     @FunctionalInterface public interface Transport { Reply send(HttpRequest request) throws IOException, InterruptedException; }
     private static final int LIMIT = 2_000_000;
-    private static final Set<String> HOSTS = Set.of("dapi.kakao.com", "apis-navi.kakaomobility.com", "www.googleapis.com", "oauth2.googleapis.com");
+    private static final Set<String> HOSTS = Set.of("dapi.kakao.com", "apis-navi.kakaomobility.com", "www.googleapis.com", "oauth2.googleapis.com", "dev.kr-ccapi.hyundai.com");
     private final ObjectMapper mapper;
     private final Transport transport;
     private final boolean testTransport;
@@ -89,7 +89,7 @@ public class ProviderHttp {
         return fields.entrySet().stream().map(e -> encode(e.getKey()) + "=" + encode(e.getValue())).collect(java.util.stream.Collectors.joining("&"));
     }
     public JsonNode get(String base, Map<String, String> params, String authorization) {
-        HttpRequest.Builder request = request(URI.create(base + "?" + form(params))).GET();
+        HttpRequest.Builder request = request(URI.create(base + (params.isEmpty() ? "" : "?" + form(params)))).GET();
         if (authorization != null) request.header("Authorization", authorization);
         Reply reply = send(request.build()); checkStatus(reply);
         JsonNode data = parse(reply, false);
@@ -148,3 +148,4 @@ public class ProviderHttp {
         if (status < 200 || status >= 300) throw new ProviderException("provider_http_error", "외부 서비스가 정상 응답을 반환하지 않았습니다.", 502, status >= 500, status, null);
     }
 }
+

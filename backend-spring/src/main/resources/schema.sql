@@ -54,3 +54,15 @@ CREATE TABLE IF NOT EXISTS registered_vehicles (
   updated_at VARCHAR(40) NOT NULL,
   PRIMARY KEY (user_id, vehicle_id)
 );
+
+CREATE TABLE IF NOT EXISTS vehicle_sample_status (
+  user_id VARCHAR(36) NOT NULL,
+  vehicle_id VARCHAR(100) NOT NULL,
+  source VARCHAR(40) NOT NULL,
+  body TEXT NOT NULL,
+  saved_at VARCHAR(40) NOT NULL,
+  PRIMARY KEY (user_id, vehicle_id),
+  UNIQUE (user_id, source),
+  FOREIGN KEY (user_id, vehicle_id) REFERENCES registered_vehicles(user_id, vehicle_id) ON DELETE CASCADE
+);
+

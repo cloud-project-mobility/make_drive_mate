@@ -6,7 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +22,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class HyundaiSampleService {
     private static final String SOURCE = "hyundai_sample";
+    private static final DateTimeFormatter PROVIDER_TIME =
+            DateTimeFormatter.ofPattern("uuuuMMddHHmmss").withResolverStyle(ResolverStyle.STRICT);
     private final JdbcTemplate jdbc;
     private final TransactionTemplate transactions;
     private final ObjectMapper json;
@@ -41,33 +46,65 @@ public class HyundaiSampleService {
         validate(sample);
         if (!powertrain.equals(sample.get("powertrain").textValue())) throw malformed();
         return transactions.execute(transaction -> {
-            List<String> owners = jdbc.queryForList("SELECT id FROM accounts WHERE id=? FOR UPDATE", String.class, userId);
-            if (owners.isEmpty()) throw new ApiException("unauthorized", "로그인이 필요해요.", 401);
-            List<String> ids = jdbc.queryForList(
-                    "SELECT vehicle_id FROM vehicle_sample_status WHERE user_id=? AND source=?", String.class, userId, SOURCE);
-            String id = ids.isEmpty() ? UUID.randomUUID().toString() : ids.get(0);
-            Map<String, Object> previous = ids.isEmpty() ? null : vehicles.list(userId).stream()
-                    .filter(vehicle -> id.equals(vehicle.get("id"))).findFirst().orElseThrow();
-            ObjectNode registration = json.createObjectNode();
-            registration.put("id", id).put("name", previous == null ? "현대 샘플 차량" : (String) previous.get("name"))
-                    .put("model", sample.get("model").textValue()).put("powertrain", sample.get("powertrain").textValue())
-                    .put("odometerKm", sample.get("odometer_km").doubleValue())
-                    .put("createdAt", previous == null ? Instant.now().toString() : (String) previous.get("createdAt"));
-            Map<String, Object> vehicle = vehicles.save(userId, id, registration);
+            vehicles.lockOwner(userId);
+            StoredSample previous = findStored(userId);
             String savedAt = Instant.now().toString();
-            if (ids.isEmpty()) {
+            String model = sample.get("model").textValue();
+            double kilometres = sample.get("odometer_km").doubleValue();
+            if (previous == null) {
+                String id = UUID.randomUUID().toString();
+                ObjectNode registration = json.createObjectNode().put("id", id).put("name", "현대 샘플 차량")
+                        .put("model", model).put("powertrain", powertrain).put("odometerKm", kilometres).put("createdAt", savedAt);
+                vehicles.insertSampleWhileLocked(userId, id, registration);
                 jdbc.update("INSERT INTO vehicle_sample_status (user_id,vehicle_id,source,body,saved_at) VALUES (?,?,?,?,?)",
                         userId, id, SOURCE, sample.toString(), savedAt);
             } else {
+                if (!shouldReplace(previous.status(), sample)) return previous.response();
+                String id = (String) previous.vehicle().get("id");
+                // Keep user-edited names and registration dates. A catalog link only applies to the same model and powertrain.
+                jdbc.update("UPDATE registered_vehicles SET catalog_id=CASE WHEN model=? AND powertrain=? THEN catalog_id ELSE NULL END,"
+                                + "model=?,powertrain=?,odometer_km=?,updated_at=? WHERE user_id=? AND vehicle_id=?",
+                        model, powertrain, model, powertrain, kilometres, savedAt, userId, id);
                 jdbc.update("UPDATE vehicle_sample_status SET body=?,saved_at=? WHERE user_id=? AND vehicle_id=? AND source=?",
                         sample.toString(), savedAt, userId, id, SOURCE);
             }
-            return Map.of("vehicle", vehicle, "status", sample);
+            return get(userId);
         });
     }
 
+    private static boolean shouldReplace(JsonNode previous, JsonNode next) {
+        if (!previous.get("provider_vehicle_id").equals(next.get("provider_vehicle_id"))) {
+            throw new ApiException("hyundai_sample_vehicle_changed", "기존에 연결된 샘플 차량을 확인해 주세요.", 409);
+        }
+        String oldTime = previous.path("provider_timestamp_raw").asText(null);
+        String nextTime = next.path("provider_timestamp_raw").asText(null);
+        int receiptOrder = Instant.parse(next.get("received_at").textValue())
+                .compareTo(Instant.parse(previous.get("received_at").textValue()));
+        if (oldTime != null && nextTime == null) return false;
+        // Strictly validated fixed-width provider clocks are comparable for the same vehicle, without guessing a zone.
+        int order = oldTime != null ? nextTime.compareTo(oldTime) : receiptOrder;
+        if (order < 0) return false;
+        int distanceOrder = next.get("odometer_km").decimalValue().compareTo(previous.get("odometer_km").decimalValue());
+        if (distanceOrder < 0 || (order == 0 && distanceOrder != 0)) {
+            throw new ApiException("hyundai_sample_odometer_conflict", "누적거리 값이 이전 관측과 맞지 않아 기존 기록을 유지했어요.", 409);
+        }
+        // A repeat observation may still carry a deliberate choice of a different app vehicle category.
+        return order > 0 || (oldTime == null && nextTime != null)
+                || (receiptOrder > 0 && !next.get("powertrain").equals(previous.get("powertrain")));
+    }
+
+    private record StoredSample(Map<String, Object> vehicle, JsonNode status) {
+        Map<String, Object> response() { return Map.of("vehicle", vehicle, "status", status); }
+    }
+
     public Map<String, Object> get(String userId) {
-        List<Map<String, Object>> results = jdbc.query(
+        StoredSample stored = findStored(userId);
+        if (stored == null) throw new ApiException("hyundai_sample_not_found", "계정에 저장된 현대 샘플 차량이 없어요.", 404);
+        return stored.response();
+    }
+
+    private StoredSample findStored(String userId) {
+        List<StoredSample> results = jdbc.query(
                 "SELECT v.*,s.body FROM registered_vehicles v JOIN vehicle_sample_status s"
                         + " ON v.user_id=s.user_id AND v.vehicle_id=s.vehicle_id WHERE v.user_id=? AND s.source=?",
                 (row, index) -> {
@@ -83,13 +120,12 @@ public class HyundaiSampleService {
                     try {
                         JsonNode sample = json.readTree(row.getString("body"));
                         validate(sample);
-                        return Map.<String, Object>of("vehicle", vehicle, "status", sample);
+                        return new StoredSample(vehicle, sample);
                     } catch (IOException error) {
                         throw new IllegalStateException("Stored Hyundai sample is invalid", error);
                     }
                 }, userId, SOURCE);
-        if (results.isEmpty()) throw new ApiException("hyundai_sample_not_found", "계정에 저장된 현대 샘플 차량이 없어요.", 404);
-        return results.get(0);
+        return results.isEmpty() ? null : results.get(0);
     }
 
     private static void validate(JsonNode sample) {
@@ -104,6 +140,11 @@ public class HyundaiSampleService {
                 || !validText(sample.get("received_at"), 40)) throw malformed();
         try {
             Instant.parse(sample.get("received_at").textValue());
+            if (sample.hasNonNull("provider_timestamp_raw")) {
+                JsonNode timestamp = sample.get("provider_timestamp_raw");
+                if (!timestamp.isTextual() || !timestamp.textValue().matches("[0-9]{14}")) throw malformed();
+                LocalDateTime.parse(timestamp.textValue(), PROVIDER_TIME);
+            }
         } catch (DateTimeParseException error) {
             throw malformed();
         }

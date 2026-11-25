@@ -35,23 +35,13 @@ public class VehicleRegistrationService {
         String catalogId = body.has("catalogId") ? body.get("catalogId").textValue() : null;
         return transactions.execute(status -> {
             lockOwner(userId);
-            List<Map<String, Object>> existing = jdbc.query(
-                    "SELECT * FROM registered_vehicles WHERE user_id=? AND vehicle_id=?", this::vehicle, userId, id);
-            if (existing.isEmpty()) {
-                Long count = jdbc.queryForObject("SELECT COUNT(*) FROM registered_vehicles WHERE user_id=?", Long.class, userId);
-                if (count != null && count >= 3) {
-                    throw new ApiException("vehicle_limit", "차량은 계정당 최대 3대까지 등록할 수 있어요.", 409);
-                }
-                jdbc.update("INSERT INTO registered_vehicles (user_id,vehicle_id,catalog_id,name,model,powertrain,odometer_km,created_at,updated_at)"
-                                + " VALUES (?,?,?,?,?,?,?,?,?)", userId, id, catalogId, body.get("name").textValue().strip(),
-                        body.get("model").textValue().strip(), body.get("powertrain").textValue(), body.get("odometerKm").doubleValue(),
-                        body.get("createdAt").textValue(), Instant.now().toString());
-            } else {
-                // The identity and original registration timestamp are immutable on updates.
-                jdbc.update("UPDATE registered_vehicles SET catalog_id=?,name=?,model=?,powertrain=?,odometer_km=?,updated_at=?"
-                                + " WHERE user_id=? AND vehicle_id=?", catalogId, body.get("name").textValue().strip(),
-                        body.get("model").textValue().strip(), body.get("powertrain").textValue(), body.get("odometerKm").doubleValue(),
-                        Instant.now().toString(), userId, id);
+            // The identity and original registration timestamp are immutable on updates.
+            int updated = jdbc.update("UPDATE registered_vehicles SET catalog_id=?,name=?,model=?,powertrain=?,odometer_km=?,updated_at=?"
+                            + " WHERE user_id=? AND vehicle_id=?", catalogId, body.get("name").textValue().strip(),
+                    body.get("model").textValue().strip(), body.get("powertrain").textValue(), body.get("odometerKm").doubleValue(),
+                    Instant.now().toString(), userId, id);
+            if (updated == 0) {
+                insert(userId, id, body, catalogId);
             }
             return jdbc.queryForObject("SELECT * FROM registered_vehicles WHERE user_id=? AND vehicle_id=?", this::vehicle, userId, id);
         });
@@ -65,9 +55,26 @@ public class VehicleRegistrationService {
         });
     }
 
-    private void lockOwner(String userId) {
+    // Both registration writers acquire this same lock before checking the account's three-vehicle limit.
+    void lockOwner(String userId) {
         List<String> owners = jdbc.queryForList("SELECT id FROM accounts WHERE id=? FOR UPDATE", String.class, userId);
         if (owners.isEmpty()) throw new ApiException("unauthorized", "로그인이 필요해요.", 401);
+    }
+
+    void insertSampleWhileLocked(String userId, String id, JsonNode body) {
+        validate(id, body);
+        insert(userId, id, body, null);
+    }
+
+    private void insert(String userId, String id, JsonNode body, String catalogId) {
+        Long count = jdbc.queryForObject("SELECT COUNT(*) FROM registered_vehicles WHERE user_id=?", Long.class, userId);
+        if (count != null && count >= 3) {
+            throw new ApiException("vehicle_limit", "차량은 계정당 최대 3대까지 등록할 수 있어요.", 409);
+        }
+        jdbc.update("INSERT INTO registered_vehicles (user_id,vehicle_id,catalog_id,name,model,powertrain,odometer_km,created_at,updated_at)"
+                        + " VALUES (?,?,?,?,?,?,?,?,?)", userId, id, catalogId, body.get("name").textValue().strip(),
+                body.get("model").textValue().strip(), body.get("powertrain").textValue(), body.get("odometerKm").doubleValue(),
+                body.get("createdAt").textValue(), Instant.now().toString());
     }
 
     private void validate(String id, JsonNode body) {
